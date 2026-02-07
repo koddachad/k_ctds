@@ -1,9 +1,0 @@
-*~
-*.pyc
-*.so
-.gh-pages/
-.tox/
-.vscode/
-build/
-dist/
-src/ctds.egg-info/

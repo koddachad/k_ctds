@@ -654,6 +654,7 @@ int Parameter_bind(struct Parameter* parameter, DBPROCESS* dbproc)
                     case TDSDATE:
                     case TDSTIME:
                     case TDSDATETIME2:
+                    case TDSDATETIMEOFFSET:
                     {
 #if defined(CTDS_HAVE_TDS73_SUPPORT)
                         parameter->noutput = sizeof(DBDATETIMEALL);
@@ -914,6 +915,7 @@ char* Parameter_sqltype(struct Parameter* rpcparam, bool maximum_width)
         case TDSDATETIMEN:
         CONST_CASE(DATETIME)
         CONST_CASE(DATETIME2)
+        CONST_CASE(DATETIMEOFFSET)
         CONST_CASE(SMALLDATETIME)
         CONST_CASE(DATE)
         CONST_CASE(TIME)
@@ -1108,6 +1110,7 @@ char* Parameter_serialize(struct Parameter* rpcparam, bool maximum_width, size_t
             case TDSDATE:
             case TDSDATETIME:
             case TDSDATETIME2:
+            case TDSDATETIMEOFFSET:
             case TDSTIME:
             case TDSMONEY:
             case TDSDECIMAL:
@@ -1135,7 +1138,7 @@ char* Parameter_serialize(struct Parameter* rpcparam, bool maximum_width, size_t
                     default:
                     {
                         quoted = true;
-                        nvalue = ARRAYSIZE("'MMM DD YYYY hh:mm:ss:nnnPM'");
+                        nvalue = ARRAYSIZE("'YYYY-MM-DD hh:mm:ss.nnnnnnn +HH:MM'");
                         break;
                     }
                 }

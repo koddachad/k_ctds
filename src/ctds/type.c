@@ -1091,6 +1091,7 @@ static PyObject* DATETIME_topython(enum TdsType tdstype, const void* data, size_
         case TDSDATE:
         case TDSTIME:
         case TDSDATETIME2:
+        case TDSDATETIMEOFFSET:
         case TDSSMALLDATETIME:
 #endif /* if defined(CTDS_HAVE_TDS73_SUPPORT) */
         case TDSDATETIME:
@@ -1132,6 +1133,32 @@ static PyObject* DATETIME_topython(enum TdsType tdstype, const void* data, size_
                                             dbdaterec.minute,
                                             dbdaterec.second,
                                             usecond);
+                }
+                case TDSDATETIMEOFFSET:
+                {
+                    /*
+                        dbdaterec.tzone contains the UTC offset in minutes
+                        (e.g., -300 for US Eastern, +330 for IST).
+                        Build a Python timezone-aware datetime.
+                    */
+                    PyObject* timedelta = PyDelta_FromDSU_(0, dbdaterec.tzone * 60, 0);
+                    if (!timedelta) return NULL;
+
+                    PyObject* tz = PyTimeZone_FromOffset_(timedelta);
+                    Py_DECREF(timedelta);
+                    if (!tz) return NULL;
+
+                    PyObject* result = PyDateTime_FromDateAndTimeAndTZ_(
+                        dbdaterec.year,
+                        dbdaterec.month,
+                        dbdaterec.day,
+                        dbdaterec.hour,
+                        dbdaterec.minute,
+                        dbdaterec.second,
+                        usecond,
+                        tz);
+                    Py_DECREF(tz);
+                    return result;
                 }
                 default:
                 {
@@ -1195,6 +1222,7 @@ static const struct {
     { TDSDATE,          DATETIME_topython },
     { TDSDATETIME,      DATETIME_topython },
     { TDSDATETIME2,     DATETIME_topython },
+    { TDSDATETIMEOFFSET,DATETIME_topython },
     { TDSDATETIMEN,     DATETIME_topython },
     { TDSSMALLDATETIME, DATETIME_topython },
     { TDSTIME,          DATETIME_topython },
@@ -1418,7 +1446,7 @@ int datetime_to_sql(DBPROCESS* dbproc,
 {
     int written = 0;
     /* Python only supports microsecond precision. */
-    char buffer[ARRAYSIZE("YYYY-MM-DD HH:MM:SS.nnnnnn")];
+    char buffer[ARRAYSIZE("YYYY-MM-DD HH:MM:SS.nnnnnn +HH:MM")];
 
 #if defined(CTDS_HAVE_TDS73_SUPPORT)
     bool tds73plus = ((NULL == dbproc) || (DBTDS(dbproc) >= DBTDS_7_3));
@@ -1481,6 +1509,31 @@ int datetime_to_sql(DBPROCESS* dbproc,
         else if (tds73plus && !PyDateTime_Check_(o))
         {
             *tdstype = TDSTIME;
+        }
+        /*
+            If the datetime is timezone-aware and TDS 7.3+ is available,
+            append the UTC offset and use DATETIMEOFFSET.
+        */
+        if (tds73plus && PyDateTime_Check_(o))
+        {
+            long offset_seconds = 0;
+            if (-1 == PyDateTime_GetUTCOffsetSeconds_(o, &offset_seconds))
+            {
+                return -1;
+            }
+            if (PyDateTime_GetTZInfo_(o))
+            {
+                long offset_minutes = offset_seconds / 60;
+                int sign = (offset_minutes >= 0) ? '+' : '-';
+                long abs_minutes = (offset_minutes >= 0) ? offset_minutes : -offset_minutes;
+                int offset_h = (int)(abs_minutes / 60);
+                int offset_m = (int)(abs_minutes % 60);
+
+                written += sprintf(&buffer[written], " %c%02d:%02d",
+                                   sign, offset_h, offset_m);
+
+                *tdstype = TDSDATETIMEOFFSET;
+            }
         }
     }
     return (int)dbconvert(dbproc,

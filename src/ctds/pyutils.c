@@ -197,6 +197,70 @@ PyObject* PyTime_FromTime_(int hour, int minute, int second, int usecond)
     return PyTime_FromTime(hour, minute, second, usecond);
 }
 
+PyObject* PyDelta_FromDSU_(int days, int seconds, int useconds)
+{
+    return PyDelta_FromDSU(days, seconds, useconds);
+}
+
+PyObject* PyTimeZone_FromOffset_(PyObject* offset)
+{
+    return PyTimeZone_FromOffset(offset);
+}
+
+PyObject* PyDateTime_FromDateAndTimeAndTZ_(int year, int month, int day,
+                                           int hour, int minute, int second,
+                                           int usecond, PyObject* tzinfo)
+{
+    return PyDateTimeAPI->DateTime_FromDateAndTime(
+        year, month, day, hour, minute, second, usecond,
+        tzinfo, PyDateTimeAPI->DateTimeType);
+}
+
+PyObject* PyDateTime_GetTZInfo_(PyObject* o)
+{
+    if (PyDateTime_Check(o))
+    {
+        PyObject* tzinfo = ((PyDateTime_DateTime*)o)->tzinfo;
+        if (tzinfo == Py_None) return NULL;
+        return tzinfo;
+    }
+    return NULL;
+}
+
+int PyDateTime_GetUTCOffsetSeconds_(PyObject* o, long* offset_seconds)
+{
+    PyObject* tzinfo;
+    PyObject* offset;
+    PyObject* total;
+
+    *offset_seconds = 0;
+
+    tzinfo = PyDateTime_GetTZInfo_(o);
+    if (!tzinfo) return 0; /* naive datetime, not an error */
+
+    /* Call tzinfo.utcoffset(o) to get a timedelta. */
+    offset = PyObject_CallMethod(tzinfo, "utcoffset", "(O)", o);
+    if (!offset) return -1;
+
+    if (offset == Py_None)
+    {
+        Py_DECREF(offset);
+        return 0;
+    }
+
+    /* Call timedelta.total_seconds() to get a float, then truncate to long. */
+    total = PyObject_CallMethod(offset, "total_seconds", NULL);
+    Py_DECREF(offset);
+    if (!total) return -1;
+
+    *offset_seconds = (long)PyFloat_AsDouble(total);
+    Py_DECREF(total);
+
+    if (PyErr_Occurred()) return -1;
+
+    return 0;
+}
+
 int PyDateTime_GET_YEAR_(PyObject* o) { return PyDateTime_GET_YEAR(o); }
 int PyDateTime_GET_MONTH_(PyObject* o) { return PyDateTime_GET_MONTH(o); }
 int PyDateTime_GET_DAY_(PyObject* o) { return PyDateTime_GET_DAY(o); }

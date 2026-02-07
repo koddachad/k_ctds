@@ -71,7 +71,25 @@ PyObject* PyDateTime_FromTimestamp_(PyObject* args);
 PyObject* PyDate_FromDate_(int year, int month, int day);
 PyObject* PyDate_FromTimestamp_(PyObject* args);
 PyObject* PyTime_FromTime_(int hour, int minute, int second, int usecond);
+/* Timezone-aware datetime support (for DATETIMEOFFSET). */
+PyObject* PyDelta_FromDSU_(int days, int seconds, int useconds);
+PyObject* PyTimeZone_FromOffset_(PyObject* offset);
+PyObject* PyDateTime_FromDateAndTimeAndTZ_(int year, int month, int day,
+                                           int hour, int minute, int second,
+                                           int usecond, PyObject* tzinfo);
 
+/**
+    Get the tzinfo from a datetime object. Returns a borrowed reference.
+    Returns NULL (without setting an exception) if the datetime is naive.
+*/
+PyObject* PyDateTime_GetTZInfo_(PyObject* o);
+
+/**
+    Get the UTC offset of a timezone-aware datetime as total seconds.
+    Returns 0 and sets no error for naive datetimes.
+    Returns -1 and sets an error on failure.
+*/
+int PyDateTime_GetUTCOffsetSeconds_(PyObject* o, long* offset_seconds);
 int PyDateTime_GET_YEAR_(PyObject* o);
 int PyDateTime_GET_MONTH_(PyObject* o);
 int PyDateTime_GET_DAY_(PyObject* o);
