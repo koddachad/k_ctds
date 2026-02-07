@@ -1514,15 +1514,18 @@ int datetime_to_sql(DBPROCESS* dbproc,
             If the datetime is timezone-aware and TDS 7.3+ is available,
             append the UTC offset and use DATETIMEOFFSET.
         */
+        /* Only check timezone for datetime objects (not date or time). */
         if (tds73plus && PyDateTime_Check_(o))
         {
-            long offset_seconds = 0;
-            if (-1 == PyDateTime_GetUTCOffsetSeconds_(o, &offset_seconds))
+           PyObject* tzinfo = PyDateTime_GetTZInfo_(o);
+           if (tzinfo)
             {
-                return -1;
-            }
-            if (PyDateTime_GetTZInfo_(o))
-            {
+                long offset_seconds = 0;
+                if (-1 == PyDateTime_GetUTCOffsetSeconds_(o, &offset_seconds))
+                {
+                    return -1;
+                }
+
                 long offset_minutes = offset_seconds / 60;
                 int sign = (offset_minutes >= 0) ? '+' : '-';
                 long abs_minutes = (offset_minutes >= 0) ? offset_minutes : -offset_minutes;
@@ -1534,7 +1537,7 @@ int datetime_to_sql(DBPROCESS* dbproc,
 
                 *tdstype = TDSDATETIMEOFFSET;
             }
-        }
+        }    
     }
     return (int)dbconvert(dbproc,
                           TDSCHAR,
