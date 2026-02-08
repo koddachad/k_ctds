@@ -1517,6 +1517,12 @@ int datetime_to_sql(DBPROCESS* dbproc,
             FreeTDS's dbconvert does not support SYBCHAR -> SYBMSDATETIMEOFFSET,
             so we convert the datetime part as DATETIME2, then manually set the
             timezone offset in the DBDATETIMEALL output struct.
+            
+            IMPORTANT: FreeTDS's BCP serialization adds the timezone offset to
+            the stored time when writing the wire format. Therefore we must store
+            the UTC time in DBDATETIMEALL, not the local time. We convert the
+            Python datetime to UTC, format that as a string, and pass it through
+            dbconvert as DATETIME2.
         */
         if (tds73plus && PyDateTime_Check_(o))
         {
@@ -1527,6 +1533,10 @@ int datetime_to_sql(DBPROCESS* dbproc,
                 long offset_minutes;
                 int result;
                 DBDATETIMEALL* dtall;
+                PyObject* utc_dt;
+                int utc_written = 0;
+                char utc_buffer[ARRAYSIZE("YYYY-MM-DD HH:MM:SS.nnnnnn")];
+                int utc_useconds;
 
                 if (-1 == PyDateTime_GetUTCOffsetSeconds_(o, &offset_seconds))
                 {
@@ -1536,14 +1546,45 @@ int datetime_to_sql(DBPROCESS* dbproc,
                 offset_minutes = offset_seconds / 60;
 
                 /*
-                    Convert the datetime string (without offset) as DATETIME2.
-                    The buffer already contains "YYYY-MM-DD HH:MM:SS[.nnnnnn]"
-                    which dbconvert can handle for DATETIME2.
+                    Convert the timezone-aware datetime to UTC by calling
+                    Python's astimezone(timezone.utc).
                 */
+                {
+                    PyObject* zero_delta = PyDelta_FromDSU_(0, 0, 0);
+                    PyObject* utc_tz;
+                    if (!zero_delta) return -1;
+
+                    utc_tz = PyTimeZone_FromOffset_(zero_delta);
+                    Py_DECREF(zero_delta);
+                    if (!utc_tz) return -1;
+
+                    utc_dt = PyObject_CallMethod(o, "astimezone", "(O)", utc_tz);
+                    Py_DECREF(utc_tz);
+                    if (!utc_dt) return -1;
+                }
+
+                /* Format the UTC datetime as a string for dbconvert. */
+                utc_written += sprintf(&utc_buffer[utc_written],
+                                       "%04d-%02d-%02d %02d:%02d:%02d",
+                                       PyDateTime_GET_YEAR_(utc_dt),
+                                       PyDateTime_GET_MONTH_(utc_dt),
+                                       PyDateTime_GET_DAY_(utc_dt),
+                                       PyDateTime_DATE_GET_HOUR_(utc_dt),
+                                       PyDateTime_DATE_GET_MINUTE_(utc_dt),
+                                       PyDateTime_DATE_GET_SECOND_(utc_dt));
+
+                utc_useconds = PyDateTime_DATE_GET_MICROSECOND_(utc_dt);
+                Py_DECREF(utc_dt);
+
+                if (utc_useconds)
+                {
+                    utc_written += sprintf(&utc_buffer[utc_written], ".%06d", utc_useconds);
+                }
+
                 result = (int)dbconvert(dbproc,
                                         TDSCHAR,
-                                        (const BYTE*)buffer,
-                                        (DBINT)written,
+                                        (const BYTE*)utc_buffer,
+                                        (DBINT)utc_written,
                                         TDSDATETIME2,
                                         (BYTE*)converted,
                                         (DBINT)cbconverted);
@@ -1553,9 +1594,10 @@ int datetime_to_sql(DBPROCESS* dbproc,
                 }
 
                 /*
-                    Now set the timezone offset in the DBDATETIMEALL struct.
-                    DBDATETIMEALL has an 'offset' field (DBSMALLINT, minutes)
-                    and a 'has_offset' bitfield that must be set to 1.
+                    Set the timezone offset in the DBDATETIMEALL struct.
+                    FreeTDS BCP will add this offset back to the UTC time
+                    when writing the wire format, producing the correct
+                    local time + offset pair.
                 */
                 dtall = (DBDATETIMEALL*)converted;
                 dtall->offset = (DBSMALLINT)offset_minutes;
@@ -1564,7 +1606,7 @@ int datetime_to_sql(DBPROCESS* dbproc,
                 *tdstype = TDSDATETIMEOFFSET;
                 return result;
             }
-        }    
+        }
     }
     return (int)dbconvert(dbproc,
                           TDSCHAR,
