@@ -1510,32 +1510,59 @@ int datetime_to_sql(DBPROCESS* dbproc,
         {
             *tdstype = TDSTIME;
         }
-        /*
+/*
             If the datetime is timezone-aware and TDS 7.3+ is available,
-            append the UTC offset and use DATETIMEOFFSET.
+            use DATETIMEOFFSET.
+            
+            FreeTDS's dbconvert does not support SYBCHAR -> SYBMSDATETIMEOFFSET,
+            so we convert the datetime part as DATETIME2, then manually set the
+            timezone offset in the DBDATETIMEALL output struct.
         */
-        /* Only check timezone for datetime objects (not date or time). */
         if (tds73plus && PyDateTime_Check_(o))
         {
-           PyObject* tzinfo = PyDateTime_GetTZInfo_(o);
-           if (tzinfo)
+            PyObject* tzinfo = PyDateTime_GetTZInfo_(o);
+            if (tzinfo)
             {
                 long offset_seconds = 0;
+                long offset_minutes;
+                int result;
+                DBDATETIMEALL* dtall;
+
                 if (-1 == PyDateTime_GetUTCOffsetSeconds_(o, &offset_seconds))
                 {
                     return -1;
                 }
 
-                long offset_minutes = offset_seconds / 60;
-                int sign = (offset_minutes >= 0) ? '+' : '-';
-                long abs_minutes = (offset_minutes >= 0) ? offset_minutes : -offset_minutes;
-                int offset_h = (int)(abs_minutes / 60);
-                int offset_m = (int)(abs_minutes % 60);
+                offset_minutes = offset_seconds / 60;
 
-                written += sprintf(&buffer[written], " %c%02d:%02d",
-                                   sign, offset_h, offset_m);
+                /*
+                    Convert the datetime string (without offset) as DATETIME2.
+                    The buffer already contains "YYYY-MM-DD HH:MM:SS[.nnnnnn]"
+                    which dbconvert can handle for DATETIME2.
+                */
+                result = (int)dbconvert(dbproc,
+                                        TDSCHAR,
+                                        (const BYTE*)buffer,
+                                        (DBINT)written,
+                                        TDSDATETIME2,
+                                        (BYTE*)converted,
+                                        (DBINT)cbconverted);
+                if (-1 == result)
+                {
+                    return -1;
+                }
+
+                /*
+                    Now set the timezone offset in the DBDATETIMEALL struct.
+                    DBDATETIMEALL has an 'offset' field (DBSMALLINT, minutes)
+                    and a 'has_offset' bitfield that must be set to 1.
+                */
+                dtall = (DBDATETIMEALL*)converted;
+                dtall->offset = (DBSMALLINT)offset_minutes;
+                dtall->has_offset = 1;
 
                 *tdstype = TDSDATETIMEOFFSET;
+                return result;
             }
         }    
     }
