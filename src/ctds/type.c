@@ -1510,19 +1510,18 @@ int datetime_to_sql(DBPROCESS* dbproc,
         {
             *tdstype = TDSTIME;
         }
-/*
+        /*
             If the datetime is timezone-aware and TDS 7.3+ is available,
             use DATETIMEOFFSET.
             
-            FreeTDS's dbconvert does not support SYBCHAR -> SYBMSDATETIMEOFFSET,
-            so we convert the datetime part as DATETIME2, then manually set the
-            timezone offset in the DBDATETIMEALL output struct.
+            We construct the DBDATETIMEALL struct directly rather than going
+            through dbconvert, because:
+            1. FreeTDS dbconvert does not support SYBCHAR -> SYBMSDATETIMEOFFSET
+            2. FreeTDS string parser applies 2-digit year windowing (year 1 -> 2001)
+            3. Direct construction is more efficient (no string formatting/parsing)
             
-            IMPORTANT: FreeTDS's BCP serialization adds the timezone offset to
-            the stored time when writing the wire format. Therefore we must store
-            the UTC time in DBDATETIMEALL, not the local time. We convert the
-            Python datetime to UTC, format that as a string, and pass it through
-            dbconvert as DATETIME2.
+            DBDATETIMEALL stores UTC time internally. FreeTDS BCP adds the
+            timezone offset when serializing to the wire format.
         */
         if (tds73plus && PyDateTime_Check_(o))
         {
@@ -1531,12 +1530,12 @@ int datetime_to_sql(DBPROCESS* dbproc,
             {
                 long offset_seconds = 0;
                 long offset_minutes;
-                int result;
                 DBDATETIMEALL* dtall;
                 PyObject* utc_dt;
-                int utc_written = 0;
-                char utc_buffer[ARRAYSIZE("YYYY-MM-DD HH:MM:SS.nnnnnn")];
-                int utc_useconds;
+                int utc_year, utc_month, utc_day;
+                int utc_hour, utc_minute, utc_second, utc_usecond;
+                DBINT days_since_epoch;
+                DBUBIGINT time_ticks;
 
                 if (-1 == PyDateTime_GetUTCOffsetSeconds_(o, &offset_seconds))
                 {
@@ -1546,8 +1545,7 @@ int datetime_to_sql(DBPROCESS* dbproc,
                 offset_minutes = offset_seconds / 60;
 
                 /*
-                    Convert the timezone-aware datetime to UTC by calling
-                    Python's astimezone(timezone.utc).
+                    Convert to UTC via Python's astimezone(timezone.utc).
                 */
                 {
                     PyObject* zero_delta = PyDelta_FromDSU_(0, 0, 0);
@@ -1563,50 +1561,59 @@ int datetime_to_sql(DBPROCESS* dbproc,
                     if (!utc_dt) return -1;
                 }
 
-                /* Format the UTC datetime as a string for dbconvert. */
-                utc_written += sprintf(&utc_buffer[utc_written],
-                                       "%04d-%02d-%02d %02d:%02d:%02d",
-                                       PyDateTime_GET_YEAR_(utc_dt),
-                                       PyDateTime_GET_MONTH_(utc_dt),
-                                       PyDateTime_GET_DAY_(utc_dt),
-                                       PyDateTime_DATE_GET_HOUR_(utc_dt),
-                                       PyDateTime_DATE_GET_MINUTE_(utc_dt),
-                                       PyDateTime_DATE_GET_SECOND_(utc_dt));
-
-                utc_useconds = PyDateTime_DATE_GET_MICROSECOND_(utc_dt);
+                /* Extract UTC components. */
+                utc_year   = PyDateTime_GET_YEAR_(utc_dt);
+                utc_month  = PyDateTime_GET_MONTH_(utc_dt);
+                utc_day    = PyDateTime_GET_DAY_(utc_dt);
+                utc_hour   = PyDateTime_DATE_GET_HOUR_(utc_dt);
+                utc_minute = PyDateTime_DATE_GET_MINUTE_(utc_dt);
+                utc_second = PyDateTime_DATE_GET_SECOND_(utc_dt);
+                utc_usecond = PyDateTime_DATE_GET_MICROSECOND_(utc_dt);
                 Py_DECREF(utc_dt);
 
-                if (utc_useconds)
+                /*
+                    Compute days since 1900-01-01 using the Julian Day Number
+                    algorithm. JDN of 1900-01-01 = 2415021.
+                */
                 {
-                    utc_written += sprintf(&utc_buffer[utc_written], ".%06d", utc_useconds);
-                }
-
-                result = (int)dbconvert(dbproc,
-                                        TDSCHAR,
-                                        (const BYTE*)utc_buffer,
-                                        (DBINT)utc_written,
-                                        TDSDATETIME2,
-                                        (BYTE*)converted,
-                                        (DBINT)cbconverted);
-                if (-1 == result)
-                {
-                    return -1;
+                    int a = (14 - utc_month) / 12;
+                    int y = utc_year + 4800 - a;
+                    int m = utc_month + 12 * a - 3;
+                    long jdn = utc_day
+                             + (153 * m + 2) / 5
+                             + 365 * y
+                             + y / 4
+                             - y / 100
+                             + y / 400
+                             - 32045;
+                    days_since_epoch = (DBINT)(jdn - 2415021);
                 }
 
                 /*
-                    Set the timezone offset in the DBDATETIMEALL struct.
-                    FreeTDS BCP will add this offset back to the UTC time
-                    when writing the wire format, producing the correct
-                    local time + offset pair.
+                    Time in 100-nanosecond ticks since midnight.
+                    DBDATETIMEALL.time has 7-digit (100ns) precision.
                 */
+                time_ticks = (DBUBIGINT)(
+                    ((DBUBIGINT)utc_hour * 3600 +
+                     (DBUBIGINT)utc_minute * 60 +
+                     (DBUBIGINT)utc_second) * 10000000ULL +
+                    (DBUBIGINT)utc_usecond * 10ULL
+                );
+
+                /* Fill in the DBDATETIMEALL struct directly. */
                 dtall = (DBDATETIMEALL*)converted;
-                dtall->offset = (DBSMALLINT)offset_minutes;
+                dtall->time      = time_ticks;
+                dtall->date      = days_since_epoch;
+                dtall->offset    = (DBSMALLINT)offset_minutes;
+                dtall->time_prec = 6;  /* microsecond precision (Python's max) */
+                dtall->has_time   = 1;
+                dtall->has_date   = 1;
                 dtall->has_offset = 1;
 
                 *tdstype = TDSDATETIMEOFFSET;
-                return result;
+                return (int)sizeof(DBDATETIMEALL);
             }
-        }
+        }    
     }
     return (int)dbconvert(dbproc,
                           TDSCHAR,

@@ -143,7 +143,7 @@ will be implicitly rolled back when the connection is closed.
                         cursor.execute('INSERT INTO {0} VALUES (1),(2),(3)'.format(name))
                         cursor.execute("WAITFOR DELAY '00:00:02';SELECT @@VERSION")
             except ctds.DatabaseError as ex:
-                self.assertEqual(str(ex), 'Adaptive Server connection timed out')
+                self.assertIn('connection timed out', str(ex))
             else:
                 self.fail('ctds.DatabaseError was not raised as expected') # pragma: nocover
 

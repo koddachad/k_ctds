@@ -207,12 +207,12 @@ Connect to a database.
         except ctds.OperationalError as ex:
             # FreeTDS version 0.95+ adds a (<host>:<port) to this error.
             self.assertTrue(
-                'Unable to connect: Adaptive Server is unavailable or does not exist' in str(ex)
+                'is unavailable or does not exist' in str(ex)
             )
             self.assertEqual(ex.severity, 9)
             self.assertEqual(ex.db_error['number'], 20009)
             self.assertTrue(
-                'Unable to connect: Adaptive Server is unavailable or does not exist' in ex.db_error['description']
+                'is unavailable or does not exist' in ex.db_error['description']
             )
             # Sepcific errors vary by platform and FreeTDS version.
             self.assertTrue(isinstance(ex.os_error['description'], unicode_))
@@ -247,7 +247,7 @@ Connect to a database.
 
                 # FreeTDS version 0.95+ adds a (<host>:<port) to this error.
                 self.assertTrue(
-                    'Adaptive Server connection failed' in ex.db_error['description']
+                    'connection failed' in ex.db_error['description']
                 )
                 self.assertEqual(ex.os_error, None)
                 self.assertTrue(self.server_name_and_instance in ex.last_message.pop('server'))

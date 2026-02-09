@@ -1,2 +1,4 @@
 wheelhouse/*
 build/*
+src/_tds.*.so
+src/ctds.egg-info/

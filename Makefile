@@ -4,21 +4,21 @@ BUILDDIR ?= build
 
 # Python version support
 SUPPORTED_PYTHON_VERSIONS := \
-    2.7 \
-    3.3 \
-    3.4 \
-    3.5 \
-    3.6 \
-    3.7 \
     3.8 \
-    3.9
+    3.9 \
+    3.10 \
+    3.11 \
+    3.12 \
+    3.13
 
 CHECKED_PYTHON_VERSIONS := \
-    2.7 \
-    3.6 \
-    3.7 \
     3.8 \
-    3.9
+    3.9 \
+    3.10 \
+    3.11 \
+    3.12 \
+    3.13
+
 
 VALGRIND_PYTHON_VERSIONS := \
     2.7.14 \

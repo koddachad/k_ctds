@@ -64,7 +64,7 @@ is closed.
                 try:
                     cursor.execute("WAITFOR DELAY '00:00:02';SELECT @@VERSION")
                 except ctds.DatabaseError as ex:
-                    self.assertEqual(str(ex), 'Adaptive Server connection timed out')
+                    self.assertIn('connection timed out', str(ex))
                 else:
                     self.fail('.execute() did not fail as expected') # pragma: nocover
 
@@ -75,7 +75,9 @@ is closed.
                         str(ex) in (
                             'DBPROCESS is dead or not enabled',
                             # Older versions of FreeTDS return a timeout error.
-                            'Adaptive Server connection timed out'
+                            'Adaptive Server connection timed out',
+                            # FreeTDS 1.4+ changed the error message.
+                            'TDS server connection timed out'
                         )
                     )
                 else:

@@ -23,13 +23,10 @@ A connection to the database server.
                 try:
                     cursor.execute("WAITFOR DELAY '00:00:02';SELECT @@VERSION")
                 except ctds.DatabaseError as ex:
-                    msg = 'Adaptive Server connection timed out'
-                    self.assertEqual(str(ex), msg)
+                    self.assertIn('connection timed out', str(ex))
                     self.assertEqual(ex.severity, 6)
-                    self.assertEqual(ex.db_error, {
-                        'number': 20003,
-                        'description': msg,
-                    })
+                    self.assertEqual(ex.db_error['number'], 20003)
+                    self.assertIn('connection timed out', ex.db_error['description'])
                     self.assertEqual(ex.os_error, None)
                     self.assertEqual(ex.last_message, None)
                 else:

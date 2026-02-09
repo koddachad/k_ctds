@@ -259,8 +259,7 @@ class TestDateTimeOffsetWrite(TestExternalDatabase):
             output_dt = ctds.Parameter(None, output=True)
             self.cursor.callproc('test_dto_sproc', (input_dt, output_dt))
             
-            result = self.cursor.fetchone()[0]
-            self.assertEqual(result, input_dt)
+            self.assertEqual(output_dt.value, input_dt)
 
     def test_datetimeoffset_parameter_type(self):
         """Test that timezone-aware datetime is recognized as DATETIMEOFFSET."""
