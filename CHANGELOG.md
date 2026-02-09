@@ -8,7 +8,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Support for SQL Server DATETIMEOFFSET data type (timezone-aware datetimes)
 - Support for Python 3.10, 3.11, 3.12, and 3.13
-- New tests for DATETIMEOFFSET operations
+- Comprehensive test suite for DATETIMEOFFSET operations (65 new tests)
+  - Reading DATETIMEOFFSET values from SQL Server
+  - Writing timezone-aware datetime values to SQL Server
+  - Bulk insert operations with DATETIMEOFFSET
+  - Backward compatibility tests for FreeTDS < 0.95
 
 ### Changed
 - FreeTDS 0.95+ required for DATETIMEOFFSET (older versions still work but feature unavailable)
