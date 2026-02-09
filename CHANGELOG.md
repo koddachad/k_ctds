@@ -4,6 +4,18 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [1.15.0] - 2026-02-09
+### Added
+- Support for SQL Server DATETIMEOFFSET data type (timezone-aware datetimes)
+- Support for Python 3.10, 3.11, 3.12, and 3.13
+- New tests for DATETIMEOFFSET operations
+
+### Changed
+- FreeTDS 0.95+ required for DATETIMEOFFSET (older versions still work but feature unavailable)
+
+### Compatibility
+- No breaking changes for existing code
+
 ## [1.14.0] - 2021-03-25
 ### Fixed
 - Replaced travis-ci with Github Actions.
