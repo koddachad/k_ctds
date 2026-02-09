@@ -2,3 +2,21 @@ wheelhouse/*
 build/*
 src/_tds.*.so
 src/ctds.egg-info/
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Test/coverage artifacts
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+coverage.xml
+
+# tox
+.tox/
+
+# common build artifacts
+*.egg-info/
+dist/
+build/
