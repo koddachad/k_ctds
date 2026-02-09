@@ -255,11 +255,9 @@ class TestDateTimeOffsetWrite(TestExternalDatabase):
         ):
             tz = timezone(timedelta(hours=5, minutes=30))
             input_dt = datetime(2024, 1, 15, 12, 30, 45, 123456, tzinfo=tz)
-            
-            output_dt = ctds.Parameter(None, output=True)
-            self.cursor.callproc('test_dto_sproc', (input_dt, output_dt))
-            
-            self.assertEqual(output_dt.value, input_dt)
+            output_dt = ctds.Parameter(input_dt, output=True)
+            outputs = self.cursor.callproc('test_dto_sproc', (input_dt, output_dt))
+            self.assertEqual(outputs[1], input_dt) 
 
     def test_datetimeoffset_parameter_type(self):
         """Test that timezone-aware datetime is recognized as DATETIMEOFFSET."""

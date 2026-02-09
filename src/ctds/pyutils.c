@@ -220,7 +220,13 @@ PyObject* PyDateTime_GetTZInfo_(PyObject* o)
 {
     if (PyDateTime_Check(o))
     {
-        PyObject* tzinfo = PyDateTime_DATE_GET_TZINFO(o);
+        #if PY_VERSION_HEX >= 0x030a0000
+            PyObject* tzinfo = PyDateTime_DATE_GET_TZINFO(o);
+        #else
+            PyObject* tzinfo = ((_PyDateTime_BaseTZInfo *)(o))->hastzinfo
+                ? ((PyDateTime_DateTime *)(o))->tzinfo
+                : Py_None;
+        #endif
         if (tzinfo == Py_None) return NULL;
         return tzinfo;
     }

@@ -21,5 +21,10 @@ coverage erase
 for OBJDIR in build/*/src/ctds; do :; done;
 
 # Outputs data to "<source-file>.gcov"
-gcov -b -o $OBJDIR src/ctds/*.c
-mv *.gcov $COVERAGEDIR
+if ls $OBJDIR/*.gcno 1>/dev/null 2>&1; then
+    gcov -b -o $OBJDIR src/ctds/*.c
+    mv *.gcov $COVERAGEDIR 2>/dev/null || true
+else
+    echo "Warning: No gcov data found in $OBJDIR, skipping C coverage"
+fi
+

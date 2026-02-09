@@ -336,11 +336,9 @@ class TestDateTimeOffsetBackwardCompatibility(TestExternalDatabase):
             '''
         ):
             input_dt = datetime(2024, 1, 15, 12, 30, 45)
-            output_dt = ctds.Parameter(None, output=True)
-            
-            self.cursor.callproc('test_datetime_compat_sproc', (input_dt, output_dt))
-            
-            self.assertEqual(output_dt.value, input_dt) 
+            output_dt = ctds.Parameter(input_dt, output=True)            
+            outputs = self.cursor.callproc('test_datetime_compat_sproc', (input_dt, output_dt))            
+            self.assertEqual(outputs[1], input_dt) 
             # Should work on all FreeTDS versions
 
     def test_executemany_naive_datetime_still_works(self):

@@ -1,6 +1,6 @@
 import re
 import unittest
-import pkg_resources
+from importlib.metadata import version as get_version
 
 import ctds
 
@@ -16,7 +16,7 @@ class TestTds(unittest.TestCase):
             ctds.version_info
         )
 
-        self.assertTrue(pkg_resources.get_distribution('ctds').version)
+        self.assertTrue(get_version('ctds'))
 
     def test_apilevel(self):
         self.assertEqual(ctds.apilevel, '2.0')
