@@ -193,7 +193,8 @@ static const char s_tds_Parameter_doc[] =
     "\n"
     ":param object value: The parameter's value.\n"
     ":param bool output: Is the parameter an output parameter.\n";
-
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 PyTypeObject ParameterType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "ctds.Parameter",             /* tp_name */
@@ -256,6 +257,7 @@ PyTypeObject ParameterType = {
 #  endif /* if PY_VERSION_HEX < 0x03090000 */
 #endif /* if PY_VERSION_HEX >= 0x03080000 */
 };
+#pragma GCC diagnostic pop
 
 /*
     Convert a python object to a parameter for use in a SQL statement.

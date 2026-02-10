@@ -2268,6 +2268,8 @@ PyObject* Connection_create(const char* server, uint16_t port, const char* insta
     return (PyObject*)connection;
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 PyTypeObject ConnectionType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "ctds.Connection",             /* tp_name */
@@ -2330,6 +2332,8 @@ PyTypeObject ConnectionType = {
 #  endif /* if PY_VERSION_HEX < 0x03090000 */
 #endif /* if PY_VERSION_HEX >= 0x03080000 */
 };
+#pragma GCC diagnostic pop
+
 
 PyTypeObject* ConnectionType_init(void)
 {

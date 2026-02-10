@@ -11,7 +11,7 @@ fi
 /usr/local/bin/$PYTHON -m ensurepip
 
 # Install using setuptools directly so the local setup.cfg is used.
-CTDS_STRICT=1 /usr/local/bin/$PYTHON setup.py -v install
+CTDS_STRICT=1 /usr/local/bin/$PIP install -v .
 
 if [ -n "$TEST" ]; then
     ARGS="-s $TEST"

@@ -2939,6 +2939,8 @@ static PyMethodDef Row_methods[] = {
     { NULL,   NULL,     0,           NULL }
 };
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 PyTypeObject RowType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "ctds.Row",                               /* tp_name */
@@ -3001,6 +3003,7 @@ PyTypeObject RowType = {
 #  endif /* if PY_VERSION_HEX < 0x03090000 */
 #endif /* if PY_VERSION_HEX >= 0x03080000 */
 };
+#pragma GCC diagnostic pop
 
 /* Stores the `struct RowBuffer` for a row until requested by the client. */
 struct LazilyCreatedRow {
@@ -3156,6 +3159,8 @@ static PySequenceMethods s_RowList_as_sequence = {
     NULL,         /* sq_inplace_repeat */
 };
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 PyTypeObject RowListType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "ctds.RowList",                           /* tp_name */
@@ -3218,6 +3223,7 @@ PyTypeObject RowListType = {
 #  endif /* if PY_VERSION_HEX < 0x03090000 */
 #endif /* if PY_VERSION_HEX >= 0x03080000 */
 };
+#pragma GCC diagnostic pop
 
 #define FETCH_ALL ((size_t)-1)
 
@@ -3725,6 +3731,9 @@ PyObject* Cursor_create(struct Connection* connection, enum ParamStyle paramstyl
     return (PyObject*)cursor;
 }
 
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 PyTypeObject CursorType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "ctds.Cursor",                /* tp_name */
@@ -3787,6 +3796,7 @@ PyTypeObject CursorType = {
 #  endif /* if PY_VERSION_HEX < 0x03090000 */
 #endif /* if PY_VERSION_HEX >= 0x03080000 */
 };
+#pragma GCC diagnostic pop
 
 PyTypeObject* CursorType_init(void)
 {

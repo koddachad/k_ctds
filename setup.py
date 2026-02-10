@@ -42,7 +42,6 @@ if not WINDOWS:
             '-ansi',
             '-Wall',
             '-Wextra',
-            '-Wno-missing-field-initializers',
             '-Werror',
             '-Wconversion',
             '-Wpedantic',
@@ -140,7 +139,6 @@ setuptools.setup(
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: MIT License',
         'Operating System :: MacOS :: MacOS X',
         'Operating System :: POSIX :: Linux',
         'Operating System :: Microsoft :: Windows',

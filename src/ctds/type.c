@@ -139,7 +139,8 @@ static PyMemberDef s_SqlType_members[] = {
 static const char s_tds_SqlType_doc[] =
     "An object wrapper to explicitly specify which SQL type a Python object"
     "should be serialized as.";
-
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 PyTypeObject SqlTypeType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "ctds.SqlType",                           /* tp_name */
@@ -202,6 +203,7 @@ PyTypeObject SqlTypeType = {
 #  endif /* if PY_VERSION_HEX < 0x03090000 */
 #endif /* if PY_VERSION_HEX >= 0x03080000 */
 };
+#pragma GCC diagnostic pop
 
 int SqlType_Check(PyObject* o)
 {
@@ -353,7 +355,10 @@ static int SqlTinyInt_init(PyObject* self, PyObject* args, PyObject* kwargs)
     UNUSED(kwargs);
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 SQL_TYPE_DEF(TinyInt, s_SqlTinyInt_doc);
+#pragma GCC diagnostic pop
 
 struct SqlSmallInt
 {
@@ -382,7 +387,10 @@ static int SqlSmallInt_init(PyObject* self, PyObject* args, PyObject* kwargs)
     UNUSED(kwargs);
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 SQL_TYPE_DEF(SmallInt, s_SqlSmallInt_doc);
+#pragma GCC diagnostic pop
 
 struct SqlInt
 {
@@ -410,7 +418,10 @@ static int SqlInt_init(PyObject* self, PyObject* args, PyObject* kwargs)
     UNUSED(kwargs);
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 SQL_TYPE_DEF(Int, s_SqlInt_doc);
+#pragma GCC diagnostic pop
 
 struct SqlBigInt
 {
@@ -438,7 +449,10 @@ static int SqlBigInt_init(PyObject* self, PyObject* args, PyObject* kwargs)
     UNUSED(kwargs);
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 SQL_TYPE_DEF(BigInt, s_SqlBigInt_doc);
+#pragma GCC diagnostic pop
 
 struct SqlBinary
 {
@@ -472,8 +486,10 @@ static int SqlBinary_init(PyObject* self, PyObject* args, PyObject* kwargs)
     UNUSED(kwargs);
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 SQL_TYPE_DEF(Binary, s_SqlBinary_doc);
-
+#pragma GCC diagnostic pop
 
 struct SqlVarBinary
 {
@@ -521,7 +537,10 @@ static int SqlVarBinary_init(PyObject* self, PyObject* args, PyObject* kwargs)
     UNUSED(kwargs);
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 SQL_TYPE_DEF(VarBinary, s_SqlVarBinary_doc);
+#pragma GCC diagnostic pop
 
 struct SqlChar
 {
@@ -575,8 +594,10 @@ static int SqlChar_init(PyObject* self, PyObject* args, PyObject* kwargs)
     UNUSED(kwargs);
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 SQL_TYPE_DEF(Char, s_SqlChar_doc);
-
+#pragma GCC diagnostic pop
 
 struct SqlVarChar
 {
@@ -637,8 +658,10 @@ static int SqlVarChar_init(PyObject* self, PyObject* args, PyObject* kwargs)
     return 0;
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 SQL_TYPE_DEF(VarChar, s_SqlVarChar_doc);
-
+#pragma GCC diagnostic pop
 
 struct SqlNVarChar
 {
@@ -727,8 +750,10 @@ static int SqlNVarChar_init(PyObject* self, PyObject* args, PyObject* kwargs)
     return 0;
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 SQL_TYPE_DEF(NVarChar, s_SqlNVarChar_doc);
-
+#pragma GCC diagnostic pop
 
 struct SqlDate
 {
@@ -787,7 +812,10 @@ static int SqlDate_init(PyObject* self, PyObject* args, PyObject* kwargs)
     UNUSED(kwargs);
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 SQL_TYPE_DEF(Date, s_SqlDate_doc);
+#pragma GCC diagnostic 
 
 struct SqlDecimal
 {
@@ -891,8 +919,10 @@ static int SqlDecimal_init(PyObject* self, PyObject* args, PyObject* kwargs)
     return 0;
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 SQL_TYPE_DEF(Decimal, s_SqlDecimal_doc);
-
+#pragma GCC diagnostic 
 
 /*
     In order to properly use `dbdatecrack` without a DBPROCESS* handle,
