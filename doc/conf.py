@@ -69,7 +69,7 @@ master_doc = 'index'
 # General information about the project.
 project = 'ctds'
 copyright = '2016-, Zillow, Inc. | 2026-, Kodda Labs, Inc.'
-author = 'Chad Ongstad
+author = 'Chad Ongstad'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
