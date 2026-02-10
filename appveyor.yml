@@ -2,6 +2,8 @@ skip_commits:
   # Mimic Travis-ci skip behavior.
   message: /ci skip/
 
+image: Visual Studio 2022
+
 environment:
 
   # As defined by Appveyor.
@@ -9,37 +11,26 @@ environment:
 
   BUILD_INSTALL_PREFIX: "C:\\usr\\local"
 
-  FREETDS_VERSION: "1.1.20"
+  FREETDS_VERSION: "1.5.11"
 
   matrix:
-  - PYTHON: "C:\\Python27-x64"
-    SQLSERVER_INSTANCENAME: "SQL2016"
+  - PYTHON: "C:\\Python39-x64"
+    SQLSERVER_INSTANCENAME: "SQL2019"
 
-  - PYTHON: "C:\\Python33-x64"
-    SQLSERVER_INSTANCENAME: "SQL2016"
-    DISTUTILS_USE_SDK: "1"
+  - PYTHON: "C:\\Python310-x64"
+    SQLSERVER_INSTANCENAME: "SQL2019"
 
-  - PYTHON: "C:\\Python34-x64"
-    SQLSERVER_INSTANCENAME: "SQL2016"
-    DISTUTILS_USE_SDK: "1"
+  - PYTHON: "C:\\Python311-x64"
+    SQLSERVER_INSTANCENAME: "SQL2019"
 
-  - PYTHON: "C:\\Python35-x64"
-    SQLSERVER_INSTANCENAME: "SQL2016"
+  - PYTHON: "C:\\Python312-x64"
+    SQLSERVER_INSTANCENAME: "SQL2019"
 
-  - PYTHON: "C:\\Python36-x64"
-    SQLSERVER_INSTANCENAME: "SQL2008R2SP2"
+  - PYTHON: "C:\\Python313-x64"
+    SQLSERVER_INSTANCENAME: "SQL2017"
 
-  - PYTHON: "C:\\Python36-x64"
-    SQLSERVER_INSTANCENAME: "SQL2012SP1"
-
-  - PYTHON: "C:\\Python36-x64"
-    SQLSERVER_INSTANCENAME: "SQL2014"
-
-  - PYTHON: "C:\\Python36-x64"
-    SQLSERVER_INSTANCENAME: "SQL2016"
-
-  - PYTHON: "C:\\Python37-x64"
-    SQLSERVER_INSTANCENAME: "SQL2016"
+  - PYTHON: "C:\\Python313-x64"
+    SQLSERVER_INSTANCENAME: "SQL2019"
 
 # Note: Database services should *not* be specified in the services section.
 # The database service will be explicitly started by the script which enables

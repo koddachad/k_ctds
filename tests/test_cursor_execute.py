@@ -724,9 +724,9 @@ specified in the SQL statement. Parameter notation is specified by
                     DECLARE @tTable TABLE (VarCharColumn VARCHAR(1) NOT NULL);
                     INSERT INTO @tTable VALUES ('12');
                     ''',
-                    ctds.ProgrammingError,
+                    ctds.DataError,
                     16,
-                    2628
+                    8152
                 ),
                 (
                     '''
