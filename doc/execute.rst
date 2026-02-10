@@ -68,6 +68,13 @@ the SQL type can be explicitly specified using a
         )
     )
 
+.. note::
+
+    Timezone-aware :py:class:`datetime.datetime` objects are automatically
+    mapped to the SQL ``DATETIMEOFFSET`` type when using TDS 7.3+.
+    Naive datetimes continue to map to ``DATETIME``/``DATETIME2``.
+
+
 
 Limitations
 -----------

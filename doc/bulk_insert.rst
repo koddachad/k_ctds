@@ -49,7 +49,7 @@ This example illustrates how to import data from a *CSV* file.
     import ctds
     import csv
 
-    with open('BulkInsertExample.csv', 'rb') as csvfile:
+    with open('BulkInsertExample.csv', 'r') as csvfile:
         csvreader = csv.reader(csvfile, delimiter=',')
         with ctds.connect('host') as connection:
             connection.bulk_insert(
@@ -60,7 +60,7 @@ This example illustrates how to import data from a *CSV* file.
     # ctds 1.9 supports passing rows as dict objects, mapping column name
     # to value. This is useful if the table contains NULLable columns
     # not present in the CSV file. 
-    with open('BulkInsertExample.csv', 'rb') as csvfile:
+    with open('BulkInsertExample.csv', 'r') as csvfile:
         csvreader = csv.DictReader(csvfile, delimiter=',')
         with ctds.connect('host') as connection:
             connection.bulk_insert(

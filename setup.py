@@ -118,8 +118,8 @@ setuptools.setup(
         CTDS_PATCH_VERSION
     ),
 
-    author='Joshua Lang',
-    author_email='joshual@zillow.com',
+    author='Chad Ongstad',
+    author_email='chad@kodda.io',
     description='DB API 2.0-compliant driver for SQL Server',
     long_description=read('README.rst'),
     long_description_content_type='text/x-rst',
@@ -135,7 +135,7 @@ setuptools.setup(
         'database',
     ],
     license='MIT',
-    url='https://github.com/zillow/ctds',
+    url='https://github.com/koddachad/k_ctds',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',

@@ -10,17 +10,6 @@ is a known deficiency of the `dblib` API. String parameters with
 length *0* are interpreted as `NULL` by the `dblib` API.
 
 
-Why don't :py:class:`str` values map to **(N)VARCHAR** in Python 2?
--------------------------------------------------------------------
-
-In Python 2 :py:class:`bytes` and :py:class:`str` are equivalent. As such, it
-is difficult for `cTDS` to infer a proper *SQL* type from the Python type.
-:py:func:`unicode` should be used in Python 2 when a **(N)CHAR**-type
-parameter is desired. Alternatively, :py:class:`ctds.SqlVarChar` and
-:py:class:`ctds.SqlNVarChar` can be used to explicitly define the desired
-*SQL* type.
-
-
 Why doesn't `RAISERROR` raise a Python exception?
 -------------------------------------------------
 
@@ -83,6 +72,50 @@ codepoints outside the *UCS-2* range will no longer be replaced.
    connection. Because of these limitations, `cTDS` cannot reliably determine
    if the connection will support *UTF-16* and assumes it does not.
 
+
+How do I work with ``DATETIMEOFFSET`` columns?
+----------------------------------------------
+
+`cTDS` automatically maps between Python timezone-aware
+:py:class:`datetime.datetime` objects and SQL Server ``DATETIMEOFFSET``
+columns. This requires `FreeTDS`_ **0.95+** and TDS protocol version **7.3+**.
+
+**Reading:** ``DATETIMEOFFSET`` values are returned as timezone-aware
+:py:class:`datetime.datetime` objects with the offset preserved from
+SQL Server.
+
+**Writing:** Pass a timezone-aware :py:class:`datetime.datetime` to
+:py:meth:`ctds.Cursor.execute` or :py:meth:`ctds.Cursor.executemany`.
+`cTDS` will automatically use ``DATETIMEOFFSET`` as the SQL type.
+
+.. code-block:: python
+
+    from datetime import datetime, timezone, timedelta
+
+    eastern = timezone(timedelta(hours=-5))
+    dt = datetime(2024, 6, 15, 14, 30, 0, tzinfo=eastern)
+
+    with ctds.connect('myserver', user='user', password='pass') as conn:
+        with conn.cursor() as cursor:
+            # Writing
+            cursor.execute(
+                'INSERT INTO Events (event_time) VALUES (:0)',
+                (dt,)
+            )
+
+            # Reading
+            cursor.execute('SELECT event_time FROM Events')
+            row = cursor.fetchone()
+            # row[0] is a timezone-aware datetime
+
+**Bulk insert:** Timezone-aware datetimes also work with
+:py:meth:`ctds.Connection.bulk_insert`.
+
+.. note::
+
+    Naive (timezone-unaware) :py:class:`datetime.datetime` objects continue
+    to map to ``DATETIME`` or ``DATETIME2`` as before. Only timezone-aware
+    datetimes use ``DATETIMEOFFSET``.
 
 .. _FreeTDS: https://www.freetds.org
 .. _SQL Server errors: https://docs.microsoft.com/en-us/sql/relational-databases/errors-events/database-engine-events-and-errors?view=sql-server-ver15
