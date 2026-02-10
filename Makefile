@@ -21,9 +21,12 @@ CHECKED_PYTHON_VERSIONS := \
 
 
 VALGRIND_PYTHON_VERSIONS := \
-    2.7.14 \
-    3.6.3
-
+    3.8.18 \
+    3.9.18 \
+    3.10.13 \
+    3.11.7 \
+    3.12.1 \
+    3.13.0
 # FreeTDS versions to test against. This should
 # be the latest of each minor release.
 # Note: These version strings *must* match the versions
@@ -34,14 +37,14 @@ CHECKED_FREETDS_VERSIONS := \
     0.95.95 \
     1.00.80 \
     1.1.24 \
-    1.2.10
-
+    1.2.10 \
+    1.3.17 \
+    1.4.23 \
+    1.5.11
 # Valgrind FreeTDS versions are limited to one without sp_executesql support
 # and one with.
 VALGRIND_FREETDS_VERSIONS := \
-    $(firstword $(CHECKED_FREETDS_VERSIONS)) \
-    $(lastword $(CHECKED_FREETDS_VERSIONS))
-
+    $(filter-out 0.91.112 0.92.405, $(CHECKED_FREETDS_VERSIONS))
 
 DEFAULT_FREETDS_VERSION := $(lastword $(CHECKED_FREETDS_VERSIONS))
 

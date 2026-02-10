@@ -9,10 +9,7 @@ from decimal import Decimal
 import unittest
 import warnings
 
-import ctds
-
 from .base import TestExternalDatabase
-from .compat import unicode_
 
 
 class TestDateTimeOffsetBulkInsert(TestExternalDatabase):

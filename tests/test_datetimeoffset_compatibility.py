@@ -385,7 +385,7 @@ class TestDateTimeOffsetBackwardCompatibility(TestExternalDatabase):
             self.assertIsInstance(component, int)
         
         # Version should be reasonable (not negative, not crazy high)
-        major, minor, patch = self.freetds_version
+        major, _, _ = self.freetds_version
         self.assertGreaterEqual(major, 0)
         self.assertLess(major, 100)
 

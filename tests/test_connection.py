@@ -35,7 +35,7 @@ A connection to the database server.
                 # Subsequent operations should fail.
                 try:
                     cursor.execute("SELECT 1")
-                except ctds.DatabaseError as ex:
+                except ctds.DatabaseError:
                     pass
                 else:
                     self.fail('.execute() did not fail as expected') # pragma: nocover

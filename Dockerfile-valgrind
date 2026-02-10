@@ -1,4 +1,4 @@
-FROM buildpack-deps:stretch
+FROM buildpack-deps:bullseye
 
 ARG PYTHON_VERSION=3.6.3
 ARG FREETDS_VERSION=1.00.40
