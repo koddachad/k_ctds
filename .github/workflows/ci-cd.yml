@@ -24,19 +24,19 @@ jobs:
           - 3.9
           - 3.8
         include:
-          - freetds-version: 1.2.10
+          - freetds-version: 1.5.11
             os: macos-latest
             python-version: 3.13
-          - freetds-version: 1.2.10
+          - freetds-version: 1.5.11
             os: macos-latest
             python-version: 3.11
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: 'Cache FreeTDS ${{ matrix.freetds-version }}'
         id: cache-freetds
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: |
             build/freetds-${{ matrix.freetds-version }}/include
@@ -47,7 +47,7 @@ jobs:
         if: steps.cache-freetds.outputs.cache-hit != 'true'
         run: make freetds-${{ matrix.freetds-version }}
 
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -73,7 +73,7 @@ jobs:
 
       - name: Upload coverage to Codecov
         if: ${{ env.RUNNER_OS == 'Linux' }}
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v4
         with:
           directory: ./build/coverage/
           fail_ci_if_error: true
@@ -87,11 +87,14 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - 2.7.14
-          - 3.6.3
+          - 3.9.18
+          - 3.10.13
+          - 3.11.7
+          - 3.12.1
+          - 3.13.0
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: 'valgrind Python ${{ matrix.python-version }}'
         run: |
@@ -104,8 +107,8 @@ jobs:
     needs: [tests, valgrind]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: 3.9
 
@@ -114,7 +117,7 @@ jobs:
           python setup.py sdist
 
       - name: Publish ctds sdist to Test PyPI
-        uses: pypa/gh-action-pypi-publish@master
+        uses: pypa/gh-action-pypi-publish@release/v1
         # Allow test publishing to fail as the current version may have been previously published. 
         continue-on-error: true
         with:
@@ -135,14 +138,14 @@ jobs:
     needs: [publish-sdist]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: 3.9
 
       - name: 'Install dependencies'
         run: |
-          sudo apt-get -y install python-dev freetds-dev
+          sudo apt-get -y install python3-dev freetds-dev
           python -m pip install --upgrade pip tox
 
       - name: Build docs
