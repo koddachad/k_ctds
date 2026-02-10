@@ -165,7 +165,7 @@ int PyDateTimeType_init(void)
 
 void PyDateTimeType_free(void)
 {
-    Py_XDECREF(PyDateTimeAPI);
+    PyDateTimeAPI = NULL;
 }
 
 int PyDateTime_Check_(PyObject* o) { return PyDateTime_Check(o); }

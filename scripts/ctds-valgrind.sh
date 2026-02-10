@@ -18,7 +18,7 @@ if [ -n "$TEST" ]; then
 fi
 
 # Install test dependencies using pip.
-/usr/local/bin/$PIP install --no-cache-dir -v .[tests]
+/usr/local/bin/$PIP install --no-cache-dir -v pytest .[tests]
 
 valgrind \
     --tool=memcheck \
@@ -31,4 +31,4 @@ valgrind \
     --trace-children=yes \
     --error-exitcode=1 \
     --suppressions=$(dirname $(readlink -f "$0"))/../misc/valgrind-python.supp \
-    /usr/local/bin/$PYTHON setup.py test -v $ARGS
+    /usr/local/bin/$PYTHON -m pytest tests/ -v $ARGS

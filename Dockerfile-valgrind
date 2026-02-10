@@ -55,6 +55,16 @@ RUN set -ex \
         \) -exec rm -rf '{}' + \
     && rm -rf /usr/src/python
 
+# Install pip, setuptools, and wheel
+RUN set -ex; \
+    wget -O get-pip.py 'https://bootstrap.pypa.io/get-pip.py'; \
+    python3 get-pip.py \
+        --disable-pip-version-check \
+        --no-cache-dir \
+        setuptools \
+        wheel; \
+    rm -f get-pip.py
+
 # FreeTDS (required by ctds)
 RUN set -ex \
     && wget -O freetds.tar.gz "https://www.freetds.org/files/stable/freetds-${FREETDS_VERSION}.tar.gz" \

@@ -42,6 +42,7 @@ if not WINDOWS:
             '-ansi',
             '-Wall',
             '-Wextra',
+            '-Wno-missing-field-initializers',
             '-Werror',
             '-Wconversion',
             '-Wpedantic',
