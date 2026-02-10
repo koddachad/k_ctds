@@ -19,14 +19,26 @@ CHECKED_PYTHON_VERSIONS := \
 
 
 VALGRIND_PYTHON_VERSIONS := \
+    3.9.18 \
+    3.10.13 \
+    3.11.7 \
+    3.12.1 \
     3.13.0
 
 # FreeTDS versions to test against. This should
 # be the latest of each minor release.
 # Note: These version strings *must* match the versions
 # on http://www.freetds.org/files/stable/.
+
 CHECKED_FREETDS_VERSIONS := \
+    0.95.95 \
+    1.00.80 \
+    1.1.24 \
+    1.2.10 \
+    1.3.17 \
+    1.4.23 \
     1.5.11
+
 # Valgrind FreeTDS versions are limited to one without sp_executesql support
 # and one with.
 VALGRIND_FREETDS_VERSIONS := \
