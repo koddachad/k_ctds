@@ -815,6 +815,7 @@ static PyObject* Cursor_bind(struct Cursor* cursor, PyObject* parameters, bool k
 
                 if (0 != Parameter_bind(rpcparam, dbproc))
                 {
+                    Py_DECREF(rpcparam);
                     break;
                 }
 

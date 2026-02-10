@@ -1593,13 +1593,12 @@ int datetime_to_sql(DBPROCESS* dbproc,
                     Time in 100-nanosecond ticks since midnight.
                     DBDATETIMEALL.time has 7-digit (100ns) precision.
                 */
-                time_ticks = (DBUBIGINT)(
-                    ((DBUBIGINT)utc_hour * 3600 +
-                     (DBUBIGINT)utc_minute * 60 +
-                     (DBUBIGINT)utc_second) * 10000000ULL +
-                    (DBUBIGINT)utc_usecond * 10ULL
-                );
-
+                time_ticks = (
+                         ((DBUBIGINT)utc_hour * (DBUBIGINT)3600 +
+                         (DBUBIGINT)utc_minute * (DBUBIGINT)60 +
+                         (DBUBIGINT)utc_second) * (DBUBIGINT)10000000 +
+                         (DBUBIGINT)utc_usecond * (DBUBIGINT)10  // ← Cast utc_usecond to DBUBIGINT first
+                        );
                 /* Fill in the DBDATETIMEALL struct directly. */
                 dtall = (DBDATETIMEALL*)converted;
                 dtall->time      = time_ticks;

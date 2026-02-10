@@ -1,0 +1,8 @@
+{
+   freetds_bcp_init_leak
+   Memcheck:Leak
+   match-leak-kinds: definite,indirect
+   fun:calloc
+   ...
+   fun:Connection_bulk_insert
+}

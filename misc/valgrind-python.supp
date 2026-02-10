@@ -17,6 +17,14 @@
 
 # all tool names: Addrcheck,Memcheck,cachegrind,helgrind,massif
 {
+   freetds_bcp_init_leak
+   Memcheck:Leak
+   match-leak-kinds: definite,indirect
+   fun:calloc
+   ...
+   fun:Connection_bulk_insert
+}
+{
    ADDRESS_IN_RANGE/Invalid read of size 4
    Memcheck:Addr4
    fun:Py_ADDRESS_IN_RANGE

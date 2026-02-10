@@ -1681,6 +1681,7 @@ static PyObject* Connection_bulk_insert(PyObject* self, PyObject* args, PyObject
                     if (FAIL == retcode)
                     {
                         Connection_raise_lasterror(connection);
+                        Py_DECREF(row);
                         break;
                     }
 
@@ -1694,6 +1695,7 @@ static PyObject* Connection_bulk_insert(PyObject* self, PyObject* args, PyObject
                     if (!columns)
                     {
                         PyErr_NoMemory();
+                        Py_DECREF(row);
                         break;
                     }
 
@@ -1720,6 +1722,7 @@ static PyObject* Connection_bulk_insert(PyObject* self, PyObject* args, PyObject
 
                     if (PyErr_Occurred())
                     {
+                        Py_DECREF(row);
                         break;
                     }
                 }
