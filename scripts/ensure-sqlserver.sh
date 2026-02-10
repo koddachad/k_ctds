@@ -23,16 +23,16 @@ if [ -z "$CONTAINER_ID" ]; then
            -e "SA_PASSWORD=$SA_PASSWORD" \
            -e 'MSSQL_PID=Developer' \
            -p 1433:1433 \
+           -v $(dirname $CURDIR)/misc/:/misc \
            --name "$CONTAINER" \
            --hostname "$CONTAINER" \
-           "mcr.microsoft.com/mssql/server:2017-latest"`
+           "mcr.microsoft.com/mssql/server:2022-latest"`
+
 fi
 
-until docker run \
-        --rm \
-        --network container:$CONTAINER_ID \
-    mcr.microsoft.com/mssql-tools \
-    /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P "$SA_PASSWORD" -W -b -Q 'SET NOCOUNT ON; SELECT @@VERSION'
+until docker exec $CONTAINER_ID \
+        /opt/mssql-tools18/bin/sqlcmd -S localhost -U SA -P "$SA_PASSWORD" -W -b -C -Q 'SET NOCOUNT ON; SELECT @@VERSION'
+
 do
     if [ "$RETRIES" -le 0 ]; then
         echo "Retry count exceeded; exiting ..."
@@ -47,9 +47,5 @@ do
     sleep 1
 done
 
-docker run \
-        --rm \
-        --network container:$CONTAINER_ID \
-        -v $(dirname $CURDIR)/misc/:/misc \
-    mcr.microsoft.com/mssql-tools \
-    /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P "$SA_PASSWORD" -W -b -i "/misc/test-setup.sql"
+docker exec $CONTAINER_ID \
+    /opt/mssql-tools18/bin/sqlcmd -S localhost -U SA -P "$SA_PASSWORD" -W -b -C -i "/misc/test-setup.sql"

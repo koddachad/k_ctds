@@ -815,7 +815,7 @@ static int SqlDate_init(PyObject* self, PyObject* args, PyObject* kwargs)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 SQL_TYPE_DEF(Date, s_SqlDate_doc);
-#pragma GCC diagnostic 
+#pragma GCC diagnostic pop 
 
 struct SqlDecimal
 {
@@ -922,7 +922,7 @@ static int SqlDecimal_init(PyObject* self, PyObject* args, PyObject* kwargs)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 SQL_TYPE_DEF(Decimal, s_SqlDecimal_doc);
-#pragma GCC diagnostic 
+#pragma GCC diagnostic pop 
 
 /*
     In order to properly use `dbdatecrack` without a DBPROCESS* handle,
