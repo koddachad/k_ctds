@@ -21,6 +21,10 @@ CHECKED_PYTHON_VERSIONS := \
 
 
 VALGRIND_PYTHON_VERSIONS := \
+    3.8.18 \
+    3.9.18 \
+    3.10.13 \
+    3.11.7 \ 
     3.12.1 \
     3.13.0
 
