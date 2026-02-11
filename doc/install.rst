@@ -67,12 +67,12 @@ Installation On Windows
 On Windows, `FreeTDS`_ should be installed from the latest source code.
 A powershell script is included which may aid in this.
 
-You'll need `Visual C++ Build Tools`_ and `CMake`_ installed.
+You'll need `Visual Studio 2022 Build Tools`_ and `CMake`_, and `7-Zip`_ installed.
 
-Make sure you select the architecture matching your Python's in
-``ctds\windows\run_with_msvc.cmd`` (i.e. replace ``CALL %VCVARS% amd64``
-with ``CALL %VCVARS% x86`` if using 32-bit Python), otherwise you'll get
-errors like ``LNK2001: unresolved external symbol _bcp_batch``.
+.. note::
+
+    64-bit Python is required. The build toolchain targets ``amd64`` and is
+    only tested against 64-bit Python in CI.
 
 .. code-block:: powershell
 
@@ -94,7 +94,7 @@ which `include` and `library` directories to compile and link *cTDS* against.
     # Assuming . is the root of the virtualenv.
     # Note: In order to load the locally built version of the
     # FreeTDS libraries either the working directory must be
-    # the same as when ctds was installed or LD_LIBRARY_PATH
+    # the same as when k-ctds was installed or LD_LIBRARY_PATH
     # must be set correctly.
     pip install --global-option=build_ext \
         --global-option="--include-dirs=$(pwd)/include" \
@@ -121,16 +121,31 @@ When building on Windows, run the following in powershell:
 
 .. code-block:: powershell
 
-    # current directory must be the ctds root
+    # current directory must be the k-ctds root
     $Env:CTDS_INCLUDE_DIRS = "$(pwd)/build/include"
     $Env:CTDS_LIBRARY_DIRS = "$(pwd)/build/lib"
     $Env:CTDS_RUNTIME_LIBRARY_DIRS = "$(pwd)/build/lib"
     pip install -e .
+
+    # After pip install, copy FreeTDS DLLs alongside the installed extension:
+    Copy-Item "$Env:CTDS_LIBRARY_DIRS\*.dll" "$(python -c 'import site; print(site.getsitepackages()[0])')"
+
+Alternatively, if you prefer not to copy DLLs, you can register the
+directory at runtime before importing. On Python 3.8+, Windows no longer
+searches ``PATH`` for DLL dependencies of extension modules, so
+``os.add_dll_directory`` must be called before the first import:
+
+.. code-block:: python
+
+    import os
+    os.add_dll_directory(r'C:\path\to\freetds\lib')
+    import ctds
 
 
 .. _FreeTDS: https://www.freetds.org
 .. _homebrew: https://brew.sh/
 .. _pip: https://pip.pypa.io/en/stable/
 .. _virtualenv: http://virtualenv.readthedocs.org/en/latest/userguide.html
-.. _Visual C++ Build Tools: https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2017
+.. _Visual Studio 2022 Build Tools: https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022 
 .. _CMake: https://cmake.org/
+.. _7-Zip: https://www.7-zip.org/   
