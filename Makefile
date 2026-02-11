@@ -158,7 +158,7 @@ $(BUILDDIR)/src/freetds-$(strip $(1)): $(BUILDDIR)/src/freetds-$(strip $(1)).tar
 $(BUILDDIR)/freetds-$(strip $(1))/include/sybdb.h: $(BUILDDIR)/src/freetds-$(strip $(1))
 	mkdir -p $(BUILDDIR)/src/freetds-$(strip $(1))
 	cd $(BUILDDIR)/src/freetds-$(strip $(1)) && \
-    ./configure --prefix "$(abspath $(BUILDDIR)/freetds-$(strip $(1)))" && \
+    ./configure --prefix "$(abspath $(BUILDDIR)/freetds-$(strip $(1)))" --with-openssl && \
     make && \
     make install
 
