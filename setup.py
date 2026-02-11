@@ -65,6 +65,7 @@ else:
     if STRICT:
         EXTRA_COMPILE_ARGS += [
             '/WX',
+            '/wd4068',
             '/w14242',
             '/w14254',
             '/w14263',
