@@ -42,7 +42,7 @@ jobs:
           path: |
             build/freetds-${{ matrix.freetds-version }}/include
             build/freetds-${{ matrix.freetds-version }}/lib
-          key: ${{ matrix.os }}-freetds-${{ matrix.freetds-version }}
+          key: ${{ matrix.os }}-freetds-${{ matrix.freetds-version }}-v2
 
       - name: 'Compile FreeTDS ${{ matrix.freetds-version }}'
         if: steps.cache-freetds.outputs.cache-hit != 'true'
