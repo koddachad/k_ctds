@@ -21,9 +21,8 @@ $env:CTDS_COVER = 1
 
 & "$env:PYTHON\python.exe" -m pip install .
 
-$site_packages = (& "$env:PYTHON\python.exe" -c "import site; print(site.getsitepackages()[0])").Trim()
-Write-Output "Copying DLLs to: $site_packages\ctds\"
-Copy-Item "$env:BUILD_INSTALL_PREFIX\lib\*.dll" "$site_packages\ctds\"
-
+$ctds_dir = "$env:PYTHON\Lib\site-packages\ctds"
+Write-Output "Copying DLLs to: $ctds_dir"
+Copy-Item "$env:BUILD_INSTALL_PREFIX\lib\*.dll" "$ctds_dir\"
 
 if ($LastExitCode -ne 0) { exit $LastExitCode }

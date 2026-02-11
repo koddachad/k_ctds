@@ -19,14 +19,32 @@ Function Ensure-Dir([string] $Path)
     }
 }
 
-Function Cached-Download([string] $Url, [string] $OutputFile)
+Function Cached-Download([string] $Url, [string] $OutputFile, [string[]] $FallbackUrls = @())
 {
     if (-not (Test-Path -Path $OutputFile))
     {
-        Write-Verbose "Downloading $OutputFile from '$Url' ..."
-        (New-Object System.Net.WebClient).DownloadFile($Url, $OutputFile)
+        $allUrls = @($Url) + $FallbackUrls
+        foreach ($downloadUrl in $allUrls)
+        {
+            for ($attempt = 1; $attempt -le 3; $attempt++)
+            {
+                try
+                {
+                    Write-Verbose "Downloading $OutputFile from '$downloadUrl' (attempt $attempt) ..."
+                    (New-Object System.Net.WebClient).DownloadFile($downloadUrl, $OutputFile)
+                    return
+                }
+                catch
+                {
+                    Write-Warning "Download attempt $attempt from '$downloadUrl' failed: $_"
+                    if ($attempt -lt 3) { Start-Sleep -Seconds 5 }
+                }
+            }
+        }
+        throw "Failed to download $OutputFile from all sources."
     }
 }
+
 
 set-alias extract "$env:ProgramFiles\7-Zip\7z.exe"
 
@@ -107,11 +125,13 @@ else
     Write-Verbose "FREETDS_VERSION not set; defaulting to $freetds_version"
 }
 
-$url = "https://www.freetds.org/files/stable/freetds-$freetds_version.tar.gz"
 $freetds_tar = "$build_dir\freetds-$freetds_version.tar"
 $freetds_path = "$build_dir\freetds-$freetds_version"
 
-Cached-Download $url "$freetds_path.tar.gz"
+$url = "https://www.freetds.org/files/stable/freetds-$freetds_version.tar.gz"
+$fallback = "https://github.com/FreeTDS/freetds/releases/download/v$freetds_version/freetds-$freetds_version.tar.gz"
+
+Cached-Download $url "$freetds_path.tar.gz" @($fallback)
 
 if (-not (Test-Path -Path $freetds_path))
 {
