@@ -21,4 +21,7 @@ $env:CTDS_COVER = 1
 
 & "$env:PYTHON\python.exe" -m pip install .
 
+$site_packages = & "$env:PYTHON\python.exe" -c "import site; print(site.getsitepackages()[0])"
+Copy-Item "$env:BUILD_INSTALL_PREFIX\lib\*.dll" "$site_packages\ctds\"
+
 if ($LastExitCode -ne 0) { exit $LastExitCode }
