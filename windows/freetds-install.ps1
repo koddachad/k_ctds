@@ -39,7 +39,7 @@ if (Test-Path env:WIN_ICONV_VERSION)
 }
 else
 {
-    $win_iconv_version = "0.0.8"
+    $win_iconv_version = "0.0.10"
     Write-Verbose "WIN_ICONV_VERSION not set; defaulting to $win_iconv_version"
 }
 

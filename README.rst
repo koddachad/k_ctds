@@ -1,4 +1,4 @@
-cTDS
+k-cTDS
 ====
 
 .. include-documentation-begin-marker
@@ -16,12 +16,15 @@ cTDS
         :target: https://codecov.io/github/koddachad/k_ctds
 
 
-`cTDS` is a full Python `DB API-2.0`_-compliant
+`k-cTDS` is a full Python `DB API-2.0`_-compliant
 SQL Server database library for `Linux`, `Windows`, and `Mac OS X` supporting
 Python 3.
 
-The full documentation for `cTDS` can be found
-`here <https://zillow.github.io/ctds/>`_.
+`k-cTDS` is a maintained fork of `cTDS <https://github.com/zillow/ctds>`_,
+originally developed by Zillow.
+
+The full documentation for `k-cTDS` can be found
+`here <https://koddachad.github.io/k_ctds/>`_.
 
 Features
 --------
@@ -44,7 +47,7 @@ Dependencies
 
 .. include-documentation-end-marker
 
-See `installation instructions <https://zillow.github.io/ctds/install.html>`_
+See `installation instructions <https://koddachad.github.io/k_ctds/install.html>`_
 for more information on installing `FreeTDS`_.
 
 Releasing
@@ -74,7 +77,7 @@ Generate documentation using the following:
 
 Documentation is hosted on `GitHub Pages <https://pages.github.com/>`_.
 As such, the source code for the documentation pages must be committed
-to the `gh-pages <https://github.com/zillow/ctds/tree/gh-pages>`_ branch in
+to the `gh-pages <https://github.com/koddachad/k_ctds/tree/gh-pages>`_ branch in
 order to update the live documentation.
 
 
