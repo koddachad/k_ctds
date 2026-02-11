@@ -108,14 +108,14 @@ which `include` and `library` directories to compile and link *cTDS* against.
     CTDS_INCLUDE_DIRS=$(pwd)/include \
         CTDS_LIBRARY_DIRS=$(pwd)/lib \
         CTDS_RUNTIME_LIBRARY_DIRS=$(pwd)/lib \
-        pip install ctds
+        pip install k-ctds
 
 
 When using the system version of `FreeTDS`_, use the following:
 
 .. code-block:: bash
 
-    pip install ctds
+    pip install k-ctds
 
 When building on Windows, run the following in powershell:
 

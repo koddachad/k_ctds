@@ -516,6 +516,7 @@ void Connection_raise_lasterror(struct Connection* connection)
                     case 8114: /* Error converting data type %ls to %ls. */
                     case 8115: /* Arithmetic overflow error converting %ls to data type %ls. */
                     case 8134: /* Divide by zero error encountered. */
+                    case 2628: /* String or binary data would be truncated in table '%.*ls', column '%.*ls'. Truncated value: '%.*ls'. */
                     case 8152: /* String or binary data would be truncated. */
                     {
                         exception = PyExc_tds_DataError;

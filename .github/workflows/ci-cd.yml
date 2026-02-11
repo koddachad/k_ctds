@@ -112,11 +112,11 @@ jobs:
         with:
           python-version: 3.9
 
-      - name: Build ctds sdist
+      - name: Build k-ctds sdist
         run: |
           python setup.py sdist
 
-      - name: Publish ctds sdist to Test PyPI
+      - name: Publish k-ctds sdist to Test PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         # Allow test publishing to fail as the current version may have been previously published. 
         continue-on-error: true

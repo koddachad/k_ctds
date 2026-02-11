@@ -111,7 +111,7 @@ def read(*names, **kwargs):
 
 
 setuptools.setup(
-    name='ctds',
+    name='k-ctds',
     version='{0}.{1}.{2}'.format(
         CTDS_MAJOR_VERSION,
         CTDS_MINOR_VERSION,

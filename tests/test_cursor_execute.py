@@ -726,7 +726,7 @@ specified in the SQL statement. Parameter notation is specified by
                     ''',
                     ctds.DataError,
                     16,
-                    8152
+                    (8152, 2628)
                 ),
                 (
                     '''
@@ -775,6 +775,9 @@ specified in the SQL statement. Parameter notation is specified by
                         cursor.execute(query)
                     except exception as ex:
                         self.assertEqual(ex.last_message['severity'], severity)
-                        self.assertEqual(ex.last_message['number'], number)
+                        if isinstance(number, tuple):
+                            self.assertIn(ex.last_message['number'], number)
+                        else:
+                            self.assertEqual(ex.last_message['number'], number)
                     else:
                         self.fail('query "{0}" did not fail'.format(query)) # pragma: nocover
