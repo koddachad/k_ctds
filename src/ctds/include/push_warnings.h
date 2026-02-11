@@ -10,6 +10,7 @@
 #  pragma warning(disable: 4214)
 #  pragma warning(disable: 4255)
 #  pragma warning(disable: 4668)
+#  pragma warning(disable: 4005)
 #  pragma warning(disable: 4820)
 #  pragma warning(disable: 4115)
 #endif /* if defined(_MSC_VER) */
