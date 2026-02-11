@@ -1,7 +1,7 @@
 $ErrorActionPreference = "Stop"
 
 # Explicitly enable modern versions of TLS.
-[Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 Function MSVC-Env-Invoke([string] $command)
 {

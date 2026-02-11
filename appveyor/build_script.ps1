@@ -19,6 +19,6 @@ $env:CTDS_LIBRARY_DIRS= "$env:BUILD_INSTALL_PREFIX\lib"
 $env:CTDS_STRICT = 1
 $env:CTDS_COVER = 1
 
-& "$env:PYTHON\python.exe" setup.py install
+& "$env:PYTHON\python.exe" -m pip install .
 
 if ($LastExitCode -ne 0) { exit $LastExitCode }

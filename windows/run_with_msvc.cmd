@@ -7,7 +7,7 @@ REM MSVC-configured environment.
 
 IF NOT DEFINED VCINSTALL (
     FOR %%x IN (
-        "%PROGRAMFILES(x86)%\Microsoft Visual Studio 14.0\VC\vcvarsall.bat"
+    "%PROGRAMFILES%\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat"    
     ) DO (
         IF EXIST %%x (
             SET VCVARS=%%x

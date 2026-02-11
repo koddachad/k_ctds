@@ -27,7 +27,7 @@ $env:HOSTNAME = "$env:COMPUTERNAME"
     --export_type=cobertura:cobertura.xml --optimized_build `
     --sources "$env:APPVEYOR_BUILD_FOLDER\src" `
     --modules "$env:APPVEYOR_BUILD_FOLDER" -- `
-    "$env:PYTHON\python.exe" -m coverage run --branch --source 'ctds' setup.py test
+    "$env:PYTHON\python.exe" -m coverage run --branch --source 'ctds' -m pytest -vv tests/
 if ($LastExitCode -ne 0) { exit $LastExitCode }
 
 & "$env:PYTHON\Scripts\coverage" report -m --skip-covered

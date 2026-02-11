@@ -38,5 +38,5 @@ if ($LastExitCode -ne 0) { exit $LastExitCode }
         --no-warn-script-location `
         --no-cache-dir `
         --disable-pip-version-check `
-    check-manifest codecov coverage
+    check-manifest coverage pytest pytest-cov
 if ($LastExitCode -ne 0) { exit $LastExitCode }

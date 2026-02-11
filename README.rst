@@ -9,8 +9,8 @@ cTDS
 .. image:: https://ci.appveyor.com/api/projects/status/tlgkdm69ldx7wc78?svg=true
         :target: https://ci.appveyor.com/project/koddachad/k-ctds/branch/master
 
-.. image:: http://img.shields.io/pypi/v/ctds.svg
-        :target: https://pypi.python.org/pypi/ctds/
+.. image:: http://img.shields.io/pypi/v/k-ctds.svg
+        :target: https://pypi.python.org/pypi/k-ctds/
 
 .. image:: https://codecov.io/github/koddachad/k_ctds/graph/badge.svg
         :target: https://codecov.io/github/koddachad/k_ctds

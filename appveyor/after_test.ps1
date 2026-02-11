@@ -12,5 +12,7 @@ if (-not (Test-Path env:PYTHON))
     exit 1
 }
 
-& "$env:PYTHON\Scripts\codecov" --disable gcov -f "coverage.xml" "cobertura.xml"
+# Download and run Codecov uploader
+Invoke-WebRequest -Uri "https://uploader.codecov.io/latest/windows/codecov.exe" -OutFile codecov.exe
+& .\codecov.exe -f "coverage.xml" -f "cobertura.xml" -t "$env:CODECOV_TOKEN"
 if ($LastExitCode -ne 0) { exit $LastExitCode }
