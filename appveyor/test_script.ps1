@@ -18,6 +18,12 @@ if ($LastExitCode -ne 0) { exit $LastExitCode }
 # Add FreeTDS library dir to PATH so shared libs will be found.
 $env:PATH += ";$env:BUILD_INSTALL_PREFIX\lib"
 
+Write-Output "Contents of $env:BUILD_INSTALL_PREFIX\lib:"
+Get-ChildItem "$env:BUILD_INSTALL_PREFIX\lib" | Format-Table Name, Length
+Write-Output "FreeTDS build directory:"
+Get-ChildItem "$env:APPVEYOR_BUILD_FOLDER\build\freetds-$env:FREETDS_VERSION\src\dblib" -ErrorAction SilentlyContinue | Format-Table Name, Length
+Get-ChildItem "$env:APPVEYOR_BUILD_FOLDER\build\freetds-$env:FREETDS_VERSION\src\tds" -ErrorAction SilentlyContinue | Format-Table Name, Length
+
 # The computer's hostname is returned in messages from SQL Server.
 $env:HOSTNAME = "$env:COMPUTERNAME"
 
