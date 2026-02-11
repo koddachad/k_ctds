@@ -6,6 +6,7 @@ jobs:
     name: 'FreeTDS ${{ matrix.freetds-version }} Python ${{ matrix.python-version }} tests (${{ matrix.os }})'
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os:
           - ubuntu-22.04
@@ -61,15 +62,23 @@ jobs:
           echo "CTDS_LIBRARY_DIRS=$GITHUB_WORKSPACE/build/freetds-${{ matrix.freetds-version }}/lib" >> $GITHUB_ENV
           echo "CTDS_RUNTIME_LIBRARY_DIRS=$GITHUB_WORKSPACE/build/freetds-${{ matrix.freetds-version }}/lib" >> $GITHUB_ENV
 
+
       - name: 'Run tests (Python: ${{ matrix.python-version }}, FreeTDS: ${{ matrix.freetds-version }})'
-        # The Github OS X images don't currently include Docker (and probably never will)
-        # so simply ensure the egg can be installed.
         run: |
           if [ "$RUNNER_OS" == "Linux" ]; then
             tox
           else
             python -m pip install .
           fi
+
+      - name: 'Docker diagnostics'
+        if: always() && runner.os == 'Linux'
+        run: |
+          echo "=== Docker containers ==="
+          docker ps -a
+          echo "=== Port 1433 ==="
+          ss -tlnp | grep 1433 || echo "Port 1433 not listening"
+          timeout 5 bash -c 'cat < /dev/null > /dev/tcp/localhost/1433' && echo "Port reachable" || echo "Port NOT reachable"
 
       - name: Upload coverage to Codecov
         if: ${{ env.RUNNER_OS == 'Linux' }}
@@ -85,6 +94,8 @@ jobs:
     # Must run on linux VM as that is the only one which supports docker.
     runs-on: ubuntu-22.04
     strategy:
+      fail-fast: false
+
       matrix:
         python-version:
           - "3.9.18"
