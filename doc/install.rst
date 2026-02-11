@@ -101,7 +101,7 @@ which `include` and `library` directories to compile and link *cTDS* against.
         --global-option=build_ext \
         --global-option="--library-dirs=$(pwd)/lib" \
         --global-option=build_ext --global-option="--rpath=./lib" \
-        ctds
+        k-ctds
 
     # Alternatively, use the CTDS-specifc environment variables to
     # specify the include and library directories:
