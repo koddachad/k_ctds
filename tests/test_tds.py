@@ -16,7 +16,7 @@ class TestTds(unittest.TestCase):
             ctds.version_info
         )
 
-        self.assertTrue(get_version('ctds'))
+        self.assertTrue(get_version('k-ctds'))
 
     def test_apilevel(self):
         self.assertEqual(ctds.apilevel, '2.0')
