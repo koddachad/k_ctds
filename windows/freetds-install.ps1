@@ -26,7 +26,7 @@ Function Cached-Download([string] $Url, [string] $OutputFile, [string[]] $Fallba
         $allUrls = @($Url) + $FallbackUrls
         foreach ($downloadUrl in $allUrls)
         {
-            for ($attempt = 1; $attempt -le 3; $attempt++)
+            for ($attempt = 1; $attempt -le 10; $attempt++)
             {
                 try
                 {
@@ -129,9 +129,9 @@ $freetds_tar = "$build_dir\freetds-$freetds_version.tar"
 $freetds_path = "$build_dir\freetds-$freetds_version"
 
 $url = "https://www.freetds.org/files/stable/freetds-$freetds_version.tar.gz"
-$fallback = "https://github.com/FreeTDS/freetds/releases/download/v$freetds_version/freetds-$freetds_version.tar.gz"
 
-Cached-Download $url "$freetds_path.tar.gz" @($fallback)
+Cached-Download $url "$freetds_path.tar.gz"
+
 
 if (-not (Test-Path -Path $freetds_path))
 {

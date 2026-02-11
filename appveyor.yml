@@ -11,7 +11,7 @@ environment:
 
   BUILD_INSTALL_PREFIX: "C:\\usr\\local"
 
-  FREETDS_VERSION: "1.5.11"
+  FREETDS_VERSION: "1.5.10"
 
   matrix:
   - PYTHON: "C:\\Python39-x64"
