@@ -16,6 +16,10 @@ if (-not (Test-Path env:PYTHON))
 if ($LastExitCode -ne 0) { exit $LastExitCode }
 
 # Add FreeTDS library dir to PATH so shared libs will be found.
+# NOTE: On Python 3.8+, PATH is no longer searched for DLL dependencies of
+# extension modules. The DLLs should be in site-packages alongside _tds.pyd
+# (handled by build_script.ps1), but we also add the directory via
+# os.add_dll_directory() as a fallback.
 $env:PATH += ";$env:BUILD_INSTALL_PREFIX\lib"
 
 Write-Output "Contents of $env:BUILD_INSTALL_PREFIX\lib:"
@@ -27,7 +31,7 @@ Get-ChildItem "$env:APPVEYOR_BUILD_FOLDER\build\freetds-$env:FREETDS_VERSION\src
 # The computer's hostname is returned in messages from SQL Server.
 $env:HOSTNAME = "$env:COMPUTERNAME"
 
-& "$env:PYTHON\python.exe" -c 'import ctds; print(ctds.freetds_version)'
+& "$env:PYTHON\python.exe" -c "import os; os.add_dll_directory(r'$env:BUILD_INSTALL_PREFIX\lib'); import ctds; print(ctds.freetds_version)"
 
 & "$env:ProgramFiles\OpenCppCoverage\OpenCppCoverage.exe" `
     --export_type=cobertura:cobertura.xml --optimized_build `

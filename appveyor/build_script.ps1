@@ -21,8 +21,19 @@ $env:CTDS_COVER = 1
 
 & "$env:PYTHON\python.exe" -m pip install .
 
-$ctds_dir = "$env:PYTHON\Lib\site-packages\ctds"
-Write-Output "Copying DLLs to: $ctds_dir"
-Copy-Item "$env:BUILD_INSTALL_PREFIX\lib\*.dll" "$ctds_dir\"
+# _tds.pyd is installed as a top-level extension in site-packages (not inside ctds/).
+# On Python 3.8+, Windows no longer searches PATH for DLL dependencies of extension
+# modules, so the DLLs must be placed alongside _tds.pyd or registered via os.add_dll_directory().
+$site_packages = "$env:PYTHON\Lib\site-packages"
+Write-Output "Copying DLLs to site-packages root: $site_packages"
+Copy-Item "$env:BUILD_INSTALL_PREFIX\lib\*.dll" "$site_packages\"
+
+# Also verify _tds.pyd is where we expect it.
+$tds_pyd = Get-ChildItem "$site_packages\_tds*.pyd" -ErrorAction SilentlyContinue
+if ($tds_pyd) {
+    Write-Output "Found _tds extension: $($tds_pyd.FullName)"
+} else {
+    Write-Warning "_tds.pyd not found in $site_packages - DLL loading may fail"
+}
 
 if ($LastExitCode -ne 0) { exit $LastExitCode }
