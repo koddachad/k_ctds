@@ -147,6 +147,9 @@ $cmake = "``
 cmake -G ""NMake Makefiles"" ``
     -DCMAKE_BUILD_TYPE=Release ``
     -DCMAKE_INSTALL_PREFIX=""$build_dir"" ``
+    -DWITH_OPENSSL=OFF ``
+    -DWITH_GNUTLS=OFF ``
+    -DCMAKE_PREFIX_PATH=""$install_prefix"" ``
     .
 "
 
@@ -160,6 +163,6 @@ cp "$freetds_path\src\dblib\*.dll" "$install_prefix\lib"
 cp "$freetds_path\src\ctlib\*.lib" "$install_prefix\lib"
 cp "$freetds_path\src\ctlib\*.dll" "$install_prefix\lib"
 cp "$freetds_path\src\tds\*.lib" "$install_prefix\lib"
-cp "$freetds_path\src\tds\*.dll" "$install_prefix``\lib"
+cp "$freetds_path\src\tds\*.dll" "$install_prefix``\lib" -ErrorAction SilentlyContinue
 
 popd

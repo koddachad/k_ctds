@@ -31,7 +31,19 @@ Get-ChildItem "$env:APPVEYOR_BUILD_FOLDER\build\freetds-$env:FREETDS_VERSION\src
 # The computer's hostname is returned in messages from SQL Server.
 $env:HOSTNAME = "$env:COMPUTERNAME"
 
-& "$env:PYTHON\python.exe" -c "import os; os.add_dll_directory(r'$env:BUILD_INSTALL_PREFIX\lib'); import ctds; print(ctds.freetds_version)"
+& "$env:PYTHON\python.exe" -c @"
+import os, sys
+dll_dir = os.path.join(r'$env:BUILD_INSTALL_PREFIX', 'lib')
+print(f'Adding DLL directory: {dll_dir}')
+print(f'DLL dir exists: {os.path.isdir(dll_dir)}')
+print(f'DLL dir contents: {os.listdir(dll_dir)}')
+if hasattr(os, 'add_dll_directory'):
+    os.add_dll_directory(dll_dir)
+    print('os.add_dll_directory() called successfully')
+import ctds
+print(f'ctds imported successfully, freetds_version={ctds.freetds_version}')
+"@
+
 
 & "$env:ProgramFiles\OpenCppCoverage\OpenCppCoverage.exe" `
     --export_type=cobertura:cobertura.xml --optimized_build `
