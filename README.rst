@@ -3,17 +3,17 @@ cTDS
 
 .. include-documentation-begin-marker
 
-.. image:: https://github.com/zillow/ctds/workflows/CI/CD/badge.svg?branch=master
-        :target: https://github.com/zillow/ctds/actions
+.. image:: https://github.com/koddachad/k_ctds/actions/workflows/ci-cd.yml/badge.svg
+        :target: https://github.com/koddachad/k_ctds/actions
 
-.. image:: https://ci.appveyor.com/api/projects/status/voa33r7qdnxh6wwp/branch/master?svg=true
-        :target: https://ci.appveyor.com/project/joshuahlang/ctds/branch/master
+.. image:: https://ci.appveyor.com/api/projects/status/tlgkdm69ldx7wc78?svg=true
+        :target: https://ci.appveyor.com/project/koddachad/k-ctds/branch/master
 
 .. image:: http://img.shields.io/pypi/v/ctds.svg
         :target: https://pypi.python.org/pypi/ctds/
 
-.. image:: https://codecov.io/gh/zillow/ctds/branch/master/graph/badge.svg
-        :target: https://codecov.io/gh/zillow/ctds
+.. image:: https://codecov.io/github/koddachad/k_ctds/graph/badge.svg
+        :target: https://codecov.io/github/koddachad/k_ctds
 
 
 `cTDS` is a full Python `DB API-2.0`_-compliant
