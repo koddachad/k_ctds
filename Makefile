@@ -137,12 +137,25 @@ $(foreach PV, $(VALGRIND_PYTHON_VERSIONS), $(eval $(call VALGRIND_RULE, $(PV))))
 .PHONY: valgrind
 valgrind: $(foreach PV, $(VALGRIND_PYTHON_VERSIONS), valgrind_$(PV))
 
+# FreeTDS TLS configuration
+#   0.x    -> no TLS (predates encryption)
+#   1.0-1.3 -> GnuTLS (incompatible with OpenSSL 3.0 on Ubuntu 22.04+)
+#   1.4+   -> OpenSSL
+FREETDS_GNUTLS_VERS := 1.0% 1.1% 1.2% 1.3%
+FREETDS_NO_TLS_VERS := 0.%
+
+freetds_tls_opt = $(if $(filter $(FREETDS_NO_TLS_VERS),$(strip $(1))),,\
+                    $(if $(filter $(FREETDS_GNUTLS_VERS),$(strip $(1))),\
+                      --with-gnutls,--with-openssl))
+
 # Function to generate rules for:
 #   * downloading FreeTDS source
 #   * compiling FreeTDS source
 #
 # $(eval $(call FREETDS_BUILD_RULE, <freetds_version>))
 #
+
+
 define FREETDS_BUILD_RULE
 $(BUILDDIR)/src/freetds-$(strip $(1)).tar.gz:
 	mkdir -p $(BUILDDIR)/src
@@ -158,7 +171,7 @@ $(BUILDDIR)/src/freetds-$(strip $(1)): $(BUILDDIR)/src/freetds-$(strip $(1)).tar
 $(BUILDDIR)/freetds-$(strip $(1))/include/sybdb.h: $(BUILDDIR)/src/freetds-$(strip $(1))
 	mkdir -p $(BUILDDIR)/src/freetds-$(strip $(1))
 	cd $(BUILDDIR)/src/freetds-$(strip $(1)) && \
-    ./configure --prefix "$(abspath $(BUILDDIR)/freetds-$(strip $(1)))" --with-openssl && \
+    ./configure --prefix "$(abspath $(BUILDDIR)/freetds-$(strip $(1)))" $(call freetds_tls_opt,$(1)) && \
     make && \
     make install
 

@@ -42,11 +42,11 @@ jobs:
           path: |
             build/freetds-${{ matrix.freetds-version }}/include
             build/freetds-${{ matrix.freetds-version }}/lib
-          key: ${{ matrix.os }}-freetds-${{ matrix.freetds-version }}-v3
+          key: ${{ matrix.os }}-freetds-${{ matrix.freetds-version }}-v5
 
       - name: 'Install build dependencies'
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libssl-dev
+        run: sudo apt-get update && sudo apt-get install -y libssl-dev libgnutls28-dev
 
       - name: 'Compile FreeTDS ${{ matrix.freetds-version }}'
         if: steps.cache-freetds.outputs.cache-hit != 'true'
