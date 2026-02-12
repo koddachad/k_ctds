@@ -14,7 +14,7 @@ class TestConnectionBulkInsert(TestExternalDatabase):
         self.assertEqual(
             ctds.Connection.bulk_insert.__doc__,
             '''\
-bulk_insert(table, rows, batch_size=None, tablock=False)
+bulk_insert(table, rows, batch_size=None, tablock=False, auto_encode=False)
 
 Bulk insert rows into a given table.
 This method utilizes the `BULK INSERT` functionality of SQL Server
@@ -33,6 +33,13 @@ after `batch_size` rows have been copied to server.
 :type rows: :ref:`typeiter <python:typeiter>`
 :param int batch_size: An optional batch size.
 :param bool tablock: Should the `TABLOCK` hint be passed?
+:param bool auto_encode: Should Python `str` values be automatically
+    encoded based on the target column's collation? When True,
+    column metadata is queried from INFORMATION_SCHEMA.COLUMNS before
+    the insert begins. str values destined for NVARCHAR/NCHAR/NTEXT
+    columns are encoded to UTF-16LE. str values destined for
+    VARCHAR/CHAR/TEXT columns are encoded to the column's collation
+    code page. .. versionadded:: 1.15
 :return: The number of rows saved to the table.
 :rtype: int
 '''

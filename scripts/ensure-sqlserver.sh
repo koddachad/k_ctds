@@ -47,5 +47,5 @@ do
     sleep 1
 done
 
-docker exec $CONTAINER_ID \
-    /opt/mssql-tools18/bin/sqlcmd -S localhost -U SA -P "$SA_PASSWORD" -W -b -C -i "/misc/test-setup.sql"
+docker exec -i $CONTAINER_ID \
+    /opt/mssql-tools18/bin/sqlcmd -S localhost -U SA -P "$SA_PASSWORD" -W -b -C < "$(dirname $CURDIR)/misc/test-setup.sql"

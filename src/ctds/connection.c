@@ -1392,7 +1392,7 @@ static PyObject* Connection_cursor(PyObject* self, PyObject* args)
 }
 
 static const char s_Connection_bulk_insert_doc[] =
-    "bulk_insert(table, rows, batch_size=None, tablock=False)\n"
+    "bulk_insert(table, rows, batch_size=None, tablock=False, auto_encode=False)\n"
     "\n"
     "Bulk insert rows into a given table.\n"
     "This method utilizes the `BULK INSERT` functionality of SQL Server\n"
@@ -1414,6 +1414,14 @@ static const char s_Connection_bulk_insert_doc[] =
     ":param int batch_size: An optional batch size.\n"
 
     ":param bool tablock: Should the `TABLOCK` hint be passed?\n"
+
+    ":param bool auto_encode: Should Python `str` values be automatically\n"
+    "    encoded based on the target column's collation? When True,\n"
+    "    column metadata is queried from INFORMATION_SCHEMA.COLUMNS before\n"
+    "    the insert begins. str values destined for NVARCHAR/NCHAR/NTEXT\n"
+    "    columns are encoded to UTF-16LE. str values destined for\n"
+    "    VARCHAR/CHAR/TEXT columns are encoded to the column's collation\n"
+    "    code page. .. versionadded:: 1.15\n"
 
     ":return: The number of rows saved to the table.\n"
     ":rtype: int\n";
@@ -1546,21 +1554,26 @@ static PyObject* Connection_bulk_insert(PyObject* self, PyObject* args, PyObject
         "rows",
         "batch_size",
         "tablock",
+        "auto_encode",
         NULL
     };
     char* table;
     PyObject* rows;
     PyObject* batch_size = Py_None;
     PyObject* tablock = Py_False;
+    PyObject* auto_encode = Py_False;
+
     if (!PyArg_ParseTupleAndKeywords(args,
                                      kwargs,
-                                     "sO|OO!",
+                                     "sO|OO!O!",
                                      s_kwlist,
                                      &table,
                                      &rows,
                                      &batch_size,
                                      &PyBool_Type,
-                                     &tablock))
+                                     &tablock,
+                                     &PyBool_Type,
+                                     &auto_encode))
     {
         return NULL;
     }
@@ -1605,6 +1618,89 @@ static PyObject* Connection_bulk_insert(PyObject* self, PyObject* args, PyObject
     {
         PyErr_SetObject(PyExc_TypeError, rows);
         return NULL;
+    }
+
+    /*
+        When auto_encode is True, call into the Python helper module to
+        query column metadata and wrap the row iterator with one that
+        encodes str values based on each column's collation.
+    */
+    if (Py_True == auto_encode)
+    {
+        PyObject* module = NULL;
+        PyObject* get_codecs = NULL;
+        PyObject* encode_rows = NULL;
+        PyObject* codec_tuple = NULL;
+        PyObject* by_position = NULL;
+        PyObject* by_name = NULL;
+        PyObject* encoded_iter = NULL;
+        PyObject* table_str = NULL;
+
+        do
+        {
+            module = PyImport_ImportModule("ctds._bulk_insert");
+            if (!module)
+            {
+                break;
+            }
+
+            /* Get column codecs: (by_position, by_name) = _get_column_codecs(connection, table) */
+            get_codecs = PyObject_GetAttrString(module, "_get_column_codecs");
+            if (!get_codecs)
+            {
+                break;
+            }
+
+            table_str = PyUnicode_FromString(table);
+            if (!table_str)
+            {
+                break;
+            }
+
+            codec_tuple = PyObject_CallFunctionObjArgs(get_codecs, self, table_str, NULL);
+            if (!codec_tuple)
+            {
+                break;
+            }
+
+            by_position = PyTuple_GetItem(codec_tuple, 0);
+            by_name = PyTuple_GetItem(codec_tuple, 1);
+            if (!by_position || !by_name)
+            {
+                break;
+            }
+
+            /* Wrap the rows: _encode_rows(rows, by_position, by_name) */
+            encode_rows = PyObject_GetAttrString(module, "_encode_rows");
+            if (!encode_rows)
+            {
+                break;
+            }
+
+            encoded_iter = PyObject_CallFunctionObjArgs(encode_rows, irows, by_position, by_name, NULL);
+            if (!encoded_iter)
+            {
+                break;
+            }
+
+            /* Replace the row iterator with the encoding wrapper. */
+            Py_DECREF(irows);
+            irows = encoded_iter;
+            encoded_iter = NULL; /* ownership transferred to irows */
+        }
+        while (0);
+
+        Py_XDECREF(table_str);
+        Py_XDECREF(codec_tuple);
+        Py_XDECREF(encode_rows);
+        Py_XDECREF(get_codecs);
+        Py_XDECREF(module);
+
+        if (PyErr_Occurred())
+        {
+            Py_DECREF(irows);
+            return NULL;
+        }
     }
 
     do
