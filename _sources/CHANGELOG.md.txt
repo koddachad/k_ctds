@@ -4,7 +4,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
-## [1.15.0] - 2026-02-09
+## [1.15.0] - 2026-02-11
 ### Added
 - Support for SQL Server DATETIMEOFFSET data type (timezone-aware datetimes)
 - Support for Python 3.10, 3.11, 3.12, and 3.13
