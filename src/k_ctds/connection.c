@@ -1651,7 +1651,7 @@ static PyObject* Connection_bulk_insert(PyObject* self, PyObject* args, PyObject
 
         do
         {
-            module = PyImport_ImportModule("ctds._bulk_insert");
+            module = PyImport_ImportModule("k_ctds._bulk_insert");
             if (!module)
             {
                 break;
@@ -2382,7 +2382,7 @@ PyObject* Connection_create(const char* server, uint16_t port, const char* insta
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 PyTypeObject ConnectionType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "ctds.Connection",             /* tp_name */
+    "k_ctds.Connection",             /* tp_name */
     sizeof(struct Connection),     /* tp_basicsize */
     0,                             /* tp_itemsize */
     Connection_dealloc,            /* tp_dealloc */

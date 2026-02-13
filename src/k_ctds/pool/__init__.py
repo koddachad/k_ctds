@@ -154,7 +154,7 @@ class ConnectionPool(object): # pylint: disable=too-many-instance-attributes,use
         '''
         Return a connection back to the pool.
 
-        Prior to release, :py:meth:`ctds.Connection.rollback()` is called to
+        Prior to release, :py:meth:`k_ctds.Connection.rollback()` is called to
         rollback any pending transaction.
 
         .. note:: This must be called once for every successful call to

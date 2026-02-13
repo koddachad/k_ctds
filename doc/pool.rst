@@ -1,4 +1,4 @@
-:mod: `ctds.pool`
+:mod: `k_ctds.pool`
 
 ctds.pool
 =========

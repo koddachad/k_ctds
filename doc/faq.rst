@@ -1,7 +1,7 @@
 Frequently Asked Questions
 ==========================
 
-Why can't I pass an empty string to :py:meth:`ctds.Cursor.callproc`?
+Why can't I pass an empty string to :py:meth:`k_ctds.Cursor.callproc`?
 --------------------------------------------------------------------
 
 The definition of the `dblib` API implemented by `FreeTDS` does
@@ -15,7 +15,7 @@ Why doesn't `RAISERROR` raise a Python exception?
 
 A Python exception is raised only if the last SQL operation resulted in an
 error. For example, the following will not raise a
-:py:class:`ctds.ProgrammingError` exception because the last statement does not
+:py:class:`k_ctds.ProgrammingError` exception because the last statement does not
 result in an error.
 
 .. code-block:: SQL
@@ -25,7 +25,7 @@ result in an error.
     /* This statement does not fail, hence a Python exception is not raised. */
     SELECT 1 AS Column1;
 
-The error `some custom error` is reported as a :py:obj:`ctds.Warning`.
+The error `some custom error` is reported as a :py:obj:`k_ctds.Warning`.
 
 In `cTDS` v1.3.0 and later, this warning can be turned into an exception using
 the :py:mod:`warnings` module.
@@ -39,16 +39,16 @@ the :py:mod:`warnings` module.
 
     with ctds.connect() as connection:
         with connection.cursor() as cursor:
-            # The following will raise a `ctds.Warning` exception.
+            # The following will raise a `k_ctds.Warning` exception.
             cursor.execute(
                 "RAISERROR (N'this will become a python exception', 16, -1);"
             )
 
 
 In `cTDS` v1.14.0 and later, all `SQL Server errors`_ with **severity > 10**
-are translated to :py:obj:`ctds.DatabaseError` or more appropriate subclass of
+are translated to :py:obj:`k_ctds.DatabaseError` or more appropriate subclass of
 it. Errors and messages with a severity of 10 or less are still translated to a
-:py:obj:`ctds.Warning`.
+:py:obj:`k_ctds.Warning`.
 
 
 What does the `Unicode codepoint U+1F4A9 is not representable...` warning mean?
@@ -85,7 +85,7 @@ columns. This requires `FreeTDS`_ **0.95+** and TDS protocol version **7.3+**.
 SQL Server.
 
 **Writing:** Pass a timezone-aware :py:class:`datetime.datetime` to
-:py:meth:`ctds.Cursor.execute` or :py:meth:`ctds.Cursor.executemany`.
+:py:meth:`k_ctds.Cursor.execute` or :py:meth:`k_ctds.Cursor.executemany`.
 `cTDS` will automatically use ``DATETIMEOFFSET`` as the SQL type.
 
 .. code-block:: python
@@ -109,7 +109,7 @@ SQL Server.
             # row[0] is a timezone-aware datetime
 
 **Bulk insert:** Timezone-aware datetimes also work with
-:py:meth:`ctds.Connection.bulk_insert`.
+:py:meth:`k_ctds.Connection.bulk_insert`.
 
 .. note::
 

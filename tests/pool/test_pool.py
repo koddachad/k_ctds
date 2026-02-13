@@ -3,7 +3,7 @@ import time
 import unittest
 import warnings
 
-from ctds.pool import ConnectionPool
+from k_ctds.pool import ConnectionPool
 
 from ..compat import mock
 

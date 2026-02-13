@@ -6,7 +6,7 @@ collation, then encodes Python str values to the correct byte
 representation before passing rows to the C bulk_insert.
 """
 
-from _tds import SqlVarChar # pylint: disable=no-name-in-module
+from ._tds import SqlVarChar # pylint: disable=no-name-in-module
 
 
 # SQL Server collation code page -> Python codec name.

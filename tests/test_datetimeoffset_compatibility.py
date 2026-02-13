@@ -10,7 +10,7 @@ This module ensures that:
 from datetime import datetime, timezone, timedelta
 import unittest
 
-import ctds
+import k_ctds as ctds
 
 from .base import TestExternalDatabase
 

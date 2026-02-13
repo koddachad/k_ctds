@@ -2943,7 +2943,7 @@ static PyMethodDef Row_methods[] = {
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 PyTypeObject RowType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "ctds.Row",                               /* tp_name */
+    "k_ctds.Row",                               /* tp_name */
     sizeof(struct Row),                       /* tp_basicsize */
     sizeof(PyObject*),                        /* tp_itemsize */
     Row_dealloc,                              /* tp_dealloc */
@@ -3163,7 +3163,7 @@ static PySequenceMethods s_RowList_as_sequence = {
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 PyTypeObject RowListType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "ctds.RowList",                           /* tp_name */
+    "k_ctds.RowList",                           /* tp_name */
     sizeof(struct RowList),                   /* tp_basicsize */
     sizeof(struct LazilyCreatedRow),          /* tp_itemsize */
     RowList_dealloc,                          /* tp_dealloc */
@@ -3736,7 +3736,7 @@ PyObject* Cursor_create(struct Connection* connection, enum ParamStyle paramstyl
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 PyTypeObject CursorType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "ctds.Cursor",                /* tp_name */
+    "k_ctds.Cursor",                /* tp_name */
     sizeof(struct Cursor),        /* tp_basicsize */
     0,                            /* tp_itemsize */
     Cursor_dealloc,               /* tp_dealloc */

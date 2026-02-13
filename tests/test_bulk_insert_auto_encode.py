@@ -6,13 +6,13 @@ row encoding) and do not require a database connection.
 """
 import unittest
 
-from ctds._bulk_insert import (
+from k_ctds._bulk_insert import (
     _parse_table_name,
     _encode_rows,
     _get_column_codecs,
     _CODEPAGE_TO_CODEC,
 )
-from _tds import SqlVarChar # pylint: disable=no-name-in-module
+from k_ctds._tds import SqlVarChar # pylint: disable=no-name-in-module
 
 
 class TestParseTableName(unittest.TestCase):

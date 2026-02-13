@@ -1,4 +1,4 @@
-:mod: `ctds`
+:mod: `k_ctds`
 
 Parameter
 =========

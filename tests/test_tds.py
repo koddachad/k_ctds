@@ -2,7 +2,7 @@ import re
 import unittest
 from importlib.metadata import version as get_version
 
-import ctds
+import k_ctds as ctds
 
 from .compat import PY27, StandardError_
 

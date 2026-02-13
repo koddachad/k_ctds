@@ -61,7 +61,7 @@ static const char s_tds_doc[] =
 #  define DEFAULT_PASSWORD ""
 #endif
 #ifndef DEFAULT_APPNAME
-#  define DEFAULT_APPNAME "ctds"
+#  define DEFAULT_APPNAME "k_ctds"
 #endif
 #ifndef DEFAULT_LOGIN_TIMEOUT
 #  define DEFAULT_LOGIN_TIMEOUT 5

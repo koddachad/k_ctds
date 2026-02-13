@@ -3,7 +3,7 @@ from decimal import Decimal
 import uuid
 import warnings
 
-import ctds
+import k_ctds as ctds
 
 from .base import TestExternalDatabase
 from .compat import PY27, PY3, unichr_, unicode_

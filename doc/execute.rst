@@ -1,11 +1,11 @@
 Executing SQL Statements
 ========================
 
-*cTDS* implements both the :py:meth:`ctds.Cursor.execute` and
-:py:meth:`ctds.Cursor.executemany` methods for executing SQL statements.
+*cTDS* implements both the :py:meth:`k_ctds.Cursor.execute` and
+:py:meth:`k_ctds.Cursor.executemany` methods for executing SQL statements.
 Both are implemented using the `sp_executesql`_ `SQL Server`_ stored procedure.
 This allows optimizations when running batches using
-:py:meth:`ctds.Cursor.executemany`.
+:py:meth:`k_ctds.Cursor.executemany`.
 
 .. note::
 
@@ -17,8 +17,8 @@ This allows optimizations when running batches using
 Passing Parameters
 ------------------
 
-Parameters may be passed to the :py:meth:`ctds.Cursor.execute` and
-:py:meth:`ctds.Cursor.executemany` methods using the **numeric** parameter
+Parameters may be passed to the :py:meth:`k_ctds.Cursor.execute` and
+:py:meth:`k_ctds.Cursor.executemany` methods using the **numeric** parameter
 style as defined in :pep:`0249#paramstyle`.
 
 .. note::
@@ -45,7 +45,7 @@ style as defined in :pep:`0249#paramstyle`.
 
 .. note::
    In `ctds` version **1.6.0** and later, the **named** `paramstyle` may be used instead
-   by specifying it in :py:meth:`ctds.connect`.
+   by specifying it in :py:meth:`k_ctds.connect`.
 
 
 Parameter Types
@@ -79,8 +79,8 @@ the SQL type can be explicitly specified using a
 Limitations
 -----------
 
-Due to the implementation of :py:meth:`ctds.Cursor.execute` and
-:py:meth:`ctds.Cursor.executemany`, any SQL code which defines parameters
+Due to the implementation of :py:meth:`k_ctds.Cursor.execute` and
+:py:meth:`k_ctds.Cursor.executemany`, any SQL code which defines parameters
 cannot be used with execute parameters. For example, the following is **not**
 supported:
 

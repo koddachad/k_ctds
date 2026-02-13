@@ -143,7 +143,7 @@ static const char s_tds_SqlType_doc[] =
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 PyTypeObject SqlTypeType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "ctds.SqlType",                           /* tp_name */
+    "k_ctds.SqlType",                           /* tp_name */
     sizeof(struct SqlType),                   /* tp_basicsize */
     0,                                        /* tp_itemsize */
     SqlType_dealloc,                          /* tp_dealloc */
@@ -259,7 +259,7 @@ int SqlType_Check(PyObject* o)
     } \
     PyTypeObject Sql ## _type ## Type = { \
         PyVarObject_HEAD_INIT(NULL, 0) \
-        "ctds.Sql" STRINGIFY(_type),                /* tp_name */ \
+        "k_ctds.Sql" STRINGIFY(_type),                /* tp_name */ \
         sizeof(struct Sql ## _type),                /* tp_basicsize */ \
         0,                                          /* tp_itemsize */ \
         NULL,                                       /* tp_dealloc */ \

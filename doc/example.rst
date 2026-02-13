@@ -2,21 +2,21 @@ Basic Example
 =============
 
 All interactions with *cTDS* first require a connection. Connections
-are created using the :func:`ctds.connect` method. All
-:py:class:`ctds.Connection` objects can be used as context managers
+are created using the :func:`k_ctds.connect` method. All
+:py:class:`k_ctds.Connection` objects can be used as context managers
 in a `with <https://www.python.org/dev/peps/pep-0343/>`_ statement.
 
 In order to actually perform queries or called stored procedures,
-a :py:class:`ctds.Cursor` is required. This can be acquired using the
-:py:func:`ctds.Connection.cursor` method. Like the :py:class:`ctds.Connection`
-object, the :py:class:`ctds.Cursor` object can also be used as a context
+a :py:class:`k_ctds.Cursor` is required. This can be acquired using the
+:py:func:`k_ctds.Connection.cursor` method. Like the :py:class:`k_ctds.Connection`
+object, the :py:class:`k_ctds.Cursor` object can also be used as a context
 manager.
 
 .. note::
 
-    Due to the design of the *TDS* protocol, :py:class:`ctds.Cursor` objects
+    Due to the design of the *TDS* protocol, :py:class:`k_ctds.Cursor` objects
     cannot have multiple query results active at once. Only the results from
-    the last query are available from the :py:class:`ctds.Cursor`.
+    the last query are available from the :py:class:`k_ctds.Cursor`.
 
 
 An example of a simple query follows:

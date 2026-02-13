@@ -2,7 +2,7 @@ Bulk Insert
 ===========
 
 `cTDS` supports `BULK INSERT`_ for efficiently inserting large amounts of data
-into a table using :py:meth:`ctds.Connection.bulk_insert()`.
+into a table using :py:meth:`k_ctds.Connection.bulk_insert()`.
 
 Example
 ^^^^^^^
@@ -73,10 +73,10 @@ This example illustrates how to import data from a *CSV* file.
 Batch Size
 ^^^^^^^^^^
 
-By default, :py:meth:`ctds.Connection.bulk_insert()` will push all data to the
+By default, :py:meth:`k_ctds.Connection.bulk_insert()` will push all data to the
 database before it is actually validated against the table's schema. If any of
 the data is invalid, the entire `BULK INSERT`_ operation would fail. The
-`batch_size` parameter of :py:meth:`ctds.Connection.bulk_insert()` can be used
+`batch_size` parameter of :py:meth:`k_ctds.Connection.bulk_insert()` can be used
 to control how many rows should be copied before validating them.
 
 
@@ -89,10 +89,10 @@ Because of this behavior it is possible to insert textual data with an invalid
 encoding and cause the column data to become corrupted.
 
 To prevent this, it is recommended the caller explicitly wrap the the object
-with either :py:class:`ctds.SqlVarChar` (for **CHAR**, **VARCHAR** or **TEXT**
-columns) or :py:class:`ctds.SqlNVarChar` (for **NCHAR**, **NVARCHAR** or
+with either :py:class:`k_ctds.SqlVarChar` (for **CHAR**, **VARCHAR** or **TEXT**
+columns) or :py:class:`k_ctds.SqlNVarChar` (for **NCHAR**, **NVARCHAR** or
 **NTEXT** columns). For non-Unicode columns, the value should be first encoded
-to column's encoding (e.g. `latin-1`). By default :py:class:`ctds.SqlVarChar`
+to column's encoding (e.g. `latin-1`). By default :py:class:`k_ctds.SqlVarChar`
 will encode :py:class:`str` objects to `utf-8`, which is likely incorrect for
 most SQL Server configurations.
 

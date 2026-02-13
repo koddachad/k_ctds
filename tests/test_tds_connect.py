@@ -1,6 +1,6 @@
 import socket
 
-import ctds
+import k_ctds as ctds
 
 from .base import TestExternalDatabase
 from .compat import long_, PY3, unicode_
@@ -13,7 +13,7 @@ class TestTdsConnection(TestExternalDatabase):
             # pylint: disable=line-too-long
             '''\
 connect(server, port=1433, instance=None, user='', password='', database=None, \
-appname='ctds', hostname=None, login_timeout=5, timeout=5, tds_version=None, \
+appname='k_ctds', hostname=None, login_timeout=5, timeout=5, tds_version=None, \
 autocommit=False, ansi_defaults=True, enable_bcp=True, paramstyle=None, \
 read_only=False, ntlmv2=False)
 

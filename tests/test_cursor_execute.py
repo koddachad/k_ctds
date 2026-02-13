@@ -3,7 +3,7 @@ from decimal import Decimal
 import re
 import warnings
 
-import ctds
+import k_ctds as ctds
 
 from .base import TestExternalDatabase
 from .compat import long_, unicode_

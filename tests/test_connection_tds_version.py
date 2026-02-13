@@ -1,4 +1,4 @@
-import ctds
+import k_ctds as ctds
 
 from .base import TestExternalDatabase
 from .compat import unicode_

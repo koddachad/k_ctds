@@ -4,7 +4,7 @@ TLS/SSL Encryption
 `cTDS` relies on `FreeTDS`_ for all network communication, including
 TLS/SSL encryption. Encryption is configured through the FreeTDS
 configuration file (``freetds.conf``), not through the
-:py:func:`ctds.connect` call. This page explains how to set up
+:py:func:`k_ctds.connect` call. This page explains how to set up
 encrypted connections for common scenarios.
 
 .. note::

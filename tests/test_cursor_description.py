@@ -1,7 +1,7 @@
 from datetime import date, datetime, time
 from decimal import Decimal
 
-import ctds
+import k_ctds as ctds
 
 from .base import TestExternalDatabase
 from .compat import long_, PY3, unicode_

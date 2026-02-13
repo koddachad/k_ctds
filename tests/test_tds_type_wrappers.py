@@ -1,7 +1,7 @@
 import datetime
 from decimal import Decimal
 
-import ctds
+import k_ctds as ctds
 
 from .base import TestExternalDatabase
 from .compat import int_, long_, unichr_, unicode_, PY3
@@ -39,7 +39,7 @@ SQL BIGINT type wrapper.
 
                     self.assertEqual(
                         repr(wrapper),
-                        'ctds.SqlBigInt({0!r})'.format(value)
+                        'k_ctds.SqlBigInt({0!r})'.format(value)
                     )
                     self.assertEqual(repr(wrapper), str(wrapper))
 
@@ -87,7 +87,7 @@ SQL BINARY type wrapper.
 
                     self.assertEqual(
                         repr(wrapper),
-                        'ctds.SqlBinary({0!r}, size={1})'.format(value, wrapper.size)
+                        'k_ctds.SqlBinary({0!r}, size={1})'.format(value, wrapper.size)
                     )
                     self.assertEqual(repr(wrapper), str(wrapper))
 
@@ -138,7 +138,7 @@ SQL CHAR type wrapper. The value's UTF-8-encoded length must be <= 8000.
 
                     self.assertEqual(
                         repr(wrapper),
-                        'ctds.SqlChar({0!r}, size={1})'.format(value, wrapper.size)
+                        'k_ctds.SqlChar({0!r}, size={1})'.format(value, wrapper.size)
                     )
                     self.assertEqual(repr(wrapper), str(wrapper))
 
@@ -194,7 +194,7 @@ SQL DATE type wrapper.
 
                     self.assertEqual(
                         repr(wrapper),
-                        'ctds.SqlDate({0!r})'.format(value)
+                        'k_ctds.SqlDate({0!r})'.format(value)
                     )
                     self.assertEqual(repr(wrapper), str(wrapper))
 
@@ -243,7 +243,7 @@ SQL INT type wrapper.
 
                     self.assertEqual(
                         repr(wrapper),
-                        'ctds.SqlInt({0!r})'.format(value)
+                        'k_ctds.SqlInt({0!r})'.format(value)
                     )
                     self.assertEqual(repr(wrapper), str(wrapper))
 
@@ -292,7 +292,7 @@ SQL SMALLINT type wrapper.
 
                     self.assertEqual(
                         repr(wrapper),
-                        'ctds.SqlSmallInt({0!r})'.format(value)
+                        'k_ctds.SqlSmallInt({0!r})'.format(value)
                     )
                     self.assertEqual(repr(wrapper), str(wrapper))
 
@@ -339,7 +339,7 @@ SQL TINYINT type wrapper.
 
                     self.assertEqual(
                         repr(wrapper),
-                        'ctds.SqlTinyInt({0!r})'.format(value)
+                        'k_ctds.SqlTinyInt({0!r})'.format(value)
                     )
                     self.assertEqual(repr(wrapper), str(wrapper))
 
@@ -391,7 +391,7 @@ SQL VARBINARY type wrapper.
 
                     self.assertEqual(
                         repr(wrapper),
-                        'ctds.SqlVarBinary({0!r}, size={1})'.format(value, wrapper.size)
+                        'k_ctds.SqlVarBinary({0!r}, size={1})'.format(value, wrapper.size)
                     )
                     self.assertEqual(repr(wrapper), str(wrapper))
 
@@ -469,7 +469,7 @@ SQL VARCHAR type wrapper.
 
                     self.assertEqual(
                         repr(wrapper),
-                        'ctds.SqlVarChar({0!r}, size={1})'.format(value, wrapper.size)
+                        'k_ctds.SqlVarChar({0!r}, size={1})'.format(value, wrapper.size)
                     )
                     self.assertEqual(repr(wrapper), str(wrapper))
 
@@ -580,7 +580,7 @@ SQL NVARCHAR type wrapper.
 
                     self.assertEqual(
                         repr(wrapper),
-                        'ctds.SqlNVarChar({0!r}, size={1})'.format(
+                        'k_ctds.SqlNVarChar({0!r}, size={1})'.format(
                             value if PY3 else (value.encode('utf-8') if value is not None else value),
                             wrapper.size
                         )
@@ -698,7 +698,7 @@ SQL DECIMAL type wrapper.
 
                     self.assertEqual(
                         repr(wrapper),
-                        'ctds.SqlDecimal({0!r})'.format(value)
+                        'k_ctds.SqlDecimal({0!r})'.format(value)
                     )
                     self.assertEqual(repr(wrapper), str(wrapper))
 
@@ -769,7 +769,7 @@ SQL DECIMAL type wrapper.
             except ValueError as ex:
                 self.assertEqual(str(ex), 'invalid precision: {0}'.format(precision))
             else:
-                self.fail('ctds.SqlDecimal did not fail as expected') # pragma: nocover
+                self.fail('k_ctds.SqlDecimal did not fail as expected') # pragma: nocover
 
     def test_scale_typeerror(self):
         for scale in (
@@ -789,7 +789,7 @@ SQL DECIMAL type wrapper.
             except ValueError as ex:
                 self.assertEqual(str(ex), 'invalid scale: {0}'.format(scale))
             else:
-                self.fail('ctds.SqlDecimal did not fail as expected') # pragma: nocover
+                self.fail('k_ctds.SqlDecimal did not fail as expected') # pragma: nocover
 
     def test_runtimeerror(self):
         value = '100000000000000000000000000000.123456789'

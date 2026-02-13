@@ -2,7 +2,7 @@ import datetime
 from decimal import Decimal
 import warnings
 
-import ctds
+import k_ctds as ctds
 
 from .base import TestExternalDatabase
 from .compat import PY35, unicode_

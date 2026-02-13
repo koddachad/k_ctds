@@ -197,7 +197,7 @@ static const char s_tds_Parameter_doc[] =
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 PyTypeObject ParameterType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "ctds.Parameter",             /* tp_name */
+    "k_ctds.Parameter",             /* tp_name */
     sizeof(struct Parameter),     /* tp_basicsize */
     0,                            /* tp_itemsize */
     Parameter_dealloc,            /* tp_dealloc */

@@ -4,7 +4,7 @@ import time
 
 import unittest
 
-import ctds
+import k_ctds as ctds
 
 class TestTdsDate(unittest.TestCase):
 

@@ -1,6 +1,6 @@
 import unittest
 
-import ctds
+import k_ctds as ctds
 
 class TestTdsBinary(unittest.TestCase):
 

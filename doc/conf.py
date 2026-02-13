@@ -23,7 +23,7 @@ import shlex
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-import ctds
+import k_ctds as ctds
 
 #import sphinx_rtd_theme
 
@@ -236,7 +236,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  (master_doc, 'ctds.tex', 'ctds Documentation',
+  (master_doc, 'k_ctds.tex', 'k_ctds Documentation',
    'Chad Ongstad', 'manual'),
 ]
 
@@ -266,7 +266,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'ctds', 'ctds Documentation',
+    (master_doc, 'k_ctds', 'k_ctds Documentation',
      [author], 1)
 ]
 
@@ -280,8 +280,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  (master_doc, 'ctds', 'ctds Documentation',
-   author, 'ctds', 'One line description of project.',
+  (master_doc, 'k_ctds', 'k_ctds Documentation',
+   author, 'k_ctds', 'One line description of project.',
    'Miscellaneous'),
 ]
 

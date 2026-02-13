@@ -5,7 +5,7 @@ specification for Microsoft SQL Server.
 import logging
 
 # pylint: disable=no-name-in-module,redefined-builtin
-from _tds import (
+from k_ctds._tds import (
     apilevel,
     connect,
     paramstyle,

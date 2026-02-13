@@ -7,7 +7,7 @@ import socket
 import sys
 import unittest
 
-import ctds
+import k_ctds as ctds
 
 from .compat import configparser, PY27, unichr_, unicode_
 

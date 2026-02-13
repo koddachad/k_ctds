@@ -1,7 +1,7 @@
 Calling Stored Procedures
 =========================
 
-*cTDS* implements the :py:meth:`ctds.Cursor.callproc` method for calling stored
+*cTDS* implements the :py:meth:`k_ctds.Cursor.callproc` method for calling stored
 procedures, as defined by :pep:`0249#callproc`.
 Stored procedure parameters may be passed as either a :py:class:`tuple` or
 :py:class:`dict`.
@@ -16,7 +16,7 @@ Stored procedure parameters may be passed as either a :py:class:`tuple` or
 Passing `tuple` parameters
 --------------------------
 
-Arguments passed to :py:meth:`ctds.Cursor.callproc` in a :py:class:`tuple` will
+Arguments passed to :py:meth:`k_ctds.Cursor.callproc` in a :py:class:`tuple` will
 be passed to the stored procedure in the tuple order. The returned results will
 be a :py:class:`tuple` object, with output parameters replaced.
 
@@ -33,7 +33,7 @@ be a :py:class:`tuple` object, with output parameters replaced.
 Passing `dict` parameters
 -------------------------
 
-Arguments passed to :py:meth:`ctds.Cursor.callproc` in a :py:class:`dict` will
+Arguments passed to :py:meth:`k_ctds.Cursor.callproc` in a :py:class:`dict` will
 be passed to the stored procedure using the :py:class:`dict` keys for the
 argument names and :py:class:`dict` values for the argument values. Order does
 not matter in this usage. The returned results will be a :py:class:`dict`
@@ -60,7 +60,7 @@ object, with output parameters replaced.
 .. note::
 
     All parameter names **must** begin with the **@** character when using this
-    form of :py:meth:`ctds.Cursor.callproc`.
+    form of :py:meth:`k_ctds.Cursor.callproc`.
 
 
 Output Parameters
@@ -68,9 +68,9 @@ Output Parameters
 
 :pep:`0249#callproc` does not define a way to specify a stored procedure
 parameter as an `output` parameter. `cTDS` allows you to wrap a parameter with
-the :py:class:`ctds.Parameter` class in order to indicate that it is an output
+the :py:class:`k_ctds.Parameter` class in order to indicate that it is an output
 parameter. Output parameter values are available in the result returned from
-:py:meth:`ctds.Cursor.callproc`.
+:py:meth:`k_ctds.Cursor.callproc`.
 
 .. code-block:: python
 
@@ -96,7 +96,7 @@ By default, the output parameter's type is inferred from the Python value
 passed to it when created. This can be explicitly specified using a
 :doc:`type wrapper class <types>`. Additionally, the buffer for receiving
 the output parameter is allocated based on the size of the value passed to
-:py:meth:`ctds.Parameter`. Again using an explicit
+:py:meth:`k_ctds.Parameter`. Again using an explicit
 :doc:`type wrapper class <types>` is useful for indicating how large the
 parameter should be. For example, to specify a large `VARCHAR` output
 parameter:

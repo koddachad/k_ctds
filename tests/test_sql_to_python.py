@@ -4,7 +4,7 @@ from decimal import Decimal
 import platform
 import uuid
 
-import ctds
+import k_ctds as ctds
 
 from .base import TestExternalDatabase
 from .compat import unichr_, unicode_

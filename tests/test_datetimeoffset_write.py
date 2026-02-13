@@ -7,7 +7,7 @@ information to SQL Server DATETIMEOFFSET data types.
 from datetime import datetime, timezone, timedelta
 import unittest
 
-import ctds
+import k_ctds as ctds
 
 from .base import TestExternalDatabase
 

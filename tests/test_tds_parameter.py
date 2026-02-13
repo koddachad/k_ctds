@@ -1,7 +1,7 @@
 import re
 import warnings
 
-import ctds
+import k_ctds as ctds
 
 from .base import TestExternalDatabase
 from .compat import PY3, PY36, unicode_
@@ -39,21 +39,21 @@ parameter.
         for parameter, expected in (
                 (
                     ctds.Parameter(b'123', output=True),
-                    "ctds.Parameter(b'123', output=True)" if PY3 else "ctds.Parameter('123', output=True)"
+                    "k_ctds.Parameter(b'123', output=True)" if PY3 else "k_ctds.Parameter('123', output=True)"
                 ),
                 (
                     ctds.Parameter(unicode_('123'), output=False),
-                    "ctds.Parameter('123')" if PY3 else "ctds.Parameter(u'123')"
+                    "k_ctds.Parameter('123')" if PY3 else "k_ctds.Parameter(u'123')"
                 ),
                 (
                     ctds.Parameter(None),
-                    "ctds.Parameter(None)"
+                    "k_ctds.Parameter(None)"
                 ),
                 (
                     ctds.Parameter(ctds.SqlVarBinary(b'4321', size=10)),
-                    "ctds.Parameter(ctds.SqlVarBinary(b'4321', size=10))"
+                    "k_ctds.Parameter(k_ctds.SqlVarBinary(b'4321', size=10))"
                     if PY3 else
-                    "ctds.Parameter(ctds.SqlVarBinary('4321', size=10))"
+                    "k_ctds.Parameter(k_ctds.SqlVarBinary('4321', size=10))"
                 )
         ):
             self.assertEqual(repr(parameter), expected)

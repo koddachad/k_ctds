@@ -1,7 +1,7 @@
 #!/bin/sh -e
 
 PYTHON_VERSION=$(python -c 'import sys; print(".".join(map(str, sys.version_info)))')
-FREETDS_VERSION=$(python -c 'import ctds; print(ctds.freetds_version.replace(" ", "-"))')
+FREETDS_VERSION=$(python -c 'import k_ctds; print(k_ctds.freetds_version.replace(" ", "-"))')
 COVERAGEDIR="build/coverage/python-$PYTHON_VERSION/$FREETDS_VERSION"
 mkdir -p $COVERAGEDIR
 
@@ -18,11 +18,11 @@ coverage erase
 
 # There should be one build directory of object files,
 # e.g. build/temp.linux-x86_64-3.6/src/ctds
-for OBJDIR in build/*/src/ctds; do :; done;
+for OBJDIR in build/*/src/k_ctds; do :; done;
 
 # Outputs data to "<source-file>.gcov"
 if ls $OBJDIR/*.gcno 1>/dev/null 2>&1; then
-    gcov -b -o $OBJDIR src/ctds/*.c
+    gcov -b -o $OBJDIR src/k_ctds/*.c
     mv *.gcov $COVERAGEDIR 2>/dev/null || true
 else
     echo "Warning: No gcov data found in $OBJDIR, skipping C coverage"

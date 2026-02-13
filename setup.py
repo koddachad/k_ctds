@@ -108,8 +108,8 @@ def splitdirs(name):
 setuptools.setup(
     ext_modules=[
         setuptools.Extension(
-            '_tds',
-            glob.glob(os.path.join('src', 'ctds', '*.c')),
+            'k_ctds._tds',
+            glob.glob(os.path.join('src', 'k_ctds', '*.c')),
             define_macros=[
                 ('CTDS_MAJOR_VERSION', CTDS_MAJOR_VERSION),
                 ('CTDS_MINOR_VERSION', CTDS_MINOR_VERSION),

@@ -75,14 +75,14 @@ help:
 
 DARWIN := $(findstring Darwin,$(shell uname))
 
-SQL_SERVER_DOCKER_IMAGE_NAME := ctds-unittest-sqlserver
-VALGRIND_DOCKER_IMAGE_NAME = ctds-valgrind-python$(strip $(1))-$(strip $(2))
+SQL_SERVER_DOCKER_IMAGE_NAME := k-ctds-unittest-sqlserver
+VALGRIND_DOCKER_IMAGE_NAME = k-ctds-valgrind-python$(strip $(1))-$(strip $(2))
 
 
 .PHONY: clean
 clean: stop-sqlserver
 	git clean -dfX
-	docker images -q ctds-unittest-* | xargs $(if $(DARWIN),,-r) docker rmi
+	docker images -q k_ctds-unittest-* | xargs $(if $(DARWIN),,-r) docker rmi
 
 .PHONY: start-sqlserver
 start-sqlserver:
@@ -121,7 +121,7 @@ valgrind_$(strip $(1))_$(strip $(2)): docker_valgrind_$(strip $(1))_$(strip $(2)
             $(if $(VERBOSE),-e VERBOSE=$(VERBOSE)) \
             --network container:$(SQL_SERVER_DOCKER_IMAGE_NAME) \
         $(call VALGRIND_DOCKER_IMAGE_NAME, $(1), $(2)) \
-        ./scripts/ctds-valgrind.sh
+        ./scripts/k-ctds-valgrind.sh
 endef
 
 $(foreach PV, $(VALGRIND_PYTHON_VERSIONS), $(foreach FV, $(VALGRIND_FREETDS_VERSIONS), $(eval $(call GENERATE_VALGRIND_RULES, $(PV), $(FV)))))

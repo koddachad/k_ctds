@@ -55,7 +55,7 @@ docs = ["recommonmark", "sphinx", "sphinx_rtd_theme"]
 where = ["src"]
 
 [tool.setuptools.package-data]
-ctds = []
+k_ctds = []
 
 # ---------------------------------------------------------------------------
 # cibuildwheel — builds wheels with FreeTDS + OpenSSL bundled
@@ -70,7 +70,7 @@ environment = { FREETDS_VERSION = "1.4.23" }
 
 test-requires = "pytest"
 # Smoke test: import ctds and check the bundled FreeTDS is loadable
-test-command = "python -c \"import ctds; print(ctds.apilevel)\""
+test-command = "python -c \"import k_ctds; print(k_ctds.apilevel)\""
 
 [tool.cibuildwheel.linux]
 # Build FreeTDS from source inside the manylinux container, then build ctds
