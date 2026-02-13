@@ -3,6 +3,6 @@
 ctds.pool
 =========
 
-.. automodule:: ctds.pool
+.. automodule:: k_ctds.pool
     :members:
        ConnectionPool

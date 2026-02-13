@@ -3,5 +3,5 @@
 Parameter
 =========
 
-.. autoclass:: ctds.Parameter
+.. autoclass:: k_ctds.Parameter
     :members:

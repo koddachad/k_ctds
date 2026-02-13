@@ -3,7 +3,7 @@
 ctds
 ====
 
-.. automodule:: ctds
+.. automodule:: k_ctds
     :members:
         connect,
         Date,

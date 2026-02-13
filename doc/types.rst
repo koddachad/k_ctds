@@ -3,35 +3,35 @@
 SQL Type Wrappers
 =================
 
-.. autoclass:: ctds.SqlBigInt
+.. autoclass:: k_ctds.SqlBigInt
     :members: size, tdstype, value
 
-.. autoclass:: ctds.SqlBinary
+.. autoclass:: k_ctds.SqlBinary
     :members: size, tdstype, value
 
-.. autoclass:: ctds.SqlChar
+.. autoclass:: k_ctds.SqlChar
     :members: size, tdstype, value
 
-.. autoclass:: ctds.SqlDate
+.. autoclass:: k_ctds.SqlDate
     :members: size, tdstype, value
 
-.. autoclass:: ctds.SqlDecimal
+.. autoclass:: k_ctds.SqlDecimal
     :members: size, tdstype, value
 
-.. autoclass:: ctds.SqlInt
+.. autoclass:: k_ctds.SqlInt
     :members: size, tdstype, value
 
-.. autoclass:: ctds.SqlNVarChar
+.. autoclass:: k_ctds.SqlNVarChar
     :members: size, tdstype, value
 
-.. autoclass:: ctds.SqlSmallInt
+.. autoclass:: k_ctds.SqlSmallInt
     :members: size, tdstype, value
 
-.. autoclass:: ctds.SqlTinyInt
+.. autoclass:: k_ctds.SqlTinyInt
     :members: size, tdstype, value
 
-.. autoclass:: ctds.SqlVarBinary
+.. autoclass:: k_ctds.SqlVarBinary
     :members: size, tdstype, value
 
-.. autoclass:: ctds.SqlVarChar
+.. autoclass:: k_ctds.SqlVarChar
     :members: size, tdstype, value

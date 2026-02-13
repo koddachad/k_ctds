@@ -5,7 +5,7 @@ src/ctds.egg-info/
 # Python bytecode
 __pycache__/
 *.py[cod]
-
+*.so
 # Test/coverage artifacts
 .coverage
 .coverage.*

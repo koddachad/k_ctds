@@ -3,6 +3,6 @@
 Connection
 ==========
 
-.. autoclass:: ctds.Connection
+.. autoclass:: k_ctds.Connection
     :members:
     :special-members:
