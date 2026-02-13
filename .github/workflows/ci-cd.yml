@@ -117,7 +117,7 @@ jobs:
 
 
   publish-sdist:
-    name: Publish Python egg to PyPI
+    name: Publish sdist to PyPI
     if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags')
     needs: [tests, valgrind]
     runs-on: ubuntu-latest
@@ -127,11 +127,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.9
+          python-version: "3.12"
 
       - name: Build k-ctds sdist
         run: |
-          python setup.py sdist
+          pip install build
+          python -m build --sdist
 
       - name: Publish k-ctds sdist to Test PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
@@ -143,7 +144,7 @@ jobs:
 
       - name: Publish ctds sdist to PyPI
         if: startsWith(github.ref, 'refs/tags')
-        uses: pypa/gh-action-pypi-publish@master
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
 

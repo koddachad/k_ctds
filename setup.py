@@ -1,42 +1,44 @@
 #!/usr/bin/env python
+"""
+Minimal setup.py — retained only for the C extension build logic that
+cannot be expressed declaratively in pyproject.toml (platform-specific
+compiler flags, env-var directory lookups, coverage/profiling toggles).
+
+All package metadata now lives in pyproject.toml.
+"""
 
 import glob
-import io
 import os
 import os.path
 import platform
 import sys
 
 import setuptools
-import setuptools.dist
 
-# Version information is defined here and compiled into the extension.
+# ---------------------------------------------------------------------------
+# Version — single source of truth is pyproject.toml [project] version.
+# These constants are compiled into the C extension via define_macros.
+# ---------------------------------------------------------------------------
 CTDS_MAJOR_VERSION = 1
-CTDS_MINOR_VERSION = 15
+CTDS_MINOR_VERSION = 16
 CTDS_PATCH_VERSION = 0
 
-
-TESTS_REQUIRE = []
-if sys.version_info < (3, 3):
-    # Mock is part of the Python 3.3+ stdlib.
-    TESTS_REQUIRE.append('mock >= 0.7.2, < 4.0.0')
-
+# ---------------------------------------------------------------------------
+# Build flags driven by environment variables
+# ---------------------------------------------------------------------------
 STRICT = os.environ.get('CTDS_STRICT')
 WINDOWS = platform.system() == 'Windows'
 COVERAGE = os.environ.get('CTDS_COVER', False)
 
 LIBRARIES = [
     'sybdb',
-    'ct', # required for ct_config only
+    'ct',  # required for ct_config only
 ]
 
 EXTRA_COMPILE_ARGS = []
 EXTRA_LINK_ARGS = []
 
-
 if not WINDOWS:
-    EXTRA_COMPILE_ARGS = [
-    ]
     if STRICT:
         EXTRA_COMPILE_ARGS += [
             '-ansi',
@@ -50,15 +52,16 @@ if not WINDOWS:
 
     if os.environ.get('CTDS_PROFILE'):
         EXTRA_COMPILE_ARGS.append('-pg')
-        if os.path.isdir(os.environ['CTDS_PROFILE']):
-            EXTRA_COMPILE_ARGS += ['-fprofile-dir', '"{0}"'.format(os.environ['CTDS_PROFILE'])]
+        profile_dir = os.environ['CTDS_PROFILE']
+        if os.path.isdir(profile_dir):
+            EXTRA_COMPILE_ARGS += ['-fprofile-dir', '"{0}"'.format(profile_dir)]
         EXTRA_LINK_ARGS.append('-pg')
 
     if COVERAGE:
         EXTRA_COMPILE_ARGS += ['-fprofile-arcs', '-ftest-coverage']
         EXTRA_LINK_ARGS.append('-fprofile-arcs')
 
-    # pthread is required on OS X for thread-local storage support.
+    # pthread is required on macOS for thread-local storage support.
     if sys.platform == 'darwin':
         EXTRA_LINK_ARGS.append('-lpthread')
 else:
@@ -85,16 +88,15 @@ else:
             '/w14905',
             '/w14906',
             '/w14928',
-            '/Zi'
+            '/Zi',
         ]
     if COVERAGE:
         EXTRA_COMPILE_ARGS.append('/Od')
-
-        # Generate a PDB for code coverage.
         EXTRA_LINK_ARGS.append('/DEBUG')
+
     LIBRARIES += [
         'shell32',
-        'ws2_32'
+        'ws2_32',
     ]
 
 
@@ -103,70 +105,7 @@ def splitdirs(name):
     return dirs.split(os.pathsep) if dirs else []
 
 
-def read(*names, **kwargs):
-    with io.open(
-        os.path.join(os.path.dirname(__file__), *names),
-        encoding=kwargs.get('encoding', 'utf-8')
-    ) as file_:
-        return file_.read()
-
-
 setuptools.setup(
-    name='k-ctds',
-    version='{0}.{1}.{2}'.format(
-        CTDS_MAJOR_VERSION,
-        CTDS_MINOR_VERSION,
-        CTDS_PATCH_VERSION
-    ),
-
-    author='Chad Ongstad',
-    author_email='chad@kodda.io',
-    description='DB API 2.0-compliant driver for SQL Server',
-    long_description=read('README.rst'),
-    long_description_content_type='text/x-rst',
-    keywords=[
-        'freetds',
-        'mssql',
-        'SQL',
-        'T-SQL',
-        'TDS',
-        'SQL Server',
-        'DB-API',
-        'PEP-0249',
-        'database',
-    ],
-    license='MIT',
-    url='https://github.com/koddachad/k_ctds',
-    classifiers=[
-        'Development Status :: 5 - Production/Stable',
-        'Intended Audience :: Developers',
-        'Operating System :: MacOS :: MacOS X',
-        'Operating System :: POSIX :: Linux',
-        'Operating System :: Microsoft :: Windows',
-        'Programming Language :: C',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.9',
-        'Programming Language :: Python :: 3.10',
-        'Programming Language :: Python :: 3.11',
-        'Programming Language :: Python :: 3.12',
-        'Programming Language :: Python :: 3.13',
-        'Programming Language :: Python :: Implementation :: CPython',
-        'Programming Language :: SQL',
-        'Topic :: Database',
-    ],
-
-    python_requires='>=3.9',
-
-    packages=setuptools.find_packages('src'),
-    package_data={
-        'ctds': []
-    },
-    package_dir={'': 'src'},
-
-    entry_points={
-        'console_scripts': []
-    },
-
     ext_modules=[
         setuptools.Extension(
             '_tds',
@@ -188,16 +127,4 @@ setuptools.setup(
             language='c',
         ),
     ],
-
-    install_requires=[],
-
-    tests_require=TESTS_REQUIRE,
-    test_suite='tests',
-
-    extras_require={
-        'tests': TESTS_REQUIRE,
-    },
-
-    # Prevent easy_install from warning about use of __file__.
-    zip_safe=False
 )

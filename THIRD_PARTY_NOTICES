@@ -1,0 +1,58 @@
+THIRD-PARTY SOFTWARE NOTICES
+============================
+
+k-ctds wheel packages may bundle compiled copies of the following
+third-party libraries. These libraries are not part of k-ctds itself
+and are distributed under their own license terms.
+
+All bundled libraries are DYNAMICALLY LINKED as shared objects
+(.so on Linux, .dylib on macOS, .dll on Windows). They are copied
+into the wheel by auditwheel (Linux) or delocate (macOS) and can
+be located alongside the _tds extension module inside the installed
+package. This means users can replace any bundled library with a
+compatible version of their choosing, as described below.
+
+
+FreeTDS
+-------
+License: GNU Lesser General Public License (LGPL) version 2.0
+Website: https://www.freetds.org/
+Source:  https://github.com/FreeTDS/freetds
+
+k-ctds dynamically links against FreeTDS (libsybdb) for SQL Server
+connectivity. When distributed as a pre-built wheel, the FreeTDS
+shared library is bundled inside the wheel.
+
+Because FreeTDS is dynamically linked (not statically linked), the
+LGPL's requirements are satisfied: users retain the ability to replace
+the bundled FreeTDS shared library with a different or modified version.
+
+To use your own FreeTDS instead of the bundled copy, install k-ctds
+from source:
+
+    pip install k-ctds --no-binary k-ctds
+
+Set the following environment variables to point to your FreeTDS
+installation:
+
+    CTDS_INCLUDE_DIRS=/path/to/freetds/include
+    CTDS_LIBRARY_DIRS=/path/to/freetds/lib
+    CTDS_RUNTIME_LIBRARY_DIRS=/path/to/freetds/lib
+
+See LICENSE.FreeTDS for the full license notice.
+
+
+OpenSSL
+-------
+License: Apache License 2.0 (OpenSSL 3.0+)
+Website: https://www.openssl.org/
+Source:  https://github.com/openssl/openssl
+
+FreeTDS is compiled with TLS support via OpenSSL. Pre-built wheels
+may include the OpenSSL shared libraries (libssl, libcrypto) as
+transitive dependencies of FreeTDS — they are bundled automatically
+by auditwheel or delocate.
+
+OpenSSL 3.0 and later is licensed under the Apache License 2.0.
+See LICENSE.OpenSSL for the full license text.
+

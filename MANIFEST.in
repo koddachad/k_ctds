@@ -1,2 +1,6 @@
 graft src/ctds/include
 include LICENSE
+include LICENSE.FreeTDS
+include LICENSE.OpenSSL
+include THIRD_PARTY_NOTICES
+include pyproject.toml

@@ -1,0 +1,169 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "k-ctds"
+version = "1.16.0"
+description = "DB API 2.0-compliant driver for SQL Server"
+readme = "README.rst"
+license = {text = "MIT"}
+requires-python = ">=3.9"
+authors = [
+    { name = "Chad Ongstad", email = "chad@kodda.io" },
+]
+keywords = [
+    "freetds",
+    "mssql",
+    "SQL",
+    "T-SQL",
+    "TDS",
+    "SQL Server",
+    "DB-API",
+    "PEP-0249",
+    "database",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: C",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: SQL",
+    "Topic :: Database",
+]
+
+[project.urls]
+Homepage = "https://github.com/koddachad/k_ctds"
+Documentation = "https://koddachad.github.io/k_ctds/"
+Changelog = "https://github.com/koddachad/k_ctds/blob/master/CHANGELOG.md"
+
+[project.optional-dependencies]
+test = ["pytest", "pytest-cov", "coverage"]
+docs = ["recommonmark", "sphinx", "sphinx_rtd_theme"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+ctds = []
+
+# ---------------------------------------------------------------------------
+# cibuildwheel — builds wheels with FreeTDS + OpenSSL bundled
+# ---------------------------------------------------------------------------
+[tool.cibuildwheel]
+# Build only CPython, skip 32-bit and musl for now
+build = "cp39-* cp310-* cp311-* cp312-* cp313-*"
+skip = "*-win32 *-manylinux_i686 *-musllinux*"
+
+# FreeTDS version to bundle — update this when upgrading
+environment = { FREETDS_VERSION = "1.4.23" }
+
+test-requires = "pytest"
+# Smoke test: import ctds and check the bundled FreeTDS is loadable
+test-command = "python -c \"import ctds; print(ctds.apilevel)\""
+
+[tool.cibuildwheel.linux]
+# Build FreeTDS from source inside the manylinux container, then build ctds
+# against it. FreeTDS is DYNAMICALLY linked (shared library) — this is
+# important for LGPL compliance, as it allows users to replace the bundled
+# libsybdb.so with their own version. auditwheel (run automatically by
+# cibuildwheel) will vendor the .so files into the wheel.
+before-all = """
+    set -ex
+    yum install -y openssl-devel || apk add openssl-dev || apt-get install -y libssl-dev || true
+    curl -sSf "https://www.freetds.org/files/stable/freetds-${FREETDS_VERSION}.tar.gz" -o /tmp/freetds.tar.gz
+    tar -xzf /tmp/freetds.tar.gz -C /tmp
+    cd /tmp/freetds-${FREETDS_VERSION}
+    ./configure --prefix=/usr/local --with-openssl --enable-msdblib
+    make -j$(nproc)
+    make install
+    ldconfig || true
+"""
+environment-pass = ["FREETDS_VERSION"]
+repair-wheel-command = "auditwheel repair -w {dest_dir} {wheel}"
+
+# Point the build at the FreeTDS we just compiled
+[tool.cibuildwheel.linux.environment]
+FREETDS_VERSION = "1.4.23"
+CTDS_INCLUDE_DIRS = "/usr/local/include"
+CTDS_LIBRARY_DIRS = "/usr/local/lib"
+CTDS_RUNTIME_LIBRARY_DIRS = "/usr/local/lib"
+
+[tool.cibuildwheel.macos]
+before-all = """
+    set -ex
+    brew install openssl@3
+    curl -sSf "https://www.freetds.org/files/stable/freetds-${FREETDS_VERSION}.tar.gz" -o /tmp/freetds.tar.gz
+    tar -xzf /tmp/freetds.tar.gz -C /tmp
+    cd /tmp/freetds-${FREETDS_VERSION}
+    ./configure --prefix=/usr/local --with-openssl=$(brew --prefix openssl@3) --enable-msdblib
+    make -j$(sysctl -n hw.ncpu)
+    sudo make install
+"""
+repair-wheel-command = "delocate-wheel --require-archs {delocate_archs} -w {dest_dir} {wheel}"
+
+[tool.cibuildwheel.macos.environment]
+FREETDS_VERSION = "1.4.23"
+CTDS_INCLUDE_DIRS = "/usr/local/include"
+CTDS_LIBRARY_DIRS = "/usr/local/lib"
+CTDS_RUNTIME_LIBRARY_DIRS = "/usr/local/lib"
+
+[tool.cibuildwheel.windows]
+# On Windows, the existing freetds-install.ps1 builds FreeTDS + win-iconv
+# into build\include and build\lib. cibuildwheel runs before-all before
+# building wheels for each Python version.
+before-all = "powershell windows\\freetds-install.ps1"
+
+[tool.cibuildwheel.windows.environment]
+FREETDS_VERSION = "1.4.23"
+CTDS_INCLUDE_DIRS = "build\\include"
+CTDS_LIBRARY_DIRS = "build\\lib"
+
+# ---------------------------------------------------------------------------
+# pytest
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+# ---------------------------------------------------------------------------
+# check-manifest
+# ---------------------------------------------------------------------------
+[tool.check-manifest]
+ignore = [
+    ".dockerignore",
+    ".python-version",
+    "appveyor.yml",
+    "codecov.yml",
+    "CHANGELOG.md",
+    "Dockerfile-valgrind",
+    "Makefile",
+    "pylintrc",
+    "tox.ini",
+    "conftest.py",
+    ".github",
+    ".github/*",
+    "appveyor",
+    "appveyor/*",
+    "doc",
+    "doc/*",
+    "misc",
+    "misc/*",
+    "scripts",
+    "scripts/*",
+    "tests",
+    "tests/*",
+    "tests/pool",
+    "tests/pool/*",
+    "windows",
+    "windows/*",
+]
