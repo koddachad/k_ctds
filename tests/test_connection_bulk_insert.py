@@ -39,7 +39,7 @@ after `batch_size` rows have been copied to server.
     the insert begins. str values destined for NVARCHAR/NCHAR/NTEXT
     columns are encoded to UTF-16LE. str values destined for
     VARCHAR/CHAR/TEXT columns are encoded to the column's collation
-    code page. .. versionadded:: 1.15
+    code page. .. versionadded:: 1.16
 :return: The number of rows saved to the table.
 :rtype: int
 '''
@@ -213,7 +213,7 @@ insert.\
                             ctds.SqlVarChar(
                                 unicode_(b'this is row {0} \xc2\xbd', encoding='utf-8').format(ix).encode('latin-1')
                             ),
-                            ctds.SqlVarChar((unicode_(b'\xe3\x83\x9b', encoding='utf-8') * 100).encode('utf-16le')),
+                            ctds.SqlNVarChar(unicode_(b'\xe3\x83\x9b', encoding='utf-8') * 100), 
                             bytes(ix + 1),
                             Decimal(str(ix + .125))
                         )
@@ -277,8 +277,8 @@ insert.\
                             'String': ctds.SqlVarChar(
                                 unicode_(b'this is row {0} \xc2\xbd', encoding='utf-8').format(ix).encode('latin-1')
                             ),
-                            'Unicode': ctds.SqlVarChar(
-                                (unicode_(b'\xe3\x83\x9b', encoding='utf-8') * 100).encode('utf-16le')
+                            'Unicode': ctds.SqlNVarChar(
+                             unicode_(b'\xe3\x83\x9b', encoding='utf-8') * 100
                             ),
                         }
                         for ix in range(0, rows)
@@ -494,7 +494,7 @@ insert.\
                             ctds.SqlVarChar(
                                 unicode_(b'this is row {0} \xc2\xbd', encoding='utf-8').format(ix).encode('latin-1')
                             ),
-                            ctds.SqlVarChar((unicode_(b'\xe3\x83\x9b', encoding='utf-8')).encode('utf-16le')),
+                            ctds.SqlNVarChar(unicode_(b'\xe3\x83\x9b', encoding='utf-8')),
                             bytes(ix + 1),
                             Decimal(str(ix + .125))
                         )
@@ -537,7 +537,7 @@ insert.\
                             ix,
                             datetime.datetime(2000 + ix, 1, 1) if ix < 1000 else None,
                             ctds.SqlVarChar(unicode_(b'this is row {0}', encoding='utf-8').format(ix)),
-                            ctds.SqlVarChar((unicode_(b'\xe3\x83\x9b', encoding='utf-8') * 100).encode('utf-16le')),
+                            ctds.SqlNVarChar(unicode_(b'\xe3\x83\x9b', encoding='utf-8') * 100),
                             bytes(ix + 1),
                             Decimal(str(ix + .125))
                         )

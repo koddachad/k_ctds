@@ -752,16 +752,55 @@ RETCODE Parameter_bcp_bind(struct Parameter* parameter, DBPROCESS* dbproc, size_
     enum TdsType tdstype;
     BYTE* input = (BYTE*)parameter->input;
 
+    /*
+        Buffer for re-encoded UTF-16LE data when downgrading an explicit
+        SqlNVarChar/SqlNText. This must persist until after bcp_bind returns.
+    */
+    PyObject* utf16_bytes = NULL;
+
     /* Use the input byte count for non-NULL, variable-length types. */
     DBINT cbinput = (parameter->tdstypesize > 0) ? (DBINT)parameter->ninput : parameter->tdstypesize;
 
     if ((parameter->tdstype == TDSNTEXT) || (parameter->tdstype == TDSNVARCHAR))
     {
         /*
+            Re-encode UTF-8 to UTF-16LE only when the caller explicitly used
+            SqlNVarChar (or SqlNText). When the NVARCHAR type was *inferred*
+            from a bare Python str, the data should be sent as-is — the old
+            behaviour — because the caller did not indicate an NVARCHAR target
+            column and the warning about encoding is already emitted elsewhere.
+        */
+        if (SqlType_Check(parameter->value) &&
+            (NULL != input) && (parameter->ninput > 0))
+        {
+            PyObject* unicode_str = PyUnicode_DecodeUTF8((const char*)input,
+                                                          (Py_ssize_t)parameter->ninput,
+                                                          "strict");
+            if (!unicode_str)
+            {
+                return FAIL;
+            }
+
+            utf16_bytes = PyUnicode_AsEncodedString(unicode_str,
+                                                     "utf-16-le",
+                                                     "strict");
+            Py_DECREF(unicode_str);
+            if (!utf16_bytes)
+            {
+                return FAIL;
+            }
+
+            input = (BYTE*)PyBytes_AS_STRING(utf16_bytes);
+            cbinput = (DBINT)PyBytes_GET_SIZE(utf16_bytes);
+        }
+
+        /*
             FreeTDS does not support passing *VARCHAR(MAX) types.
             Use the *TEXT types instead.
+            Use cbinput (the re-encoded byte count) for the threshold check
+            since that is what will actually be sent on the wire.
         */
-        tdstype = (parameter->ninput > TDS_CHAR_MAX_SIZE) ? TDSTEXT : TDSVARCHAR;
+        tdstype = (cbinput > (DBINT)TDS_CHAR_MAX_SIZE) ? TDSTEXT : TDSVARCHAR;
     }
     else
     {
@@ -784,20 +823,40 @@ RETCODE Parameter_bcp_bind(struct Parameter* parameter, DBPROCESS* dbproc, size_
                          " Please update to a recent version of FreeTDS.",
                          1))
         {
+            Py_XDECREF(utf16_bytes);
             return FAIL;
         }
 #endif /* else if CTDS_SUPPORT_BCP_EMPTY_STRING */
     }
 
-    return bcp_bind(dbproc,
-                    input,
-                    0,
-                    cbinput,
-                    NULL,
-                    0,
-                    tdstype,
-                    (int)column);
+    {
+        RETCODE rc = bcp_bind(dbproc,
+                              input,
+                              0,
+                              cbinput,
+                              NULL,
+                              0,
+                              tdstype,
+                              (int)column);
+
+        /*
+            Store the re-encoded buffer as the parameter's source so it stays
+            alive for the duration of the BCP operation (FreeTDS may reference
+            the bound buffer until bcp_sendrow/bcp_done).
+        */
+        if (utf16_bytes)
+        {
+            Py_XDECREF(parameter->source);
+            parameter->source = utf16_bytes;
+            /* Update input/ninput so any subsequent access sees the UTF-16LE data. */
+            parameter->input = (const void*)PyBytes_AS_STRING(utf16_bytes);
+            parameter->ninput = (size_t)PyBytes_GET_SIZE(utf16_bytes);
+        }
+
+        return rc;
+    }
 }
+
 
 bool Parameter_output(struct Parameter* rpcparam)
 {

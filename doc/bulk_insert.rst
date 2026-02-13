@@ -121,12 +121,14 @@ most SQL Server configurations.
                             'utf-8'
                         ).encode('latin-1')
                     ),
-                    ctds.SqlVarChar(
+                    # SqlNVarChar handles the UTF-16LE encoding automatically
+                    # for bulk insert.
+                    ctds.SqlNVarChar(
                         b'a string with Unicode -> \xe3\x83\x9b'.decode(
                             'utf-8'
-                        ).encode('utf-16le')
-                    ),
-                )
+                        )
+                    ),  
+              )
             ]
         )
 

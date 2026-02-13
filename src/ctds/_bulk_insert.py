@@ -179,9 +179,10 @@ def _encode_rows(rows, by_position, by_name):
     For dict rows: uses by_name (column name lookup).
 
     Both NVARCHAR and VARCHAR columns are wrapped as SqlVarChar with
-    pre-encoded bytes. This is necessary because FreeTDS BCP downgrades
-    TDSNVARCHAR to TDSVARCHAR, so SqlNVarChar would corrupt Unicode data.
-    SqlVarChar with the correctly encoded bytes works for both column types.
+    pre-encoded bytes. For NVARCHAR columns the encoding is UTF-16LE,
+    for VARCHAR columns it uses the column's collation codec.
+    Note: SqlNVarChar also works correctly for NVARCHAR columns as
+    Parameter_bcp_bind now re-encodes UTF-8 to UTF-16LE automatically.
     """
     for row in rows:
         if isinstance(row, dict):
