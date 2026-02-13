@@ -20,10 +20,7 @@ The current database or :py:data:`None` if the connection is closed.
     def test_database(self):
         with self.connect() as connection:
             # Versions prior to 0.95 had issues with database names > 30 characters.
-            if self.freetds_version[:2] > (0, 92):
-                database = self.get_option('database')
-            else: # pragma: nocover
-                database = self.get_option('database')[:30]
+            database = self.get_option('database')
             self.assertEqual(connection.database, database)
 
             for database in ('master', unicode_('master')):

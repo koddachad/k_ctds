@@ -1,10 +1,10 @@
 """
-Unit tests for DATETIMEOFFSET backward compatibility on FreeTDS < 0.95.
+Unit tests for DATETIMEOFFSET compatibility.
 
 This module ensures that:
 1. Naive datetimes still work correctly (no regression)
-2. Timezone-aware datetimes fall back to DATETIME gracefully on old FreeTDS
-3. Reading DATETIMEOFFSET columns fails with clear error on old FreeTDS
+2. Timezone-aware datetimes are preserved as DATETIMEOFFSET
+3. Reading DATETIMEOFFSET columns works correctly
 4. All existing datetime functionality remains unchanged
 """
 from datetime import datetime, timezone, timedelta
@@ -56,9 +56,7 @@ class TestDateTimeOffsetBackwardCompatibility(TestExternalDatabase):
         self.assertEqual(result.minute, dt.minute)
         self.assertEqual(result.second, dt.second)
         
-        # On old FreeTDS, precision might be reduced
-        if self.tdsdatetime2_supported:
-            self.assertEqual(result.microsecond, dt.microsecond)
+        self.assertEqual(result.microsecond, dt.microsecond)
         
         # Result should be timezone-naive (no tzinfo)
         self.assertIsNone(result.tzinfo)
@@ -89,34 +87,16 @@ class TestDateTimeOffsetBackwardCompatibility(TestExternalDatabase):
         # Should get back a datetime
         self.assertIsInstance(result, datetime)
         
-        if self.freetds_version >= (0, 95, 0):
-            # FreeTDS 0.95+: Timezone should be preserved
-            self.assertIsNotNone(result.tzinfo, 
+        # Timezone should be preserved
+        self.assertIsNotNone(result.tzinfo, 
                                 "FreeTDS 0.95+ should preserve timezone")
-            self.assertEqual(result, dt,
+        self.assertEqual(result, dt,
                            "FreeTDS 0.95+ should preserve exact datetime")
-        else:
-            # FreeTDS < 0.95: Timezone is dropped (fallback to DATETIME)
-            self.assertIsNone(result.tzinfo,
-                            "FreeTDS < 0.95 should drop timezone (fallback to DATETIME)")
-            
-            # The date and time values should still match (just without timezone)
-            self.assertEqual(result.year, dt.year)
-            self.assertEqual(result.month, dt.month)
-            self.assertEqual(result.day, dt.day)
-            self.assertEqual(result.hour, dt.hour)
-            self.assertEqual(result.minute, dt.minute)
-            self.assertEqual(result.second, dt.second)
 
     def test_reading_datetimeoffset_column_behavior(self):
         """
         Test reading DATETIMEOFFSET column behavior across FreeTDS versions.
         
-        On FreeTDS < 0.95:
-        - Should raise NotSupportedError with "unsupported type 43"
-        - This is the existing behavior - no regression
-        
-        On FreeTDS 0.95+:
         - Should successfully read and return timezone-aware datetime
         """
         # Create a table with DATETIMEOFFSET column
@@ -141,20 +121,10 @@ class TestDateTimeOffsetBackwardCompatibility(TestExternalDatabase):
             # Try to read it
             self.cursor.execute("SELECT dto_col FROM #test_dto_compat WHERE id = 1")
             
-            if self.freetds_version >= (0, 95, 0):
-                # FreeTDS 0.95+: Should work
-                result = self.cursor.fetchone()[0]
-                self.assertIsInstance(result, datetime)
-                self.assertIsNotNone(result.tzinfo,
-                                   "FreeTDS 0.95+ should read timezone-aware datetime")
-            else:
-                # FreeTDS < 0.95: Should raise NotSupportedError
-                with self.assertRaises(ctds.NotSupportedError) as cm:
-                    result = self.cursor.fetchone()
-                
-                # Should mention type 43 (DATETIMEOFFSET)
-                self.assertIn("43", str(cm.exception),
-                            "Error should mention unsupported type 43")
+            result = self.cursor.fetchone()[0]
+            self.assertIsInstance(result, datetime)
+            self.assertIsNotNone(result.tzinfo,
+                               "Should read timezone-aware datetime")
                 
         except ctds.DatabaseError as e:
             # If DATETIMEOFFSET type isn't supported by SQL Server (very old version)
@@ -265,32 +235,16 @@ class TestDateTimeOffsetBackwardCompatibility(TestExternalDatabase):
         """
         Test bulk insert with timezone-aware datetimes.
         
-        On FreeTDS < 0.95:
-        - Should work but drop timezone (fallback to DATETIME)
-        
-        On FreeTDS 0.95+:
-        - Should work and preserve timezone (use DATETIMEOFFSET)
+        Should work and preserve timezone (use DATETIMEOFFSET)
         """
-        if self.freetds_version >= (0, 95, 0):
-            # On FreeTDS 0.95+, create DATETIMEOFFSET column
-            self.cursor.execute(
-                """
-                CREATE TABLE #test_bulk_tz_compat (
-                    id INT,
-                    dto_col DATETIMEOFFSET
-                )
-                """
+        self.cursor.execute(
+            """
+            CREATE TABLE #test_bulk_tz_compat (
+                id INT,
+                dto_col DATETIMEOFFSET
             )
-        else:
-            # On old FreeTDS, use DATETIME column
-            self.cursor.execute(
-                """
-                CREATE TABLE #test_bulk_tz_compat (
-                    id INT,
-                    dto_col DATETIME
-                )
-                """
-            )
+            """
+        )
         
         # Bulk insert timezone-aware datetimes
         tz = timezone.utc
@@ -308,16 +262,10 @@ class TestDateTimeOffsetBackwardCompatibility(TestExternalDatabase):
         
         self.assertEqual(len(results), 5)
         
-        if self.freetds_version >= (0, 95, 0):
-            # Should have timezone preserved
-            for i, row in enumerate(results, 1):
-                self.assertIsNotNone(row.dto_col.tzinfo,
-                                   f"Row {i} should have timezone on FreeTDS 0.95+")
-        else:
-            # Timezone should be dropped (but data should still be there)
-            for i, row in enumerate(results, 1):
-                self.assertIsNone(row.dto_col.tzinfo,
-                                f"Row {i} should not have timezone on FreeTDS < 0.95")
+        # Should have timezone preserved
+        for i, row in enumerate(results, 1):
+            self.assertIsNotNone(row.dto_col.tzinfo,
+                                f"Row {i} should have timezone preserved")
 
     def test_stored_procedure_datetime_parameter(self):
         """
@@ -409,7 +357,7 @@ class TestDateTimeOffsetBackwardCompatibility(TestExternalDatabase):
         self.assertLess(major, 10)
         
         # If FreeTDS >= 0.95, TDS version should be >= 7.3
-        if self.freetds_version >= (0, 95, 0):
+        if self.freetds_version >= (1, 0, 0):
             # Should support TDS 7.3+
             # (Though connection might still negotiate lower)
             pass
@@ -418,18 +366,17 @@ class TestDateTimeOffsetBackwardCompatibility(TestExternalDatabase):
 class TestDateTimeOffsetVersionDetection(TestExternalDatabase):
     """
     Test version detection and capability checking.
-    
+
     These tests ensure that the version checks used in other tests work correctly.
     """
 
     def test_freetds_version_property(self):
         """Test that freetds_version property works."""
         version = self.freetds_version
-        
+
         self.assertIsInstance(version, tuple)
         self.assertEqual(len(version), 3)
-        
-        # Should be like (0, 95, 95) or (1, 2, 10)
+
         major, minor, patch = version
         self.assertGreaterEqual(major, 0)
         self.assertGreaterEqual(minor, 0)
@@ -438,57 +385,30 @@ class TestDateTimeOffsetVersionDetection(TestExternalDatabase):
     def test_freetds_version_comparison(self):
         """Test that version comparisons work correctly."""
         version = self.freetds_version
-        
-        # Should be comparable
+
         self.assertTrue(version >= (0, 0, 0))
         self.assertTrue(version < (100, 0, 0))
-        
-        # Specific checks
-        if version >= (0, 95, 0):
-            # Should support DATETIMEOFFSET
-            self.assertTrue(version >= (0, 95, 0))
-        else:
-            # Should not support DATETIMEOFFSET
-            self.assertTrue(version < (0, 95, 0))
+
+        # Minimum supported version is 1.0
+        self.assertGreaterEqual(version, (1, 0, 0))
 
     def test_tdsdatetime2_supported_property(self):
         """Test the tdsdatetime2_supported property."""
-        # This should correlate with FreeTDS version
-        if self.freetds_version >= (0, 95, 0):
-            self.assertTrue(self.tdsdatetime2_supported,
-                          "FreeTDS 0.95+ should support DATETIME2")
-        else:
-            self.assertFalse(self.tdsdatetime2_supported,
-                           "FreeTDS < 0.95 should not support DATETIME2")
+        self.assertTrue(self.tdsdatetime2_supported)
 
     def test_tdstime_supported_property(self):
         """Test the tdstime_supported property."""
-        # This should correlate with FreeTDS version
-        if self.freetds_version >= (0, 95, 0):
-            self.assertTrue(self.tdstime_supported,
-                          "FreeTDS 0.95+ should support TIME")
-        else:
-            self.assertFalse(self.tdstime_supported,
-                           "FreeTDS < 0.95 should not support TIME")
+        self.assertTrue(self.tdstime_supported)
 
     def test_capability_detection_consistency(self):
         """
         Test that all TDS 7.3 capabilities are detected consistently.
-        
+
         DATETIMEOFFSET, DATETIME2, TIME, and DATE all require TDS 7.3+,
         so their support should be consistent.
         """
-        # All TDS 7.3 features should have same support level
-        if self.freetds_version >= (0, 95, 0):
-            # All should be supported
-            self.assertTrue(self.tdsdatetime2_supported)
-            self.assertTrue(self.tdstime_supported)
-            # DATETIMEOFFSET has same requirement
-        else:
-            # None should be supported
-            self.assertFalse(self.tdsdatetime2_supported)
-            self.assertFalse(self.tdstime_supported)
-
+        self.assertTrue(self.tdsdatetime2_supported)
+        self.assertTrue(self.tdstime_supported)
 
 if __name__ == '__main__':
     unittest.main()

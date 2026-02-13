@@ -616,8 +616,57 @@ int Connection_raise_lastwarning(struct Connection* connection)
             {
                 lastmsg->warned = true;
 
-                /* $TODO: figure out some way to include the other metadata in the warning */
-                error = PyErr_WarnEx(PyExc_tds_Warning, lastmsg->msgtext, 1);
+                {
+                    /*
+                        Construct a Warning instance with the last_message
+                        metadata attached, consistent with how errors are
+                        raised in raise_lasterror().
+                    */
+                    PyObject* args = Py_BuildValue("(s)", lastmsg->msgtext ? lastmsg->msgtext : "");
+                    if (args)
+                    {
+                        PyObject* warning = PyObject_Call(PyExc_tds_Warning, args, NULL);
+                        if (warning)
+                        {
+                            PyObject* last_message = build_message_dict(lastmsg);
+                            if (last_message &&
+                                -1 != PyObject_SetAttrString(warning, "last_message", last_message))
+                            {
+                                PyObject* filename = PyUnicode_FromString("connection");
+                                if (filename)
+                                {
+                                    error = PyErr_WarnExplicitObject(
+                                        PyExc_tds_Warning,
+                                        warning,
+                                        filename,
+                                        lastmsg->line,
+                                        /*module=*/ NULL,
+                                        /*registry=*/ NULL);
+                                    Py_DECREF(filename);
+                                }
+                                else
+                                {
+                                    error = 1;
+                                }
+                            }
+                            else
+                            {
+                                error = 1;
+                            }
+                            Py_XDECREF(last_message);
+                            Py_DECREF(warning);
+                        }
+                        else
+                        {
+                            error = 1;
+                        }
+                        Py_DECREF(args);
+                    }
+                    else
+                    {
+                        error = 1;
+                    }
+                }
             }
             else
             {

@@ -31,7 +31,6 @@ VALGRIND_PYTHON_VERSIONS := \
 # on http://www.freetds.org/files/stable/.
 
 CHECKED_FREETDS_VERSIONS := \
-    0.95.95 \
     1.00.80 \
     1.1.24 \
     1.2.10 \

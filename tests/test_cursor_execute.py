@@ -202,6 +202,22 @@ specified in the SQL statement. Parameter notation is specified by
                     [ctds.Warning] * len(warns)
                 )
 
+                # Verify structured last_message metadata is attached to warnings.
+                for warn in warns:
+                    self.assertTrue(hasattr(warn.message, 'last_message'))
+                    last_message = warn.message.last_message
+                    self.assertEqual(last_message['number'], long_(50000))
+                    self.assertEqual(last_message['severity'], long_(10))
+                    self.assertIn('description', last_message)
+                    self.assertIn('server', last_message)
+                    self.assertIn('proc', last_message)
+                    self.assertIn('line', last_message)
+                    self.assertIn('state', last_message)
+
+                # Verify specific state values for each warning.
+                self.assertEqual(warns[0].message.last_message['state'], long_(111))
+                self.assertEqual(warns[1].message.last_message['state'], long_(222))
+
                 self.assertEqual(warns[0].category, ctds.Warning)
 
                 # The cursor should be usable after a warning.
@@ -224,6 +240,10 @@ specified in the SQL statement. Parameter notation is specified by
                         )
                     except ctds.Warning as warn:
                         self.assertEqual('some custom non-severe error hello!', str(warn))
+                        self.assertTrue(hasattr(warn, 'last_message'))
+                        self.assertEqual(warn.last_message['number'], long_(50000))
+                        self.assertEqual(warn.last_message['severity'], long_(10))
+                        self.assertEqual(warn.last_message['state'], long_(111))
                     else:
                         self.fail('.execute() did not fail as expected') # pragma: nocover
 

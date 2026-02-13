@@ -12,9 +12,8 @@ system's package manager.
 
 .. warning::
 
-    Versions of `FreeTDS`_ prior to *0.95* contain defects which may
-    affect `cTDS` functionality.
-
+    `FreeTDS`_ *1.0* or later is required. Older versions are not
+    supported.
 
 Installation From Source
 ^^^^^^^^^^^^^^^^^^^^^^^^

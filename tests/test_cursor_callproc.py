@@ -1141,11 +1141,10 @@ parameters are replaced with output values.
                     lengths = [
                         1, 2, 3, 3999, 4000
                     ]
-                    # FreeTDS 0.92.x doesn't properly handle VARCHAR types > 4000 characters.
-                    if self.freetds_version[:2] != (0, 92): # pragma: nocover
-                        lengths.extend([
-                            4001, 7999, 8000, 8001
-                        ])
+
+                    lengths.extend([
+                        4001, 7999, 8000, 8001
+                    ])
                     for length in lengths:
                         inputs = (unicode_('*') * length,)
                         cursor.callproc(sproc, inputs)
