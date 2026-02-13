@@ -183,10 +183,8 @@ against all parameter sequences or mappings found in the sequence
                     )
                     msg = "some custom non-severe error hello!"
                     self.assertEqual(len(warns), 1)
-                    self.assertEqual(
-                        [str(warn.message) for warn in warns],
-                        [msg] * len(warns)
-                    )
+                    for warn in warns:
+                        self.assertIn(msg, str(warn.message))
                     self.assertEqual(
                         [warn.category for warn in warns],
                         [ctds.Warning] * len(warns)
@@ -211,7 +209,7 @@ against all parameter sequences or mappings found in the sequence
                             ((unicode_('hello!'),),)
                         )
                     except ctds.Warning as warn:
-                        self.assertEqual('some custom non-severe error hello!', str(warn))
+                        self.assertIn('some custom non-severe error hello!', str(warn))
                     else:
                         self.fail('.executemany() did not fail as expected') # pragma: nocover
 

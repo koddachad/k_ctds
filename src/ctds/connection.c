@@ -617,55 +617,19 @@ int Connection_raise_lastwarning(struct Connection* connection)
                 lastmsg->warned = true;
 
                 {
-                    /*
-                        Construct a Warning instance with the last_message
-                        metadata attached, consistent with how errors are
-                        raised in raise_lasterror().
-                    */
-                    PyObject* args = Py_BuildValue("(s)", lastmsg->msgtext ? lastmsg->msgtext : "");
-                    if (args)
-                    {
-                        PyObject* warning = PyObject_Call(PyExc_tds_Warning, args, NULL);
-                        if (warning)
-                        {
-                            PyObject* last_message = build_message_dict(lastmsg);
-                            if (last_message &&
-                                -1 != PyObject_SetAttrString(warning, "last_message", last_message))
-                            {
-                                PyObject* filename = PyUnicode_FromString("connection");
-                                if (filename)
-                                {
-                                    error = PyErr_WarnExplicitObject(
-                                        PyExc_tds_Warning,
-                                        warning,
-                                        filename,
-                                        lastmsg->line,
-                                        /*module=*/ NULL,
-                                        /*registry=*/ NULL);
-                                    Py_DECREF(filename);
-                                }
-                                else
-                                {
-                                    error = 1;
-                                }
-                            }
-                            else
-                            {
-                                error = 1;
-                            }
-                            Py_XDECREF(last_message);
-                            Py_DECREF(warning);
-                        }
-                        else
-                        {
-                            error = 1;
-                        }
-                        Py_DECREF(args);
-                    }
-                    else
-                    {
-                        error = 1;
-                    }
+                    char warning_msg[2048];
+                    snprintf(warning_msg, sizeof(warning_msg),
+                             "[SQL Server message %ld, severity %d, state %d%s%s%s%s, line %d]: %s",
+                             (long)lastmsg->msgno,
+                             lastmsg->severity,
+                             lastmsg->msgstate,
+                             lastmsg->srvname ? ", server " : "",
+                             lastmsg->srvname ? lastmsg->srvname : "",
+                             lastmsg->proc ? ", proc " : "",
+                             lastmsg->proc ? lastmsg->proc : "",
+                             lastmsg->line,
+                             lastmsg->msgtext ? lastmsg->msgtext : "");
+                    error = PyErr_WarnEx(PyExc_tds_Warning, warning_msg, 1);
                 }
             }
             else

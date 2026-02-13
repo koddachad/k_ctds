@@ -129,10 +129,8 @@ parameters are replaced with output values.
                         cursor.callproc(sproc, ())
                         msg = unicode_('some custom error hello!')
                         self.assertEqual(len(warns), 1)
-                        self.assertEqual(
-                            [str(warn.message) for warn in warns],
-                            [msg] * len(warns)
-                        )
+                        for warn in warns:
+                            self.assertIn(msg, str(warn.message))
                         self.assertEqual(
                             [warn.category for warn in warns],
                             [ctds.Warning] * len(warns)
@@ -185,7 +183,7 @@ parameters are replaced with output values.
                         try:
                             cursor.callproc(sproc, ())
                         except ctds.Warning as warn:
-                            self.assertEqual('some custom error hello!', str(warn))
+                            self.assertIn('some custom error hello!', str(warn))
                         else:
                             self.fail('.callproc() did not fail as expected') # pragma: nocover
 
@@ -297,10 +295,8 @@ parameters are replaced with output values.
                         self.assertEqual(outputs, (None, inputs[1].value - 1000))
                         self.assertEqual(len(warns), 1)
                         msg = 'Arithmetic overflow occurred.'
-                        self.assertEqual(
-                            [str(warn.message) for warn in warns],
-                            [msg] * len(warns)
-                        )
+                        for warn in warns:
+                            self.assertIn(msg, str(warn.message))
                         self.assertEqual(
                             [warn.category for warn in warns],
                             [ctds.Warning] * len(warns)
@@ -330,7 +326,7 @@ parameters are replaced with output values.
                         try:
                             cursor.callproc(sproc, inputs)
                         except ctds.Warning as warn:
-                            self.assertEqual('Arithmetic overflow occurred.', str(warn))
+                            self.assertIn('Arithmetic overflow occurred.', str(warn))
                         else:
                             self.fail('.callproc() did not fail as expected') # pragma: nocover
 
