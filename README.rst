@@ -6,8 +6,8 @@ k-cTDS
 .. image:: https://github.com/koddachad/k_ctds/actions/workflows/ci-cd.yml/badge.svg
         :target: https://github.com/koddachad/k_ctds/actions
 
-.. image:: https://ci.appveyor.com/api/projects/status/tlgkdm69ldx7wc78?svg=true
-        :target: https://ci.appveyor.com/project/koddachad/k-ctds/branch/master
+.. image:: https://github.com/koddachad/k_ctds/actions/workflows/wheels.yml/badge.svg
+        :target: https://github.com/koddachad/k_ctds/actions/workflows/wheels.yml
 
 .. image:: http://img.shields.io/pypi/v/k-ctds.svg
         :target: https://pypi.python.org/pypi/k-ctds/
@@ -34,27 +34,99 @@ Features
 * Python 3.9-3.13 support.
 * Bulk insert (bcp) support.
 * Written entirely in C.
+* Pre-built wheels with bundled `FreeTDS`_ and `OpenSSL`_ for Linux, macOS, and Windows.
+* TLS/SSL support out of the box (OpenSSL 3.0).
+
+Installation
+------------
+
+Install from `PyPI`_ using `pip`_. Pre-built wheels are available for
+Linux (x86_64, aarch64), macOS (x86_64, arm64), and Windows (AMD64):
+
+.. code-block:: bash
+
+    pip install k-ctds
+
+That's it — the wheels bundle FreeTDS and OpenSSL so there is nothing else
+to install. TLS/SSL connections to SQL Server (including Azure SQL) work
+out of the box.
+
+.. note::
+
+    Pre-built wheels bundle **OpenSSL 3.0** (Apache 2.0 license) and
+    **FreeTDS 1.4.x** (LGPL-2.0, dynamically linked). See
+    ``THIRD_PARTY_NOTICES`` for details.
+
+
+Using a Custom FreeTDS
+^^^^^^^^^^^^^^^^^^^^^^
+
+If you need to link against your own build of FreeTDS (for example, to use
+a newer version or one compiled with different options), install from source:
+
+.. code-block:: bash
+
+    pip install k-ctds --no-binary k-ctds
+
+Point the build at your FreeTDS installation using environment variables:
+
+.. code-block:: bash
+
+    export CTDS_INCLUDE_DIRS=/path/to/freetds/include
+    export CTDS_LIBRARY_DIRS=/path/to/freetds/lib
+    export CTDS_RUNTIME_LIBRARY_DIRS=/path/to/freetds/lib
+    pip install k-ctds --no-binary k-ctds
+
+On **Debian/Ubuntu** you can use the system FreeTDS:
+
+.. code-block:: bash
+
+    sudo apt-get install freetds-dev python3-dev
+    pip install k-ctds --no-binary k-ctds
+
+On **macOS** with Homebrew:
+
+.. code-block:: bash
+
+    brew install freetds
+    pip install k-ctds --no-binary k-ctds
+
+On **Windows** (requires Visual Studio 2022 Build Tools, CMake, and 7-Zip):
+
+.. code-block:: powershell
+
+    # Build FreeTDS from source (uses the included helper script)
+    ./windows/freetds-install.ps1
+
+    $Env:CTDS_INCLUDE_DIRS = "$(pwd)/build/include"
+    $Env:CTDS_LIBRARY_DIRS = "$(pwd)/build/lib"
+    pip install k-ctds --no-binary k-ctds
+
 
 Dependencies
 ------------
 
-* `FreeTDS`_
-* `Python`_
+When installed from a **pre-built wheel**: none — FreeTDS, OpenSSL, and
+all native dependencies are bundled.
+
+When installed from **source**: `FreeTDS`_ and its development headers
+must be available on the system.
 
 .. _`FreeTDS`: https://www.freetds.org/
+.. _`OpenSSL`: https://www.openssl.org/
 .. _`Python`: https://www.python.org/
 .. _`DB API-2.0`: https://www.python.org/dev/peps/pep-0249
+.. _`PyPI`: https://pypi.org/project/k-ctds/
+.. _`pip`: https://pip.pypa.io/en/stable/
 
 .. include-documentation-end-marker
 
-See `installation instructions <https://koddachad.github.io/k_ctds/install.html>`_
-for more information on installing `FreeTDS`_.
 
 Releasing
 ---------
 
-Publishing new versions of the egg and documentation is automated using a
-`Github Actions <https://docs.github.com/en/actions/>`_ workflow.
+Publishing new versions of the egg and documentation is automated using
+`Github Actions <https://docs.github.com/en/actions/>`_ workflows.
 Official releases are marked using git
 `tags <https://git-scm.com/book/en/v2/Git-Basics-Tagging>`_. Pushing the
 tag to the git remote will trigger the automated deployment. E.g.

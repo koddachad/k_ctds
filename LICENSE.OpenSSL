@@ -1,10 +1,22 @@
-OpenSSL is licensed under the Apache License 2.0.
+OpenSSL License Notice
+======================
+
+OpenSSL 3.0 and later is licensed under the Apache License, Version 2.0.
+
+SPDX-License-Identifier: Apache-2.0
 
 Copyright (c) 1998-2025 The OpenSSL Project Authors. All Rights Reserved.
 
-Source code for OpenSSL is available at:
-https://www.openssl.org/source/
-https://github.com/openssl/openssl
+Website: https://www.openssl.org/
+Source:  https://github.com/openssl/openssl
+License: https://openssl-library.org/source/license/
+
+Pre-built k-ctds wheels bundle OpenSSL 3.0.x shared libraries (libssl,
+libcrypto) as transitive dependencies of FreeTDS. OpenSSL 3.0+ is built
+from source during the wheel build process to ensure the Apache 2.0
+license applies. Older OpenSSL versions (1.1.1 and earlier) used a
+different dual-license (OpenSSL License + SSLeay License) and are NOT
+used in pre-built wheels.
 
 The full text of the Apache License 2.0 follows.
 

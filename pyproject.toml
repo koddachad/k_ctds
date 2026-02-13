@@ -94,7 +94,7 @@ repair-wheel-command = "auditwheel repair -w {dest_dir} {wheel}"
 
 # Point the build at the FreeTDS we just compiled
 [tool.cibuildwheel.linux.environment]
-FREETDS_VERSION = "1.4.23"
+FREETDS_VERSION = "1.5.11"
 CTDS_INCLUDE_DIRS = "/usr/local/include"
 CTDS_LIBRARY_DIRS = "/usr/local/lib"
 CTDS_RUNTIME_LIBRARY_DIRS = "/usr/local/lib"
@@ -113,7 +113,7 @@ before-all = """
 repair-wheel-command = "delocate-wheel --require-archs {delocate_archs} -w {dest_dir} {wheel}"
 
 [tool.cibuildwheel.macos.environment]
-FREETDS_VERSION = "1.4.23"
+FREETDS_VERSION = "1.5.11"
 CTDS_INCLUDE_DIRS = "/usr/local/include"
 CTDS_LIBRARY_DIRS = "/usr/local/lib"
 CTDS_RUNTIME_LIBRARY_DIRS = "/usr/local/lib"
@@ -125,7 +125,7 @@ CTDS_RUNTIME_LIBRARY_DIRS = "/usr/local/lib"
 before-all = "powershell windows\\freetds-install.ps1"
 
 [tool.cibuildwheel.windows.environment]
-FREETDS_VERSION = "1.4.23"
+FREETDS_VERSION = "1.5.11"
 CTDS_INCLUDE_DIRS = "build\\include"
 CTDS_LIBRARY_DIRS = "build\\lib"
 

@@ -15,7 +15,8 @@ compatible version of their choosing, as described below.
 
 FreeTDS
 -------
-License: GNU Lesser General Public License (LGPL) version 2.0
+License: GNU Library General Public License (LGPL) version 2.0 or later
+SPDX:    LGPL-2.0-or-later
 Website: https://www.freetds.org/
 Source:  https://github.com/FreeTDS/freetds
 
@@ -45,14 +46,31 @@ See LICENSE.FreeTDS for the full license notice.
 OpenSSL
 -------
 License: Apache License 2.0 (OpenSSL 3.0+)
+SPDX:    Apache-2.0
 Website: https://www.openssl.org/
 Source:  https://github.com/openssl/openssl
 
 FreeTDS is compiled with TLS support via OpenSSL. Pre-built wheels
-may include the OpenSSL shared libraries (libssl, libcrypto) as
-transitive dependencies of FreeTDS — they are bundled automatically
-by auditwheel or delocate.
+include the OpenSSL shared libraries (libssl, libcrypto) as transitive
+dependencies of FreeTDS — they are bundled automatically by auditwheel,
+delocate, or copied alongside the extension on Windows.
 
-OpenSSL 3.0 and later is licensed under the Apache License 2.0.
+IMPORTANT: Pre-built wheels are guaranteed to bundle OpenSSL 3.0.x,
+which is licensed under the Apache License 2.0. OpenSSL 3.0 is built
+from source during the wheel build process (on Linux and Windows) or
+installed via Homebrew's openssl@3 formula (on macOS). Older OpenSSL
+versions (1.1.1 and earlier) used a different dual-license (the
+OpenSSL License + SSLeay License) and are NOT bundled in wheels.
+
 See LICENSE.OpenSSL for the full license text.
+
+
+win-iconv (Windows only)
+------------------------
+License: Public Domain
+Website: https://github.com/win-iconv/win-iconv
+
+On Windows, FreeTDS requires iconv for character set conversion.
+win-iconv is statically linked into the FreeTDS build on Windows.
+win-iconv is released into the public domain by its author.
 

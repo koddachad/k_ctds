@@ -8,7 +8,6 @@ verify data integrity.
 import datetime
 from decimal import Decimal
 
-import ctds
 
 from .base import TestExternalDatabase
 from .compat import unicode_

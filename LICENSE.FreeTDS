@@ -1,14 +1,15 @@
-FreeTDS is licensed under the GNU Lesser General Public License (LGPL)
-version 2.0 or later.
+FreeTDS License Notice
+======================
 
-The full text of the LGPL-2.0 can be found at:
-https://www.gnu.org/licenses/old-licenses/lgpl-2.0.html
+FreeTDS is licensed under the GNU Library General Public License (LGPL),
+version 2.0 or, at your option, any later version.
 
-Source code for FreeTDS is available at:
-https://www.freetds.org/
-https://github.com/FreeTDS/freetds
+SPDX-License-Identifier: LGPL-2.0-or-later
 
 Copyright (C) 1998-2025 Brian Bruns, Frediano Ziglio, and contributors.
+
+Website: https://www.freetds.org/
+Source:  https://github.com/FreeTDS/freetds
 
 This library is free software; you can redistribute it and/or modify it
 under the terms of the GNU Library General Public License as published
@@ -19,4 +20,39 @@ This library is distributed in the hope that it will be useful, but
 WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Library
 General Public License for more details.
+
+You should have received a copy of the GNU Library General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+MA 02110-1301, USA.
+
+The full text of the GNU Library General Public License version 2.0
+can be found at:
+https://www.gnu.org/licenses/old-licenses/lgpl-2.0.html
+
+----------------------------------------------------------------------
+
+LGPL Binary Distribution Notice (applicable to pre-built wheels)
+================================================================
+
+When k-ctds is distributed as a pre-built wheel, FreeTDS (libsybdb) is
+bundled as a DYNAMICALLY LINKED shared library (.so on Linux, .dylib on
+macOS, .dll on Windows). This satisfies the LGPL's requirement that users
+retain the ability to replace the library with a modified or different
+version.
+
+To exercise this right, you may:
+
+  1. Install k-ctds from source instead of using a pre-built wheel:
+
+         pip install k-ctds --no-binary k-ctds
+
+  2. Or replace the bundled FreeTDS shared library with your own build
+     inside the installed package directory.
+
+The source code for the version of FreeTDS bundled in wheels is available
+from the official FreeTDS project:
+
+    https://www.freetds.org/files/stable/
+    https://github.com/FreeTDS/freetds
 
