@@ -445,6 +445,30 @@ class TestSQLToPython(TestExternalDatabase): # pylint: disable=too-many-public-m
             )
         )
 
+    def test_datetimeoffset(self):
+        from datetime import timezone, timedelta
+        self.cursor.execute(
+            '''
+            SELECT
+                CONVERT(DATETIMEOFFSET, NULL),
+                CONVERT(DATETIMEOFFSET, '2023-06-15 12:30:45.1234567 +00:00'),
+                CONVERT(DATETIMEOFFSET, '2023-06-15 12:30:45.0000000 +05:30'),
+                CONVERT(DATETIMEOFFSET, '2023-06-15 12:30:45.0000000 -05:00')
+            '''
+        )
+        self.assertEqual(
+            tuple(self.cursor.fetchone()),
+            (
+                None,
+                datetime(2023, 6, 15, 12, 30, 45, 123456,
+                         tzinfo=timezone.utc),
+                datetime(2023, 6, 15, 12, 30, 45, 0,
+                         tzinfo=timezone(timedelta(hours=5, minutes=30))),
+                datetime(2023, 6, 15, 12, 30, 45, 0,
+                         tzinfo=timezone(timedelta(hours=-5))),
+            )
+        )
+
     def test_guid(self):
 
         uuid1 = uuid.uuid4()

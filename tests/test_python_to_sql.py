@@ -185,6 +185,41 @@ class TestPythonToSQL(TestExternalDatabase):
                             row.Value
                         )
 
+    def test_datetimeoffset(self):
+        from datetime import timezone, timedelta
+        values = (
+            datetime.datetime(2023, 6, 15, 12, 30, 45, 123456,
+                              tzinfo=timezone.utc),
+            datetime.datetime(2023, 6, 15, 12, 30, 45, 0,
+                              tzinfo=timezone(timedelta(hours=5, minutes=30))),
+            datetime.datetime(2023, 6, 15, 12, 30, 45, 0,
+                              tzinfo=timezone(timedelta(hours=-5))),
+            datetime.datetime(1753, 1, 1, 0, 0, 0, 0,
+                              tzinfo=timezone.utc),
+            datetime.datetime(9999, 12, 31, 23, 59, 59, 999999,
+                              tzinfo=timezone.utc),
+        )
+        with self.connect() as connection:
+            with connection.cursor() as cursor:
+                for value in values:
+                    row = self.parameter_type(cursor, value)
+                    self.assertEqual('datetimeoffset', row.Type)
+                    self.assertEqual(row.Precision, 34)
+                    self.assertEqual(row.Scale, 7)
+                    self.assertEqual(
+                        datetime.datetime(
+                            value.year,
+                            value.month,
+                            value.day,
+                            value.hour,
+                            value.minute,
+                            value.second,
+                            value.microsecond,
+                            tzinfo=value.tzinfo,
+                        ),
+                        row.Value
+                    )
+
     def test_float(self):
         self.assert_type('float', (0.0, -1.1234, 12345.67890))
 
