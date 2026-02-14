@@ -46,11 +46,13 @@ jobs:
           - os: macos-14
             arch: arm64
             cibw_archs: arm64
+            macos_target: "14.0"
 
           # macOS x86_64 (Intel runner)
           - os: macos-13
             arch: x86_64
             cibw_archs: x86_64
+            macos_target: "13.0"
 
           # Windows x64
           - os: windows-2022
@@ -70,7 +72,7 @@ jobs:
         uses: pypa/cibuildwheel@v2.21
         env:
           CIBW_ARCHS: ${{ matrix.cibw_archs }}
-
+          MACOSX_DEPLOYMENT_TARGET: ${{ matrix.macos_target || '' }}
       - uses: actions/upload-artifact@v4
         with:
           name: wheels-${{ matrix.os }}-${{ matrix.arch }}
