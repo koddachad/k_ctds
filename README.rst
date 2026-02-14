@@ -54,7 +54,7 @@ out of the box.
 .. note::
 
     Pre-built wheels bundle **OpenSSL 3.0** (Apache 2.0 license) and
-    **FreeTDS 1.4.x** (LGPL-2.0, dynamically linked). See
+    **FreeTDS 1.5.x** (LGPL-2.0, dynamically linked). See
     ``THIRD_PARTY_NOTICES`` for details.
 
 
