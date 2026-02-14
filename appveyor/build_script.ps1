@@ -21,7 +21,7 @@ $env:CTDS_COVER = 1
 
 & "$env:PYTHON\python.exe" -m pip install .
 
-# _tds.pyd is installed as a top-level extension in site-packages (not inside ctds/).
+# _tds.pyd is installed inside k_ctds/ in site-packages.
 # On Python 3.8+, Windows no longer searches PATH for DLL dependencies of extension
 # modules, so the DLLs must be placed alongside _tds.pyd or registered via os.add_dll_directory().
 $site_packages = "$env:PYTHON\Lib\site-packages"

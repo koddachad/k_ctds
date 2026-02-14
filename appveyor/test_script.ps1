@@ -40,8 +40,8 @@ print(f'DLL dir contents: {os.listdir(dll_dir)}')
 if hasattr(os, 'add_dll_directory'):
     os.add_dll_directory(dll_dir)
     print('os.add_dll_directory() called successfully')
-import ctds
-print(f'ctds imported successfully, freetds_version={ctds.freetds_version}')
+import k_ctds
+print(f'k_ctds imported successfully, freetds_version={k_ctds.freetds_version}')
 "@
 
 
@@ -49,7 +49,7 @@ print(f'ctds imported successfully, freetds_version={ctds.freetds_version}')
     --export_type=cobertura:cobertura.xml --optimized_build `
     --sources "$env:APPVEYOR_BUILD_FOLDER\src" `
     --modules "$env:APPVEYOR_BUILD_FOLDER" -- `
-    "$env:PYTHON\python.exe" -m coverage run --branch --source 'ctds' -m pytest -vv tests/
+    "$env:PYTHON\python.exe" -m coverage run --branch --source 'k_ctds' -m pytest -vv tests/
 if ($LastExitCode -ne 0) { exit $LastExitCode }
 
 & "$env:PYTHON\Scripts\coverage" report -m --skip-covered
