@@ -512,12 +512,13 @@ class TestBulkInsertAutoEncode(TestExternalDatabase):
                 inserted = connection.bulk_insert(
                     self.test_identity_column.__name__,
                     [
-                        {'Name': 'hello', 'Code': 'world'},
-                        {'Name': 'foo', 'Code': 'bar'},
+                        {'Name': '\u00e9\u00e8\u00ea', 'Code': '\u00a9\u00ae\u00bf'},
+                        {'Name': '\u30db\u30c6\u30eb', 'Code': '\u00fc\u00f1\u00e4'},
+                        {'Name': '\U0001f600\U0001f4a1', 'Code': '\u00d8\u00c6\u00e5'},
                     ],
                     auto_encode=True
                 )
-                self.assertEqual(inserted, 2)
+                self.assertEqual(inserted, 3)
 
                 with connection.cursor() as cursor:
                     cursor.execute(
@@ -527,8 +528,9 @@ class TestBulkInsertAutoEncode(TestExternalDatabase):
                     )
                     rows = [tuple(row) for row in cursor.fetchall()]
                     self.assertEqual(rows, [
-                        ('hello', 'world'),
-                        ('foo', 'bar'),
+                        ('\u00e9\u00e8\u00ea', '\u00a9\u00ae\u00bf'),
+                        ('\u30db\u30c6\u30eb', '\u00fc\u00f1\u00e4'),
+                        ('\U0001f600\U0001f4a1', '\u00d8\u00c6\u00e5'),
                     ])
 
             finally:
