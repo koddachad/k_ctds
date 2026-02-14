@@ -14,7 +14,7 @@ implementation: :py:class:`k_ctds.pool.ConnectionPool`. It can also be used with
 
 
 k_ctds.pool Example
------------------
+-------------------
 
 .. code-block:: python
 
