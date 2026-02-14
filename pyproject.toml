@@ -126,8 +126,8 @@ before-all = "powershell windows\\freetds-install.ps1"
 
 [tool.cibuildwheel.windows.environment]
 FREETDS_VERSION = "1.5.11"
-CTDS_INCLUDE_DIRS = "build\\include"
-CTDS_LIBRARY_DIRS = "build\\lib"
+CTDS_INCLUDE_DIRS = "build/include"
+CTDS_LIBRARY_DIRS = "build/lib"
 
 # ---------------------------------------------------------------------------
 # pytest

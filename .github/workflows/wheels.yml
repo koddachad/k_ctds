@@ -43,16 +43,16 @@ jobs:
             qemu: true
 
           # macOS arm64 (Apple Silicon runner)
-          - os: macos-14
+          - os: macos-15
             arch: arm64
             cibw_archs: arm64
-            macos_target: "14.0"
+            macos_target: "15.0"
 
           # macOS x86_64 (Intel runner)
-          - os: macos-13
+          - os: macos-15-intel
             arch: x86_64
             cibw_archs: x86_64
-            macos_target: "13.0"
+            macos_target: "15.0"
 
           # Windows x64
           - os: windows-2022
