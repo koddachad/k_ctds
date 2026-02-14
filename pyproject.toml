@@ -66,7 +66,7 @@ build = "cp39-* cp310-* cp311-* cp312-* cp313-*"
 skip = "*-win32 *-manylinux_i686 *-musllinux*"
 
 # FreeTDS version to bundle — update this when upgrading
-environment = { FREETDS_VERSION = "1.4.23" }
+environment = { FREETDS_VERSION = "1.5.11" }
 
 test-requires = "pytest"
 # Smoke test: import ctds and check the bundled FreeTDS is loadable
