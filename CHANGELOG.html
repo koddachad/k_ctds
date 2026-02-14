@@ -6,20 +6,20 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Change Log &mdash; k-ctds 1.15.0 documentation</title>
+  <title>Change Log &mdash; k-ctds 2.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=70d5d4a5"></script>
+      <script src="_static/documentation_options.js?v=51b770b3"></script>
       <script src="_static/doctools.js?v=9a2dae69"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="ctds.pool" href="pool.html" /> 
+    <link rel="prev" title="k_ctds.pool" href="pool.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -51,10 +51,18 @@
 <li class="toctree-l1"><a class="reference internal" href="transactions.html">Transactions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="bulk_insert.html">Bulk Insert</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pooling.html">Connection Pooling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="encryption.html">TLS/SSL Encryption</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Change Log</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#unreleased">Unreleased</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v2-0-0">v2.0.0</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#breaking-changes">Breaking Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#new-features">New Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#build-packaging">Build &amp; Packaging</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#internal">Internal</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#id1">1.15.0 - 2026-02-11</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#added">Added</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#changed">Changed</a></li>
@@ -239,7 +247,43 @@
 <p>All notable changes to this project will be documented in this file.
 This project adheres to <a class="reference external" href="http://semver.org/">Semantic Versioning</a>.</p>
 <section id="unreleased">
-<h2><a class="reference external" href="https://github.com/koddachad/ctds_k/compare/v1.15.0...HEAD">Unreleased</a><a class="headerlink" href="#unreleased" title="Link to this heading"></a></h2>
+<h2><a class="reference external" href="https://github.com/koddachad/ctds_k/compare/v2.0.0...HEAD">Unreleased</a><a class="headerlink" href="#unreleased" title="Link to this heading"></a></h2>
+</section>
+<section id="v2-0-0">
+<h2>v2.0.0<a class="headerlink" href="#v2-0-0" title="Link to this heading"></a></h2>
+<section id="breaking-changes">
+<h3>Breaking Changes<a class="headerlink" href="#breaking-changes" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Renamed import from <code class="docutils literal notranslate"><span class="pre">ctds</span></code> to <code class="docutils literal notranslate"><span class="pre">k_ctds</span></code>.</strong> Users must now write <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">k_ctds</span></code> instead of <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">ctds</span></code> to align with the PyPI package name (<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">k-ctds</span></code>).</p></li>
+<li><p><strong>Dropped FreeTDS 0.95 support.</strong> FreeTDS 1.0 or later is now required.</p></li>
+</ul>
+</section>
+<section id="new-features">
+<h3>New Features<a class="headerlink" href="#new-features" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">auto_encode</span></code> parameter for <code class="docutils literal notranslate"><span class="pre">bulk_insert</span></code>.</strong> <code class="docutils literal notranslate"><span class="pre">bulk_insert(...,</span> <span class="pre">auto_encode=True)</span></code> queries <code class="docutils literal notranslate"><span class="pre">INFORMATION_SCHEMA.COLUMNS</span></code> to determine each column’s type and collation, then automatically encodes Python <code class="docutils literal notranslate"><span class="pre">str</span></code> values: NVARCHAR/NCHAR/NTEXT columns are encoded to UTF-16LE, and VARCHAR/CHAR/TEXT columns are encoded to the column’s collation code page.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">SqlNVarChar</span></code> now produces correct output for <code class="docutils literal notranslate"><span class="pre">bulk_insert</span></code>.</strong> Previously, <code class="docutils literal notranslate"><span class="pre">Parameter_bcp_bind</span></code> sent UTF-8 bytes unchanged for NVARCHAR columns, silently corrupting data. It now re-encodes from UTF-8 to UTF-16LE when downgrading an explicit <code class="docutils literal notranslate"><span class="pre">SqlNVarChar</span></code> wrapper for FreeTDS BCP compatibility.</p></li>
+</ul>
+</section>
+<section id="build-packaging">
+<h3>Build &amp; Packaging<a class="headerlink" href="#build-packaging" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Migrated to <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> with FreeTDS + OpenSSL bundled in wheels via cibuildwheel</p></li>
+<li><p>Updated wheel builds to use OpenSSL 3.0 (built from source) across all platforms</p></li>
+<li><p>Upgraded bundled FreeTDS to 1.5.11</p></li>
+<li><p>Updated license files to reflect LGPL-2.0/Apache-2.0 compliance for bundled dependencies</p></li>
+</ul>
+</section>
+<section id="internal">
+<h3>Internal<a class="headerlink" href="#internal" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Moved C extension from top-level <code class="docutils literal notranslate"><span class="pre">_tds</span></code> to <code class="docutils literal notranslate"><span class="pre">k_ctds._tds</span></code></p></li>
+<li><p>Updated all <code class="docutils literal notranslate"><span class="pre">tp_name</span></code> strings, <code class="docutils literal notranslate"><span class="pre">DEFAULT_APPNAME</span></code>, and C docstrings to use <code class="docutils literal notranslate"><span class="pre">k_ctds</span></code></p></li>
+<li><p>Renamed CI scripts and Docker container names (<code class="docutils literal notranslate"><span class="pre">ctds-</span></code> → <code class="docutils literal notranslate"><span class="pre">k-ctds-</span></code>)</p></li>
+<li><p>Simplified test infrastructure by removing legacy FreeTDS 0.92/0.95 checks</p></li>
+<li><p>Updated warning assertion tests to use <code class="docutils literal notranslate"><span class="pre">assertIn</span></code> for substring matching</p></li>
+</ul>
+</section>
 </section>
 <section id="id1">
 <h2><a class="reference external" href="https://github.com/koddachad/ctds_k/compare/v1.14.0..v1.15.0">1.15.0</a> - 2026-02-11<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
@@ -760,7 +804,7 @@ older versions of <a class="reference external" href="https://www.freetds.org">F
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="pool.html" class="btn btn-neutral float-left" title="ctds.pool" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pool.html" class="btn btn-neutral float-left" title="k_ctds.pool" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>

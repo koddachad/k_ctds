@@ -29,6 +29,7 @@ Index
     Transactions <transactions>
     Bulk Insert <bulk_insert>
     Connection Pooling <pooling>
+    TLS/SSL Encryption <encryption>
     faq
     api
     Change Log <CHANGELOG>

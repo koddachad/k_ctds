@@ -12,9 +12,8 @@ system's package manager.
 
 .. warning::
 
-    Versions of `FreeTDS`_ prior to *0.95* contain defects which may
-    affect `cTDS` functionality.
-
+    `FreeTDS`_ *1.0* or later is required. Older versions are not
+    supported.
 
 Installation From Source
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -139,7 +138,7 @@ searches ``PATH`` for DLL dependencies of extension modules, so
 
     import os
     os.add_dll_directory(r'C:\path\to\freetds\lib')
-    import ctds
+    import k_ctds
 
 
 .. _FreeTDS: https://www.freetds.org

@@ -6,14 +6,14 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ctds.pool &mdash; k-ctds 1.15.0 documentation</title>
+  <title>k_ctds.pool &mdash; k-ctds 2.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=70d5d4a5"></script>
+      <script src="_static/documentation_options.js?v=51b770b3"></script>
       <script src="_static/doctools.js?v=9a2dae69"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
@@ -52,6 +52,7 @@
 <li class="toctree-l1"><a class="reference internal" href="transactions.html">Transactions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="bulk_insert.html">Bulk Insert</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pooling.html">Connection Pooling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="encryption.html">TLS/SSL Encryption</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="api.html">API Reference</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="connection.html">Connection</a></li>
@@ -60,12 +61,12 @@
 <li class="toctree-l2"><a class="reference internal" href="parameter.html">Parameter</a></li>
 <li class="toctree-l2"><a class="reference internal" href="rowlist.html">RowList</a></li>
 <li class="toctree-l2"><a class="reference internal" href="types.html">SQL Type Wrappers</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">ctds.pool</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#ctds.pool.ConnectionPool"><code class="docutils literal notranslate"><span class="pre">ConnectionPool</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#ctds.pool.ConnectionPool.acquire"><code class="docutils literal notranslate"><span class="pre">ConnectionPool.acquire()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#ctds.pool.ConnectionPool.connection"><code class="docutils literal notranslate"><span class="pre">ConnectionPool.connection()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#ctds.pool.ConnectionPool.finalize"><code class="docutils literal notranslate"><span class="pre">ConnectionPool.finalize()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#ctds.pool.ConnectionPool.release"><code class="docutils literal notranslate"><span class="pre">ConnectionPool.release()</span></code></a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">k_ctds.pool</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#k_ctds.pool.ConnectionPool"><code class="docutils literal notranslate"><span class="pre">ConnectionPool</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#k_ctds.pool.ConnectionPool.acquire"><code class="docutils literal notranslate"><span class="pre">ConnectionPool.acquire()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#k_ctds.pool.ConnectionPool.connection"><code class="docutils literal notranslate"><span class="pre">ConnectionPool.connection()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#k_ctds.pool.ConnectionPool.finalize"><code class="docutils literal notranslate"><span class="pre">ConnectionPool.finalize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#k_ctds.pool.ConnectionPool.release"><code class="docutils literal notranslate"><span class="pre">ConnectionPool.release()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -90,7 +91,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="api.html">API Reference</a></li>
-      <li class="breadcrumb-item active">ctds.pool</li>
+      <li class="breadcrumb-item active">k_ctds.pool</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/pool.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -100,11 +101,11 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="module-ctds.pool">
-<span id="ctds-pool"></span><h1>ctds.pool<a class="headerlink" href="#module-ctds.pool" title="Link to this heading"></a></h1>
+  <section id="module-k_ctds.pool">
+<span id="k-ctds-pool"></span><h1>k_ctds.pool<a class="headerlink" href="#module-k_ctds.pool" title="Link to this heading"></a></h1>
 <dl class="py class">
-<dt class="sig sig-object py" id="ctds.pool.ConnectionPool">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ctds.pool.</span></span><span class="sig-name descname"><span class="pre">ConnectionPool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dbapi2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idlettl</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">block</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ctds.pool.ConnectionPool" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="k_ctds.pool.ConnectionPool">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">k_ctds.pool.</span></span><span class="sig-name descname"><span class="pre">ConnectionPool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dbapi2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idlettl</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">block</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#k_ctds.pool.ConnectionPool" title="Link to this definition"></a></dt>
 <dd><p>A basic connection pool for DB-API 2.0-compliant database drivers.</p>
 <p>Example usage:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
@@ -134,7 +135,7 @@
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Idle connection collection only occurs during calls to
-<a class="reference internal" href="#ctds.pool.ConnectionPool.acquire" title="ctds.pool.ConnectionPool.acquire"><code class="xref py py-meth docutils literal notranslate"><span class="pre">acquire()</span></code></a> and does not happen automatically in the
+<a class="reference internal" href="#k_ctds.pool.ConnectionPool.acquire" title="k_ctds.pool.ConnectionPool.acquire"><code class="xref py py-meth docutils literal notranslate"><span class="pre">acquire()</span></code></a> and does not happen automatically in the
 background.</p>
 </div>
 <dl class="field-list simple">
@@ -157,8 +158,8 @@ connections retained in the pool will never exceed <cite>maxsize</cite>.</p></li
 </dd>
 </dl>
 <dl class="py method">
-<dt class="sig sig-object py" id="ctds.pool.ConnectionPool.acquire">
-<span class="sig-name descname"><span class="pre">acquire</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ctds.pool.ConnectionPool.acquire" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="k_ctds.pool.ConnectionPool.acquire">
+<span class="sig-name descname"><span class="pre">acquire</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#k_ctds.pool.ConnectionPool.acquire" title="Link to this definition"></a></dt>
 <dd><p>Get a new connection from the pool.
 This will return an existing connection, if one is available in the
 pool, or create a new connection.</p>
@@ -170,8 +171,8 @@ this method may block until a connection is available in the pool.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="ctds.pool.ConnectionPool.connection">
-<span class="sig-name descname"><span class="pre">connection</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ctds.pool.ConnectionPool.connection" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="k_ctds.pool.ConnectionPool.connection">
+<span class="sig-name descname"><span class="pre">connection</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#k_ctds.pool.ConnectionPool.connection" title="Link to this definition"></a></dt>
 <dd><p>Acquire a connection in a managed context for use with the Python
 <cite>with</cite> keyword.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">pool</span><span class="o">.</span><span class="n">connection</span><span class="p">()</span> <span class="k">as</span> <span class="n">connection</span><span class="p">:</span>
@@ -181,8 +182,8 @@ this method may block until a connection is available in the pool.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="ctds.pool.ConnectionPool.finalize">
-<span class="sig-name descname"><span class="pre">finalize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ctds.pool.ConnectionPool.finalize" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="k_ctds.pool.ConnectionPool.finalize">
+<span class="sig-name descname"><span class="pre">finalize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#k_ctds.pool.ConnectionPool.finalize" title="Link to this definition"></a></dt>
 <dd><p>Release all connections contained in the pool.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -192,20 +193,20 @@ on process exit.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="ctds.pool.ConnectionPool.release">
-<span class="sig-name descname"><span class="pre">release</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">connection</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ctds.pool.ConnectionPool.release" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="k_ctds.pool.ConnectionPool.release">
+<span class="sig-name descname"><span class="pre">release</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">connection</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#k_ctds.pool.ConnectionPool.release" title="Link to this definition"></a></dt>
 <dd><p>Return a connection back to the pool.</p>
-<p>Prior to release, <a class="reference internal" href="connection.html#ctds.Connection.rollback" title="ctds.Connection.rollback"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ctds.Connection.rollback()</span></code></a> is called to
+<p>Prior to release, <a class="reference internal" href="connection.html#k_ctds.Connection.rollback" title="k_ctds.Connection.rollback"><code class="xref py py-meth docutils literal notranslate"><span class="pre">k_ctds.Connection.rollback()</span></code></a> is called to
 rollback any pending transaction.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>This must be called once for every successful call to
-<a class="reference internal" href="#ctds.pool.ConnectionPool.acquire" title="ctds.pool.ConnectionPool.acquire"><code class="xref py py-meth docutils literal notranslate"><span class="pre">acquire()</span></code></a>.</p>
+<a class="reference internal" href="#k_ctds.pool.ConnectionPool.acquire" title="k_ctds.pool.ConnectionPool.acquire"><code class="xref py py-meth docutils literal notranslate"><span class="pre">acquire()</span></code></a>.</p>
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>connection</strong> – The connection object returned by
-<a class="reference internal" href="#ctds.pool.ConnectionPool.acquire" title="ctds.pool.ConnectionPool.acquire"><code class="xref py py-meth docutils literal notranslate"><span class="pre">acquire()</span></code></a>.</p>
+<a class="reference internal" href="#k_ctds.pool.ConnectionPool.acquire" title="k_ctds.pool.ConnectionPool.acquire"><code class="xref py py-meth docutils literal notranslate"><span class="pre">acquire()</span></code></a>.</p>
 </dd>
 </dl>
 </dd></dl>

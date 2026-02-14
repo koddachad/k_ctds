@@ -4,6 +4,33 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## v2.0.0
+
+### Breaking Changes
+
+- **Renamed import from `ctds` to `k_ctds`.** Users must now write `import k_ctds` instead of `import ctds` to align with the PyPI package name (`pip install k-ctds`).
+- **Dropped FreeTDS 0.95 support.** FreeTDS 1.0 or later is now required.
+
+### New Features
+
+- **`auto_encode` parameter for `bulk_insert`.** `bulk_insert(..., auto_encode=True)` queries `INFORMATION_SCHEMA.COLUMNS` to determine each column's type and collation, then automatically encodes Python `str` values: NVARCHAR/NCHAR/NTEXT columns are encoded to UTF-16LE, and VARCHAR/CHAR/TEXT columns are encoded to the column's collation code page.
+- **`SqlNVarChar` now produces correct output for `bulk_insert`.** Previously, `Parameter_bcp_bind` sent UTF-8 bytes unchanged for NVARCHAR columns, silently corrupting data. It now re-encodes from UTF-8 to UTF-16LE when downgrading an explicit `SqlNVarChar` wrapper for FreeTDS BCP compatibility.
+
+### Build & Packaging
+
+- Migrated to `pyproject.toml` with FreeTDS + OpenSSL bundled in wheels via cibuildwheel
+- Updated wheel builds to use OpenSSL 3.0 (built from source) across all platforms
+- Upgraded bundled FreeTDS to 1.5.11
+- Updated license files to reflect LGPL-2.0/Apache-2.0 compliance for bundled dependencies
+
+### Internal
+
+- Moved C extension from top-level `_tds` to `k_ctds._tds`
+- Updated all `tp_name` strings, `DEFAULT_APPNAME`, and C docstrings to use `k_ctds`
+- Renamed CI scripts and Docker container names (`ctds-` → `k-ctds-`)
+- Simplified test infrastructure by removing legacy FreeTDS 0.92/0.95 checks
+- Updated warning assertion tests to use `assertIn` for substring matching
+
 ## [1.15.0] - 2026-02-11
 ### Added
 - Support for SQL Server DATETIMEOFFSET data type (timezone-aware datetimes)
@@ -291,5 +318,6 @@ _NVARCHAR_ arguments to remote procedure calls.
 ## [1.0.0] - 2016-03-14
 Initial Release
 
-[Unreleased]: https://github.com/koddachad/ctds_k/compare/v1.15.0...HEAD
+[Unreleased]: https://github.com/koddachad/ctds_k/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/koddachad/k_ctds/compare/v1.15.0...v2.0.0
 [1.15.0]: https://github.com/koddachad/ctds_k/compare/v1.14.0..v1.15.0

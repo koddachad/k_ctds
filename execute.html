@@ -6,14 +6,14 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Executing SQL Statements &mdash; k-ctds 1.15.0 documentation</title>
+  <title>Executing SQL Statements &mdash; k-ctds 2.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=70d5d4a5"></script>
+      <script src="_static/documentation_options.js?v=51b770b3"></script>
       <script src="_static/doctools.js?v=9a2dae69"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
@@ -59,6 +59,7 @@
 <li class="toctree-l1"><a class="reference internal" href="transactions.html">Transactions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="bulk_insert.html">Bulk Insert</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pooling.html">Connection Pooling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="encryption.html">TLS/SSL Encryption</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Change Log</a></li>
@@ -90,21 +91,21 @@
              
   <section id="executing-sql-statements">
 <h1>Executing SQL Statements<a class="headerlink" href="#executing-sql-statements" title="Link to this heading"></a></h1>
-<p><em>cTDS</em> implements both the <a class="reference internal" href="cursor.html#ctds.Cursor.execute" title="ctds.Cursor.execute"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ctds.Cursor.execute()</span></code></a> and
-<a class="reference internal" href="cursor.html#ctds.Cursor.executemany" title="ctds.Cursor.executemany"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ctds.Cursor.executemany()</span></code></a> methods for executing SQL statements.
+<p><em>cTDS</em> implements both the <a class="reference internal" href="cursor.html#k_ctds.Cursor.execute" title="k_ctds.Cursor.execute"><code class="xref py py-meth docutils literal notranslate"><span class="pre">k_ctds.Cursor.execute()</span></code></a> and
+<a class="reference internal" href="cursor.html#k_ctds.Cursor.executemany" title="k_ctds.Cursor.executemany"><code class="xref py py-meth docutils literal notranslate"><span class="pre">k_ctds.Cursor.executemany()</span></code></a> methods for executing SQL statements.
 Both are implemented using the <a class="reference external" href="https://msdn.microsoft.com/en-us/library/ms188001.aspx">sp_executesql</a> <a class="reference external" href="http://www.microsoft.com/sqlserver/">SQL Server</a> stored procedure.
 This allows optimizations when running batches using
-<a class="reference internal" href="cursor.html#ctds.Cursor.executemany" title="ctds.Cursor.executemany"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ctds.Cursor.executemany()</span></code></a>.</p>
+<a class="reference internal" href="cursor.html#k_ctds.Cursor.executemany" title="k_ctds.Cursor.executemany"><code class="xref py py-meth docutils literal notranslate"><span class="pre">k_ctds.Cursor.executemany()</span></code></a>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Versions of <a class="reference external" href="https://www.freetds.org">FreeTDS</a> prior to <strong>0.92.405</strong> can’t properly support the use
 of <a class="reference external" href="https://msdn.microsoft.com/en-us/library/ms188001.aspx">sp_executesql</a>. <cite>cTDS</cite> still implements
-<a class="reference internal" href="cursor.html#ctds.Cursor.executemany" title="ctds.Cursor.executemany"><code class="xref py py-meth docutils literal notranslate"><span class="pre">executemany()</span></code></a>, however performance benefits are lost.</p>
+<a class="reference internal" href="cursor.html#k_ctds.Cursor.executemany" title="k_ctds.Cursor.executemany"><code class="xref py py-meth docutils literal notranslate"><span class="pre">executemany()</span></code></a>, however performance benefits are lost.</p>
 </div>
 <section id="passing-parameters">
 <h2>Passing Parameters<a class="headerlink" href="#passing-parameters" title="Link to this heading"></a></h2>
-<p>Parameters may be passed to the <a class="reference internal" href="cursor.html#ctds.Cursor.execute" title="ctds.Cursor.execute"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ctds.Cursor.execute()</span></code></a> and
-<a class="reference internal" href="cursor.html#ctds.Cursor.executemany" title="ctds.Cursor.executemany"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ctds.Cursor.executemany()</span></code></a> methods using the <strong>numeric</strong> parameter
+<p>Parameters may be passed to the <a class="reference internal" href="cursor.html#k_ctds.Cursor.execute" title="k_ctds.Cursor.execute"><code class="xref py py-meth docutils literal notranslate"><span class="pre">k_ctds.Cursor.execute()</span></code></a> and
+<a class="reference internal" href="cursor.html#k_ctds.Cursor.executemany" title="k_ctds.Cursor.executemany"><code class="xref py py-meth docutils literal notranslate"><span class="pre">k_ctds.Cursor.executemany()</span></code></a> methods using the <strong>numeric</strong> parameter
 style as defined in <span class="target" id="index-0"></span><a class="pep reference external" href="https://peps.python.org/pep-0249/#paramstyle"><strong>PEP 0249#paramstyle</strong></a>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -131,7 +132,7 @@ index of 0.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>In <cite>ctds</cite> version <strong>1.6.0</strong> and later, the <strong>named</strong> <cite>paramstyle</cite> may be used instead
-by specifying it in <a class="reference internal" href="ctds.html#ctds.connect" title="ctds.connect"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ctds.connect()</span></code></a>.</p>
+by specifying it in <a class="reference internal" href="ctds.html#k_ctds.connect" title="k_ctds.connect"><code class="xref py py-meth docutils literal notranslate"><span class="pre">k_ctds.connect()</span></code></a>.</p>
 </div>
 <section id="parameter-types">
 <h3>Parameter Types<a class="headerlink" href="#parameter-types" title="Link to this heading"></a></h3>
@@ -160,8 +161,8 @@ Naive datetimes continue to map to <code class="docutils literal notranslate"><s
 </section>
 <section id="limitations">
 <h2>Limitations<a class="headerlink" href="#limitations" title="Link to this heading"></a></h2>
-<p>Due to the implementation of <a class="reference internal" href="cursor.html#ctds.Cursor.execute" title="ctds.Cursor.execute"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ctds.Cursor.execute()</span></code></a> and
-<a class="reference internal" href="cursor.html#ctds.Cursor.executemany" title="ctds.Cursor.executemany"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ctds.Cursor.executemany()</span></code></a>, any SQL code which defines parameters
+<p>Due to the implementation of <a class="reference internal" href="cursor.html#k_ctds.Cursor.execute" title="k_ctds.Cursor.execute"><code class="xref py py-meth docutils literal notranslate"><span class="pre">k_ctds.Cursor.execute()</span></code></a> and
+<a class="reference internal" href="cursor.html#k_ctds.Cursor.executemany" title="k_ctds.Cursor.executemany"><code class="xref py py-meth docutils literal notranslate"><span class="pre">k_ctds.Cursor.executemany()</span></code></a>, any SQL code which defines parameters
 cannot be used with execute parameters. For example, the following is <strong>not</strong>
 supported:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Parameters passed from python are not supported with SQL &#39;@&#39;</span>

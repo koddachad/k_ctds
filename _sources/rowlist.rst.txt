@@ -1,8 +1,8 @@
-:mod: `ctds`
+:mod: `k_ctds`
 
 RowList
 =======
 
-.. autoclass:: ctds.RowList
+.. autoclass:: k_ctds.RowList
     :members:
     :special-members:

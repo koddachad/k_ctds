@@ -1,7 +1,7 @@
-:mod: `ctds`
+:mod: `k_ctds`
 
 Parameter
 =========
 
-.. autoclass:: ctds.Parameter
+.. autoclass:: k_ctds.Parameter
     :members:
