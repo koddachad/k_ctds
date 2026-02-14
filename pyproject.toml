@@ -123,6 +123,8 @@ CTDS_RUNTIME_LIBRARY_DIRS = "/usr/local/lib"
 # into build\include and build\lib. cibuildwheel runs before-all before
 # building wheels for each Python version.
 before-all = "powershell windows\\freetds-install.ps1"
+before-build = "pip install delvewheel"
+repair-wheel-command = "delvewheel repair --add-path build/lib -w {dest_dir} {wheel}"
 
 [tool.cibuildwheel.windows.environment]
 FREETDS_VERSION = "1.5.11"
