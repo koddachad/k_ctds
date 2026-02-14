@@ -58,13 +58,9 @@ jobs:
       - name: 'Install dependencies'
         run: |
           python -m pip install --upgrade pip tox tox-gh-actions
-
-          # Set include/binary paths for later steps to use when installing ctds against
-          # the local version of FreeTDS.
           echo "CTDS_INCLUDE_DIRS=$GITHUB_WORKSPACE/build/freetds-${{ matrix.freetds-version }}/include" >> $GITHUB_ENV
           echo "CTDS_LIBRARY_DIRS=$GITHUB_WORKSPACE/build/freetds-${{ matrix.freetds-version }}/lib" >> $GITHUB_ENV
           echo "CTDS_RUNTIME_LIBRARY_DIRS=$GITHUB_WORKSPACE/build/freetds-${{ matrix.freetds-version }}/lib" >> $GITHUB_ENV
-
 
       - name: 'Run tests (Python: ${{ matrix.python-version }}, FreeTDS: ${{ matrix.freetds-version }})'
         run: |
@@ -92,13 +88,10 @@ jobs:
           functionalities: 'gcov'
           verbose: true
 
-
   valgrind:
-    # Must run on linux VM as that is the only one which supports docker.
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
-
       matrix:
         python-version:
           - "3.9.18"
@@ -106,69 +99,121 @@ jobs:
           - "3.11.7"
           - "3.12.1"
           - "3.13.0"
-
     steps:
       - uses: actions/checkout@v4
-
       - name: 'valgrind Python ${{ matrix.python-version }}'
         run: |
           make valgrind_${{ matrix.python-version }}
 
-
-  publish-sdist:
-    name: Publish sdist to PyPI
-    if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags')
+  build-sdist:
+    name: Build sdist
     needs: [tests, valgrind]
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - run: pip install build
+      - run: python -m build --sdist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sdist
+          path: dist/*.tar.gz
 
-      - name: Build k-ctds sdist
-        run: |
-          pip install build
-          python -m build --sdist
+  build-wheels:
+    name: "Wheels ${{ matrix.os }} ${{ matrix.arch }}"
+    needs: [tests, valgrind]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            arch: x86_64
+            cibw_archs: x86_64
+          - os: ubuntu-22.04
+            arch: aarch64
+            cibw_archs: aarch64
+            qemu: true
+          - os: macos-15
+            arch: arm64
+            cibw_archs: arm64
+            macos_target: "15.0"
+          - os: macos-15-intel
+            arch: x86_64
+            cibw_archs: x86_64
+            macos_target: "15.0"
+          - os: windows-2022
+            arch: AMD64
+            cibw_archs: AMD64
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up QEMU
+        if: matrix.qemu
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.21
+        env:
+          CIBW_ARCHS: ${{ matrix.cibw_archs }}
+          MACOSX_DEPLOYMENT_TARGET: ${{ matrix.macos_target || '' }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.os }}-${{ matrix.arch }}
+          path: wheelhouse/*.whl
 
-      - name: Publish k-ctds sdist to Test PyPI
+  publish-test:
+    name: Publish to Test PyPI
+    if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v')
+    needs: [build-sdist, build-wheels]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist/
+          merge-multiple: true
+      - name: Publish to Test PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        # Allow test publishing to fail as the current version may have been previously published. 
         continue-on-error: true
         with:
-          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-          repository_url: https://test.pypi.org/legacy/
+          repository-url: https://test.pypi.org/legacy/
 
-      - name: Publish ctds sdist to PyPI
-        if: startsWith(github.ref, 'refs/tags')
-        uses: pypa/gh-action-pypi-publish@release/v1
+  publish-prod:
+    name: Publish to PyPI
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build-sdist, build-wheels]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
         with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
+          path: dist/
+          merge-multiple: true
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
 
   publish-docs:
     name: Publish docs to Github Pages
-
-    # Publish all commits to master, not just release (i.e. tagged) commits.
     if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags')
-    needs: [publish-sdist]
+    needs: [tests, valgrind]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: 3.9
-
       - name: 'Install dependencies'
         run: |
           sudo apt-get -y install python3-dev freetds-dev
           python -m pip install --upgrade pip tox
-
       - name: Build docs
         run: |
           tox -e docs
-
       - name: Deploy docs
         uses: peaceiris/actions-gh-pages@v4
         with:
