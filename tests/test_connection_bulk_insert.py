@@ -39,7 +39,7 @@ after `batch_size` rows have been copied to server.
     the insert begins. str values destined for NVARCHAR/NCHAR/NTEXT
     columns are encoded to UTF-16LE. str values destined for
     VARCHAR/CHAR/TEXT columns are encoded to the column's collation
-    code page. .. versionadded:: 1.16
+    code page. .. versionadded:: 2.0.0
 :return: The number of rows saved to the table.
 :rtype: int
 '''

@@ -1434,7 +1434,7 @@ static const char s_Connection_bulk_insert_doc[] =
     "    the insert begins. str values destined for NVARCHAR/NCHAR/NTEXT\n"
     "    columns are encoded to UTF-16LE. str values destined for\n"
     "    VARCHAR/CHAR/TEXT columns are encoded to the column's collation\n"
-    "    code page. .. versionadded:: 1.16\n"
+    "    code page. .. versionadded:: 2.0.0\n"
 
     ":return: The number of rows saved to the table.\n"
     ":rtype: int\n";
