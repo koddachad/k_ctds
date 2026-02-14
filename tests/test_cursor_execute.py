@@ -21,7 +21,7 @@ execute(sql, parameters=None)
 Prepare and execute a database operation.
 Parameters may be provided as sequence and will be bound to variables
 specified in the SQL statement. Parameter notation is specified by
-:py:const:`ctds.paramstyle`.
+:py:const:`k_ctds.paramstyle`.
 
 :pep:`0249#execute`
 

@@ -17,7 +17,7 @@ sequence of sequences.
 :pep:`0249#fetchall`
 
 :return: A sequence of result rows.
-:rtype: ctds.RowList
+:rtype: k_ctds.RowList
 '''
         )
 

@@ -11,8 +11,8 @@ class TestConnectionClose(TestExternalDatabase):
 close()
 
 Close the connection now. Pending transactions will be rolled back.
-Subsequent calls to this object or any :py:class:`ctds.Cursor` objects it
-created will raise :py:exc:`ctds.InterfaceError`.
+Subsequent calls to this object or any :py:class:`k_ctds.Cursor` objects it
+created will raise :py:exc:`k_ctds.InterfaceError`.
 
 :pep:`0249#Connection.close`
 '''

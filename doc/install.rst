@@ -138,7 +138,7 @@ searches ``PATH`` for DLL dependencies of extension modules, so
 
     import os
     os.add_dll_directory(r'C:\path\to\freetds\lib')
-    import ctds
+    import k_ctds
 
 
 .. _FreeTDS: https://www.freetds.org

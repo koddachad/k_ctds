@@ -53,7 +53,7 @@ source_suffix = {
     '.md': 'markdown',
 }
 
-nitpick_ignore = [('py:func', 'unicode')]
+nitpick_ignore = [('py:func', 'unicode'), ('py:exc', 'warnings.Warning')]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

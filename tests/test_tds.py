@@ -217,7 +217,7 @@ NotSupportedError
 
 Exception raised in case a method or database API was used which is
 not supported by the database, e.g. calling
-:py:func:`~ctds.Connection.rollback()` on a connection that does not
+:py:func:`~k_ctds.Connection.rollback()` on a connection that does not
 support transactions or has transactions turned off.
 ''' if PY27 else None
         )

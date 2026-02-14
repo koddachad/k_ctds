@@ -62,9 +62,9 @@ Then connect normally:
 
 .. code-block:: python
 
-    import ctds
+    import k_ctds
 
-    with ctds.connect('myserver', user='myuser', password='mypassword') as conn:
+    with k_ctds.connect('myserver', user='myuser', password='mypassword') as conn:
         with conn.cursor() as cursor:
             cursor.execute(
                 "SELECT encrypt_option FROM sys.dm_exec_connections "
@@ -91,9 +91,9 @@ Then connect as usual:
 
 .. code-block:: python
 
-    import ctds
+    import k_ctds
 
-    with ctds.connect(
+    with k_ctds.connect(
         'azure',
         user='youruser@yourserver',
         password='yourpassword',
@@ -201,9 +201,9 @@ To confirm that your connection is encrypted, query the
 
 .. code-block:: python
 
-    import ctds
+    import k_ctds
 
-    with ctds.connect('myserver', user='myuser', password='mypassword') as conn:
+    with k_ctds.connect('myserver', user='myuser', password='mypassword') as conn:
         with conn.cursor() as cursor:
             cursor.execute(
                 "SELECT encrypt_option, protocol_type, auth_scheme "

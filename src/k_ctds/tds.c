@@ -141,7 +141,7 @@ static const char s_tds_connect_doc[] =
     "\n"
     ".. note::\n"
     "\n"
-    "    :py:meth:`ctds.Connection.close` should be called when the returned\n"
+    "    :py:meth:`k_ctds.Connection.close` should be called when the returned\n"
     "    connection object is no longer required.\n"
     "\n"
     ":pep:`0249#connect`\n"
@@ -194,7 +194,7 @@ static const char s_tds_connect_doc[] =
     ":param bool enable_bcp: Enable bulk copy support on the connection. This\n"
     "    is required for :py:meth:`.bulk_insert` to function.\n"
 
-    ":param str paramstyle: Override the default :py:data:`ctds.paramstyle` value for\n"
+    ":param str paramstyle: Override the default :py:data:`k_ctds.paramstyle` value for\n"
     "    this connection. Supported values: `numeric`, `named`.\n"
 
     ":param bool read_only: Indicate 'read-only' application intent.\n"
@@ -726,7 +726,7 @@ static const char s_tds_NotSupportedError_doc[] =
     "\n"
     "Exception raised in case a method or database API was used which is\n"
     "not supported by the database, e.g. calling\n"
-    ":py:func:`~ctds.Connection.rollback()` on a connection that does not\n"
+    ":py:func:`~k_ctds.Connection.rollback()` on a connection that does not\n"
     "support transactions or has transactions turned off.\n";
 
 

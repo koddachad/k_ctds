@@ -21,7 +21,7 @@ Connect to a database.
 
 .. note::
 
-    :py:meth:`ctds.Connection.close` should be called when the returned
+    :py:meth:`k_ctds.Connection.close` should be called when the returned
     connection object is no longer required.
 
 :pep:`0249#connect`
@@ -60,7 +60,7 @@ Connect to a database.
     mimic ODBC drivers.
 :param bool enable_bcp: Enable bulk copy support on the connection. This
     is required for :py:meth:`.bulk_insert` to function.
-:param str paramstyle: Override the default :py:data:`ctds.paramstyle` value for
+:param str paramstyle: Override the default :py:data:`k_ctds.paramstyle` value for
     this connection. Supported values: `numeric`, `named`.
 :param bool read_only: Indicate 'read-only' application intent.
 :param bool ntlmv2: Enable NTLMv2 authentication.

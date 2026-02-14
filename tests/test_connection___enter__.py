@@ -14,6 +14,6 @@ Enter the connection's runtime context. On exit, the connection is
 closed automatically.
 
 :return: The connection object.
-:rtype: ctds.Connection
+:rtype: k_ctds.Connection
 '''
         )

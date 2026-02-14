@@ -216,7 +216,7 @@ struct Connection {
     int query_timeout;
 
     /*
-        The paramstyle to use on .execute*() calls on ctds.Cursor() objects created
+        The paramstyle to use on .execute*() calls on k_ctds.Cursor() objects created
         by this connection.
     */
     enum ParamStyle paramstyle;
@@ -880,8 +880,8 @@ static void Connection_dealloc(PyObject* self)
 */
 
 static const char s_Connection_autocommit_doc[] =
-    "Auto-commit transactions after :py:meth:`ctds.Cursor.execute`,\n"
-    ":py:meth:`ctds.Cursor.executemany`, and :py:meth:`ctds.Cursor.callproc`.\n"
+    "Auto-commit transactions after :py:meth:`k_ctds.Cursor.execute`,\n"
+    ":py:meth:`k_ctds.Cursor.executemany`, and :py:meth:`k_ctds.Cursor.callproc`.\n"
     "If :py:data:`False`, operations must be committed explicitly using\n"
     ":py:meth:`.commit`.\n"
     "\n"
@@ -1001,8 +1001,8 @@ static int Connection_database_set(PyObject* self, PyObject* value, void* closur
 
 static const char s_Connection_messages_doc[] =
     "A list of any informational messages received from the last\n"
-    ":py:meth:`ctds.Cursor.execute`, :py:meth:`ctds.Cursor.executemany`, or\n"
-    ":py:meth:`ctds.Cursor.callproc` call.\n"
+    ":py:meth:`k_ctds.Cursor.execute`, :py:meth:`k_ctds.Cursor.executemany`, or\n"
+    ":py:meth:`k_ctds.Cursor.callproc` call.\n"
     "For example, this will include messages produced by the T-SQL `PRINT`\n"
     "and `RAISERROR` statements. Messages are preserved until the next call\n"
     "to any of the above methods. :py:data:`None` is returned if the\n"
@@ -1174,7 +1174,7 @@ static const char s_Connection_timeout_doc[] =
     "\n"
     ".. note:: Setting the timeout requires FreeTDS version 1.00 or later.\n"
     "\n"
-    ":raises ctds.NotSupportedError: `cTDS` was compiled against a version of\n"
+    ":raises k_ctds.NotSupportedError: `cTDS` was compiled against a version of\n"
     "    FreeTDS which does not support setting the timeout on a connection.\n"
     "\n"
     ":rtype: int\n";
@@ -1280,8 +1280,8 @@ static const char s_Connection_close_doc[] =
     "close()\n"
     "\n"
     "Close the connection now. Pending transactions will be rolled back.\n"
-    "Subsequent calls to this object or any :py:class:`ctds.Cursor` objects it\n"
-    "created will raise :py:exc:`ctds.InterfaceError`.\n"
+    "Subsequent calls to this object or any :py:class:`k_ctds.Cursor` objects it\n"
+    "created will raise :py:exc:`k_ctds.InterfaceError`.\n"
     "\n"
     ":pep:`0249#Connection.close`\n";
 
@@ -1372,16 +1372,16 @@ static PyObject* Connection_rollback(PyObject* self, PyObject* args)
 static const char s_Connection_cursor_doc[] =
     "cursor()\n"
     "\n"
-    "Return a new :py:class:`ctds.Cursor` object using the connection.\n"
+    "Return a new :py:class:`k_ctds.Cursor` object using the connection.\n"
     "\n"
     ".. note::\n"
     "\n"
-    "    :py:meth:`ctds.Cursor.close` should be called when the returned\n"
+    "    :py:meth:`k_ctds.Cursor.close` should be called when the returned\n"
     "    cursor is no longer required.\n"
     "\n"
     ".. warning::\n"
     "\n"
-    "    Only one :py:class:`ctds.Cursor` object should be used per\n"
+    "    Only one :py:class:`k_ctds.Cursor` object should be used per\n"
     "    connection. The last command executed on any cursor associated\n"
     "    with a connection will overwrite any previous results from all\n"
     "    other cursors.\n"
@@ -1389,7 +1389,7 @@ static const char s_Connection_cursor_doc[] =
     ":pep:`0249#cursor`\n"
     "\n"
     ":return: A new Cursor object.\n"
-    ":rtype: ctds.Cursor\n";
+    ":rtype: k_ctds.Cursor\n";
 
 static PyObject* Connection_cursor(PyObject* self, PyObject* args)
 {
@@ -1982,7 +1982,7 @@ static const char s_Connection___enter___doc[] =
     "closed automatically.\n"
     "\n"
     ":return: The connection object.\n"
-    ":rtype: ctds.Connection\n";
+    ":rtype: k_ctds.Connection\n";
 
 static PyObject* Connection___enter__(PyObject* self, PyObject* args)
 {

@@ -13,13 +13,13 @@ implementation: :py:class:`k_ctds.pool.ConnectionPool`. It can also be used with
     objects must **not** be shared across threads.
 
 
-ctds.pool Example
+k_ctds.pool Example
 -----------------
 
 .. code-block:: python
 
-    import ctds
-    import ctds.pool
+    import k_ctds
+    import k_ctds.pool
     import pprint
 
     config = {
@@ -33,7 +33,7 @@ ctds.pool Example
         'autocommit': True
     }
 
-    pool = ctds.pool.ConnectionPool(
+    pool = k_ctds.pool.ConnectionPool(
         ctds,
         config
     )
@@ -45,7 +45,7 @@ ctds.pool Example
                 rows = cursor.fetchall()
                 print([c.name for c in cursor.description])
                 pprint.pprint([tuple(row) for row in rows])
-            except ctds.Error as ex:
+            except k_ctds.Error as ex:
                 print(ex)
 
     # Explicitly cleanup the connection pool.
@@ -67,7 +67,7 @@ Using `antipool <http://furius.ca/antiorm/>`_ is fairly straightforward.
 .. code-block:: python
 
     import antipool
-    import ctds
+    import k_ctds
     import pprint
 
     config = {
@@ -100,7 +100,7 @@ Using `antipool <http://furius.ca/antiorm/>`_ is fairly straightforward.
                 rows = cursor.fetchall()
                 print([c.name for c in cursor.description])
                 pprint.pprint([tuple(row) for row in rows])
-            except ctds.Error as ex:
+            except k_ctds.Error as ex:
                 print(ex)
     finally:
         connection.release()

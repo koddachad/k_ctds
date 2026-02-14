@@ -20,7 +20,7 @@ is closed.
 
 .. note:: Setting the timeout requires FreeTDS version 1.00 or later.
 
-:raises ctds.NotSupportedError: `cTDS` was compiled against a version of
+:raises k_ctds.NotSupportedError: `cTDS` was compiled against a version of
     FreeTDS which does not support setting the timeout on a connection.
 
 :rtype: int

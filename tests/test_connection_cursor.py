@@ -10,16 +10,16 @@ class TestConnectionCursor(TestExternalDatabase):
             '''\
 cursor()
 
-Return a new :py:class:`ctds.Cursor` object using the connection.
+Return a new :py:class:`k_ctds.Cursor` object using the connection.
 
 .. note::
 
-    :py:meth:`ctds.Cursor.close` should be called when the returned
+    :py:meth:`k_ctds.Cursor.close` should be called when the returned
     cursor is no longer required.
 
 .. warning::
 
-    Only one :py:class:`ctds.Cursor` object should be used per
+    Only one :py:class:`k_ctds.Cursor` object should be used per
     connection. The last command executed on any cursor associated
     with a connection will overwrite any previous results from all
     other cursors.
@@ -27,7 +27,7 @@ Return a new :py:class:`ctds.Cursor` object using the connection.
 :pep:`0249#cursor`
 
 :return: A new Cursor object.
-:rtype: ctds.Cursor
+:rtype: k_ctds.Cursor
 '''
         )
 

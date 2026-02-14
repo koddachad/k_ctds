@@ -592,7 +592,7 @@ static const char s_Cursor_connection_doc[] =
     "\n"
     ":pep:`0249#id28`\n"
     "\n"
-    ":rtype: ctds.Connection\n";
+    ":rtype: k_ctds.Connection\n";
 
 static PyObject* Cursor_connection_get(PyObject* self, void* closure)
 {
@@ -665,10 +665,10 @@ static PyObject* Cursor_spid_get(PyObject* self, void* closure)
 }
 
 static const char s_Cursor_Parameter_doc[] =
-    "Convenience method to :py:class:`ctds.Parameter`.\n"
+    "Convenience method to :py:class:`k_ctds.Parameter`.\n"
     "\n"
     ":return: A new Parameter object.\n"
-    ":rtype: ctds.Parameter\n";
+    ":rtype: k_ctds.Parameter\n";
 
 static PyObject* Cursor_Parameter_get(PyObject* self, void* closure)
 {
@@ -2379,7 +2379,7 @@ static const char s_Cursor_execute_doc[] =
     "Prepare and execute a database operation.\n"
     "Parameters may be provided as sequence and will be bound to variables\n"
     "specified in the SQL statement. Parameter notation is specified by\n"
-    ":py:const:`ctds.paramstyle`.\n"
+    ":py:const:`k_ctds.paramstyle`.\n"
     "\n"
     ":pep:`0249#execute`\n"
     "\n"
@@ -3448,7 +3448,7 @@ static const char s_Cursor_fetchmany_doc[] =
     ":pep:`0249#fetchmany`\n"
     "\n"
     ":return: A sequence of result rows.\n"
-    ":rtype: ctds.RowList\n";
+    ":rtype: k_ctds.RowList\n";
 
 static PyObject* Cursor_fetchmany(PyObject* self, PyObject* args, PyObject* kwargs)
 {
@@ -3480,7 +3480,7 @@ static const char s_Cursor_fetchall_doc[] =
     ":pep:`0249#fetchall`\n"
     "\n"
     ":return: A sequence of result rows.\n"
-    ":rtype: ctds.RowList\n";
+    ":rtype: k_ctds.RowList\n";
 
 static PyObject* Cursor_fetchall(PyObject* self, PyObject* args)
 {
@@ -3619,7 +3619,7 @@ static const char s_Cursor___enter___doc[] =
     "closed automatically.\n"
     "\n"
     ":return: The cursor object.\n"
-    ":rtype: ctds.Cursor\n";
+    ":rtype: k_ctds.Cursor\n";
 
 static PyObject* Cursor___enter__(PyObject* self, PyObject* args)
 {

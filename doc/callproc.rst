@@ -78,10 +78,10 @@ parameter. Output parameter values are available in the result returned from
         'MyStoredProcedureWithOutputs',
         {
             # This is not necessary for input parameters.
-            '@input': ctds.Parameter(1, output=False),
+            '@input': k_ctds.Parameter(1, output=False),
 
             # Input/Output parameters must be specified as output
-            '@inputOutput': ctds.Parameter(2, output=True),
+            '@inputOutput': k_ctds.Parameter(2, output=True),
 
             # The Parameter class is also available on Cursor.
             '@output': cursor.Parameter(4, output=True)

@@ -11,7 +11,7 @@ This allows optimizations when running batches using
 
     Versions of `FreeTDS`_ prior to **0.92.405** can't properly support the use
     of `sp_executesql`_. `cTDS` still implements
-    :py:meth:`~ctds.Cursor.executemany`, however performance benefits are lost.
+    :py:meth:`~k_ctds.Cursor.executemany`, however performance benefits are lost.
 
 
 Passing Parameters

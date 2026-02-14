@@ -14,6 +14,6 @@ Enter the cursor's runtime context. On exit, the cursor is
 closed automatically.
 
 :return: The cursor object.
-:rtype: ctds.Cursor
+:rtype: k_ctds.Cursor
 '''
         )

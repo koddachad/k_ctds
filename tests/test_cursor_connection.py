@@ -16,7 +16,7 @@ A reference to the Connection object on which the cursor was created.
 
 :pep:`0249#id28`
 
-:rtype: ctds.Connection
+:rtype: k_ctds.Connection
 '''
         )
 

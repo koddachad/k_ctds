@@ -145,7 +145,7 @@ will be implicitly rolled back when the connection is closed.
             except ctds.DatabaseError as ex:
                 self.assertIn('connection timed out', str(ex))
             else:
-                self.fail('ctds.DatabaseError was not raised as expected') # pragma: nocover
+                self.fail('k_ctds.DatabaseError was not raised as expected') # pragma: nocover
 
             with self.connect() as connection:
                 with connection.cursor() as cursor:
@@ -183,7 +183,7 @@ will be implicitly rolled back when the connection is closed.
             except ctds.ProgrammingError as ex:
                 self.assertEqual(str(ex), "Could not find stored procedure 'unknown'.")
             else:
-                self.fail('ctds.ProgrammingError was not raised as expected') # pragma: nocover
+                self.fail('k_ctds.ProgrammingError was not raised as expected') # pragma: nocover
 
             with self.connect() as connection:
                 with connection.cursor() as cursor:
@@ -221,7 +221,7 @@ will be implicitly rolled back when the connection is closed.
             except ctds.ProgrammingError as ex:
                 self.assertEqual(str(ex), 'Some Error')
             else:
-                self.fail('ctds.ProgrammingError was not raised as expected') # pragma: nocover
+                self.fail('k_ctds.ProgrammingError was not raised as expected') # pragma: nocover
 
             with self.connect() as connection:
                 with connection.cursor() as cursor:

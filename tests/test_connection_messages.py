@@ -14,8 +14,8 @@ class TestConnectionMessages(TestExternalDatabase):
             ctds.Connection.messages.__doc__,
             '''\
 A list of any informational messages received from the last
-:py:meth:`ctds.Cursor.execute`, :py:meth:`ctds.Cursor.executemany`, or
-:py:meth:`ctds.Cursor.callproc` call.
+:py:meth:`k_ctds.Cursor.execute`, :py:meth:`k_ctds.Cursor.executemany`, or
+:py:meth:`k_ctds.Cursor.callproc` call.
 For example, this will include messages produced by the T-SQL `PRINT`
 and `RAISERROR` statements. Messages are preserved until the next call
 to any of the above methods. :py:data:`None` is returned if the

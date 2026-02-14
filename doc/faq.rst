@@ -2,7 +2,7 @@ Frequently Asked Questions
 ==========================
 
 Why can't I pass an empty string to :py:meth:`k_ctds.Cursor.callproc`?
---------------------------------------------------------------------
+----------------------------------------------------------------------
 
 The definition of the `dblib` API implemented by `FreeTDS` does
 not define a way to specify a **(N)VARCHAR** with length *0*. This
@@ -33,11 +33,11 @@ the :py:mod:`warnings` module.
 .. code-block:: python
 
     import warnings
-    import ctds
+    import k_ctds
 
-    warnings.simplefilter('error', ctds.Warning)
+    warnings.simplefilter('error', k_ctds.Warning)
 
-    with ctds.connect() as connection:
+    with k_ctds.connect() as connection:
         with connection.cursor() as cursor:
             # The following will raise a `k_ctds.Warning` exception.
             cursor.execute(
@@ -95,7 +95,7 @@ SQL Server.
     eastern = timezone(timedelta(hours=-5))
     dt = datetime(2024, 6, 15, 14, 30, 0, tzinfo=eastern)
 
-    with ctds.connect('myserver', user='user', password='pass') as conn:
+    with k_ctds.connect('myserver', user='user', password='pass') as conn:
         with conn.cursor() as cursor:
             # Writing
             cursor.execute(

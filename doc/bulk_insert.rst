@@ -13,8 +13,8 @@ should return a sequence containing the values for each column in the table.
 
 .. code-block:: python
 
-    import ctds
-    with ctds.connect('host') as connection:
+    import k_ctds
+    with k_ctds.connect('host') as connection:
         connection.bulk_insert(
             'MyExampleTable',
             # A generator of the rows.
@@ -46,12 +46,12 @@ This example illustrates how to import data from a *CSV* file.
 
 .. code-block:: python
 
-    import ctds
+    import k_ctds
     import csv
 
     with open('BulkInsertExample.csv', 'r') as csvfile:
         csvreader = csv.reader(csvfile, delimiter=',')
-        with ctds.connect('host') as connection:
+        with k_ctds.connect('host') as connection:
             connection.bulk_insert(
                 'BulkInsertExample',
                 iter(csvreader)
@@ -62,7 +62,7 @@ This example illustrates how to import data from a *CSV* file.
     # not present in the CSV file. 
     with open('BulkInsertExample.csv', 'r') as csvfile:
         csvreader = csv.DictReader(csvfile, delimiter=',')
-        with ctds.connect('host') as connection:
+        with k_ctds.connect('host') as connection:
             connection.bulk_insert(
                 'BulkInsertExample',
                 iter(csvreader)
@@ -98,8 +98,8 @@ most SQL Server configurations.
 
 .. code-block:: python
 
-    import ctds
-    with ctds.connect('host') as connection:
+    import k_ctds
+    with k_ctds.connect('host') as connection:
         connection.bulk_insert(
             #
             # Assumes a table with the following schema:
@@ -116,14 +116,14 @@ most SQL Server configurations.
                 (
                     # Note the value passed to SqlVarChar is first encoded to
                     # match the server's encoding.
-                    ctds.SqlVarChar(
+                    k_ctds.SqlVarChar(
                         b'a string with latin-1 -> \xc2\xbd'.decode(
                             'utf-8'
                         ).encode('latin-1')
                     ),
                     # SqlNVarChar handles the UTF-16LE encoding automatically
                     # for bulk insert.
-                    ctds.SqlNVarChar(
+                    k_ctds.SqlNVarChar(
                         b'a string with Unicode -> \xe3\x83\x9b'.decode(
                             'utf-8'
                         )
@@ -141,10 +141,10 @@ message text contains the SQL Server message description.
 
 .. code-block:: python
 
-    import ctds
+    import k_ctds
     import warnings
 
-    with ctds.connect('host') as connection:
+    with k_ctds.connect('host') as connection:
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter('always')
             connection.bulk_insert('MyTable', rows)

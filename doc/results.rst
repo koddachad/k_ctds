@@ -21,8 +21,8 @@ retrieved using the :py:attr:`k_ctds.Cursor.description` property.
 
 .. code-block:: python
 
-    import ctds
-    with ctds.connect(*args, **kwargs) as connection:
+    import k_ctds
+    with k_ctds.connect(*args, **kwargs) as connection:
         with connection.cursor() as cursor:
             cursor.callproc('GetSomeResults', (1,))
             rows = cursor.fetchall()
@@ -43,8 +43,8 @@ therefore supports indexing. For example,
 
 .. code-block:: python
 
-    import ctds
-    with ctds.connect(*args, **kwargs) as connection:
+    import k_ctds
+    with k_ctds.connect(*args, **kwargs) as connection:
         with connection.cursor() as cursor:
             cursor.callproc('GetSomeResults', (1,))
             rows = cursor.fetchall()
@@ -71,8 +71,8 @@ attribute of the row, or build a dictionary mapping column names to values.
 
 .. code-block:: python
 
-    import ctds
-    with ctds.connect(*args, **kwargs) as connection:
+    import k_ctds
+    with k_ctds.connect(*args, **kwargs) as connection:
         with connection.cursor() as cursor:
             cursor.execute(
                 '''

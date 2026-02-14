@@ -10,10 +10,10 @@ class TestCursorParameter(TestExternalDatabase):
         self.assertEqual(
             ctds.Cursor.Parameter.__doc__,
             '''\
-Convenience method to :py:class:`ctds.Parameter`.
+Convenience method to :py:class:`k_ctds.Parameter`.
 
 :return: A new Parameter object.
-:rtype: ctds.Parameter
+:rtype: k_ctds.Parameter
 '''
         )
 

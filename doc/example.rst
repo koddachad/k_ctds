@@ -23,9 +23,9 @@ An example of a simple query follows:
 
 .. code-block:: python
 
-    import ctds
+    import k_ctds
 
-    connection = ctds.connect(
+    connection = k_ctds.connect(
         'my-database-host',
         user='username',
         password='password'
