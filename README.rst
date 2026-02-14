@@ -6,8 +6,8 @@ k-cTDS
 .. image:: https://github.com/koddachad/k_ctds/actions/workflows/ci-cd.yml/badge.svg
         :target: https://github.com/koddachad/k_ctds/actions
 
-.. image:: https://github.com/koddachad/k_ctds/actions/workflows/wheels.yml/badge.svg
-        :target: https://github.com/koddachad/k_ctds/actions/workflows/wheels.yml
+.. image:: https://ci.appveyor.com/api/projects/status/tlgkdm69ldx7wc78?svg=true
+        :target: https://ci.appveyor.com/project/koddachad/k-ctds/branch/master
 
 .. image:: http://img.shields.io/pypi/v/k-ctds.svg
         :target: https://pypi.python.org/pypi/k-ctds/
