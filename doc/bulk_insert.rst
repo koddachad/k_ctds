@@ -176,6 +176,7 @@ most SQL Server configurations.
               )
             ]
         )
+
 Automatic Encoding
 ^^^^^^^^^^^^^^^^^^
 
