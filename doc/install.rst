@@ -40,7 +40,7 @@ Installation From Source
 .. code-block:: bash
 
     # Create the virtual environment.
-    virtualenv ctds-venv && cd ctds-venv
+    python3 -m venv ctds-venv && cd ctds-venv
     wget 'https://www.freetds.org/files/stable/freetds-patched.tar.gz'
     tar -xzf freetds-patched.tar.gz
     pushd freetds-*

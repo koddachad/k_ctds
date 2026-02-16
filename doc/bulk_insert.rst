@@ -7,54 +7,40 @@ into a table using :py:meth:`k_ctds.Connection.bulk_insert()`.
 Parameters
 ^^^^^^^^^^
 
-.. list-table::
-   :widths: 20 15 65
-   :header-rows: 1
+``table``
+    The name of the table to insert into.
+    Supports multi-part names (e.g. ``dbo.MyTable``).
 
-   * - Parameter
-     - Default
-     - Description
-   * - ``table``
-     - (required)
-     - The name of the table to insert into. Supports multi-part names
-       (e.g. ``dbo.MyTable``, ``MyCatalog.dbo.MyTable``).
-   * - ``rows``
-     - (required)
-     - An iterable of data rows. Each row can be a sequence (tuple/list)
-       or a :py:class:`dict` mapping column names to values (v1.9+).
-   * - ``batch_size``
-     - ``None``
-     - Number of rows per batch. When ``None``, all rows are sent before
-       validation. Set this to catch errors earlier in large imports.
-   * - ``tablock``
-     - ``False``
-     - When ``True``, acquires a bulk-update table-level lock (the SQL
-       Server ``TABLOCK`` hint). This can improve throughput for large
-       inserts by reducing lock contention.
-   * - ``auto_encode``
-     - ``False``
-     - When ``True``, queries ``INFORMATION_SCHEMA.COLUMNS`` to determine
-       each column's type and collation, then automatically encodes
-       Python ``str`` values before insertion. NVARCHAR/NCHAR/NTEXT
-       columns are encoded to UTF-16LE; VARCHAR/CHAR/TEXT columns are
-       encoded to the column's collation code page (e.g. ``cp1252``).
-       This eliminates the need to manually wrap values with
-       :py:class:`k_ctds.SqlVarChar` or :py:class:`k_ctds.SqlNVarChar`.
-       See `Automatic Encoding`_ below.
+``rows``
+    An iterable of data rows. Each row can be a sequence
+    (tuple/list) or a :py:class:`dict` mapping column names
+    to values (v1.9+).
 
-       .. versionadded:: 2.0.0
+``batch_size`` *(default:* ``None`` *)*
+    Number of rows per batch. When ``None``, all rows are sent
+    before validation. Set this to catch errors earlier in large
+    imports.
 
-       .. note::
-          ``auto_encode`` does not support temporary tables (e.g.
-          ``#TempTable``) because they are not visible in
-          ``INFORMATION_SCHEMA.COLUMNS``.
+``tablock`` *(default:* ``False`` *)*
+    When ``True``, acquires a table-level lock (the SQL Server
+    ``TABLOCK`` hint) for the duration of the insert. See
+    `Table Lock Hint`_ below.
+
+``auto_encode`` *(default:* ``False`` *)*
+    When ``True``, automatically encodes Python ``str`` values
+    based on each column's type and collation. See
+    `Automatic Encoding`_ below.
+
+    .. versionadded:: 2.0.0
+
 
 Example
 ^^^^^^^
 
-A bulk insert is done by providing an :ref:`iterator <python:typeiter>` of
-rows to insert and the name of the table to insert the rows into. The iterator
-should return a sequence containing the values for each column in the table.
+A bulk insert is done by providing the name of the target table and an
+:ref:`iterator <python:typeiter>` of rows to insert. Each row should be
+a sequence containing a value for each column in the table, or a
+:py:class:`dict` mapping column names to values.
 
 .. code-block:: python
 
@@ -141,6 +127,11 @@ to column's encoding (e.g. `latin-1`). By default :py:class:`k_ctds.SqlVarChar`
 will encode :py:class:`str` objects to `utf-8`, which is likely incorrect for
 most SQL Server configurations.
 
+.. tip::
+
+    As of version 2.0.0, the ``auto_encode`` parameter can handle
+    this encoding automatically. See `Automatic Encoding`_ below.
+
 .. code-block:: python
 
     import k_ctds
@@ -176,6 +167,7 @@ most SQL Server configurations.
               )
             ]
         )
+
 
 Automatic Encoding
 ^^^^^^^^^^^^^^^^^^
