@@ -9,10 +9,12 @@ encrypted connections for common scenarios.
 
 .. note::
 
-    FreeTDS must be compiled with OpenSSL (or GnuTLS) support for
-    encryption to work. If you built FreeTDS from source, make sure you
-    used the ``--with-openssl`` flag. See :doc:`install` for details.
+    Pre-built wheels (installed via ``pip install k-ctds``) already
+    bundle FreeTDS compiled with OpenSSL 3.0 — no additional setup
+    is needed for TLS/SSL support.
 
+    If you built FreeTDS from source, make sure you compiled it with
+    the ``--with-openssl`` flag. See :doc:`install` for details.
 
 Encryption Modes
 ----------------

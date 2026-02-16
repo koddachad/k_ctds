@@ -9,8 +9,8 @@ k-cTDS
 .. image:: https://ci.appveyor.com/api/projects/status/tlgkdm69ldx7wc78?svg=true
         :target: https://ci.appveyor.com/project/koddachad/k-ctds/branch/master
 
-.. image:: http://img.shields.io/pypi/v/k-ctds.svg
-        :target: https://pypi.python.org/pypi/k-ctds/
+.. image:: https://img.shields.io/pypi/v/k-ctds.svg
+        :target: https://pypi.org/project/k-ctds/
 
 .. image:: https://codecov.io/github/koddachad/k_ctds/graph/badge.svg
         :target: https://codecov.io/github/koddachad/k_ctds
@@ -29,7 +29,7 @@ The full documentation for `k-cTDS` can be found
 Features
 --------
 
-* Supports `Microsoft SQL Server <http://www.microsoft.com/sqlserver/>`_ 2008 and up.
+* Supports `Microsoft SQL Server <https://www.microsoft.com/sql-server>`_ 2008 and up.
 * Complete `DB API-2.0`_ support.
 * Python 3.9-3.13 support.
 * Bulk insert (bcp) support.
@@ -115,7 +115,7 @@ must be available on the system.
 .. _`FreeTDS`: https://www.freetds.org/
 .. _`OpenSSL`: https://www.openssl.org/
 .. _`Python`: https://www.python.org/
-.. _`DB API-2.0`: https://www.python.org/dev/peps/pep-0249
+.. _`DB API-2.0`: https://peps.python.org/pep-0249/
 .. _`PyPI`: https://pypi.org/project/k-ctds/
 .. _`pip`: https://pip.pypa.io/en/stable/
 
@@ -125,7 +125,7 @@ must be available on the system.
 Releasing
 ---------
 
-Publishing new versions of the egg and documentation is automated using
+Publishing new versions of the package and documentation is automated using
 `Github Actions <https://docs.github.com/en/actions/>`_ workflows.
 Official releases are marked using git
 `tags <https://git-scm.com/book/en/v2/Git-Basics-Tagging>`_. Pushing the
@@ -240,9 +240,9 @@ To run test test suite under `valgrind`_:
 
 .. _`Docker`: https://www.docker.com/
 .. _`compile Python`: https://pythonextensionpatterns.readthedocs.io/en/latest/debugging/valgrind.html
-.. _`SQL Server on Linux`: https://hub.docker.com/r/microsoft/mssql-server-linux/
+.. _`SQL Server on Linux`: https://learn.microsoft.com/en-us/sql/linux/quickstart-install-connect-docker
 .. _`GNU make`: https://www.gnu.org/software/make/
 .. _`pyenv`: https://github.com/pyenv/pyenv
 .. _`pytest`: https://docs.pytest.org/en/stable/
-.. _`tox`: https://tox.readthedocs.io/en/latest/
+.. _`tox`: https://tox.wiki/en/latest/
 .. _`valgrind`: https://valgrind.org/

@@ -9,10 +9,8 @@ This allows optimizations when running batches using
 
 .. note::
 
-    Versions of `FreeTDS`_ prior to **0.92.405** can't properly support the use
-    of `sp_executesql`_. `cTDS` still implements
-    :py:meth:`~k_ctds.Cursor.executemany`, however performance benefits are lost.
-
+    `sp_executesql`_ support requires `FreeTDS`_ 1.0 or later, which is
+    the minimum version supported by `k-cTDS`.
 
 Passing Parameters
 ------------------
@@ -43,9 +41,6 @@ style as defined in :pep:`0249#paramstyle`.
         )
     )
 
-.. note::
-   In `ctds` version **1.6.0** and later, the **named** `paramstyle` may be used instead
-   by specifying it in :py:meth:`k_ctds.connect`.
 
 
 Parameter Types
@@ -107,5 +102,5 @@ supported:
 
 
 .. _FreeTDS: https://www.freetds.org
-.. _SQL Server: http://www.microsoft.com/sqlserver/
-.. _sp_executesql: https://msdn.microsoft.com/en-us/library/ms188001.aspx
+.. _SQL Server: https://www.microsoft.com/sql-server
+.. _sp_executesql: https://learn.microsoft.com/en-us/sql/relational-databases/system-stored-procedures/sp-executesql-transact-sql

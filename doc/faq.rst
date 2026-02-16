@@ -66,12 +66,9 @@ codepoints outside the *UCS-2* range will no longer be replaced.
 
 .. note::
 
-   `FreeTDS`_ **0.95** does support using *UTF-16* on connections, however
-   the only way to configure it is via *freetds.conf*. The option is disabled
-   by default, and there is no way to determine if *UTF-16* is enabled for a
-   connection. Because of these limitations, `cTDS` cannot reliably determine
-   if the connection will support *UTF-16* and assumes it does not.
-
+   FreeTDS versions prior to 1.0 had limited *UTF-16* support that
+   required manual configuration via *freetds.conf*. These versions
+   are no longer supported by `k-cTDS`.
 
 How do I work with ``DATETIMEOFFSET`` columns?
 ----------------------------------------------
@@ -90,6 +87,7 @@ SQL Server.
 
 .. code-block:: python
 
+    import k_ctds
     from datetime import datetime, timezone, timedelta
 
     eastern = timezone(timedelta(hours=-5))
@@ -117,5 +115,12 @@ SQL Server.
     to map to ``DATETIME`` or ``DATETIME2`` as before. Only timezone-aware
     datetimes use ``DATETIMEOFFSET``.
 
+.. note::
+
+    Python's :py:class:`datetime.datetime` has microsecond precision (6
+    digits). SQL Server ``DATETIMEOFFSET`` supports up to 7 digits
+    (100-nanosecond precision). The 7th digit is truncated when reading
+    from SQL Server and is not available when writing.
+
 .. _FreeTDS: https://www.freetds.org
-.. _SQL Server errors: https://docs.microsoft.com/en-us/sql/relational-databases/errors-events/database-engine-events-and-errors?view=sql-server-ver15
+.. _SQL Server errors: https://learn.microsoft.com/en-us/sql/relational-databases/errors-events/database-engine-events-and-errors

@@ -24,6 +24,5 @@ The `autocommit` parameter to :py:func:`k_ctds.connect()` and
 committed after an operation and calls to :py:meth:`k_ctds.Connection.commit()`
 are unnecessary (`IMPLICIT_TRANSACTIONS`_ is set to **OFF**).
 
-
-.. _IMPLICIT_TRANSACTIONS: https://msdn.microsoft.com/en-us/library/ms187807.aspx
-.. _Microsoft SQL Server: http://www.microsoft.com/sqlserver/
+.. _IMPLICIT_TRANSACTIONS: https://learn.microsoft.com/en-us/sql/t-sql/statements/set-implicit-transactions-transact-sql
+.. _Microsoft SQL Server: https://www.microsoft.com/sql-server

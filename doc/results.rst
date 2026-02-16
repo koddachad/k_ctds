@@ -98,7 +98,6 @@ attribute of the row, or build a dictionary mapping column names to values.
         # for any unnamed columns
         assert row.dict() == {
             0: 'unnamed',
-            'Column1': 1,
             'Column2': '2',
             'Column3': 'Three',
         }

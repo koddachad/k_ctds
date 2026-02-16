@@ -1,7 +1,23 @@
 Getting Started
 ===============
 
-`cTDS` is built on top of `FreeTDS`_ and therefore is required to use `cTDS`.
+The easiest way to install `k-cTDS` is from `PyPI`_ using `pip`_::
+
+    pip install k-ctds
+
+Pre-built wheels are available for Linux (x86_64, aarch64), macOS
+(x86_64, arm64), and Windows (AMD64). The wheels bundle `FreeTDS`_ and
+`OpenSSL`_ so there is nothing else to install.
+
+The rest of this page covers building from source, which is only
+necessary when linking against a custom build of `FreeTDS`_.
+
+
+Building From Source
+--------------------
+
+`k-cTDS` is built on top of `FreeTDS`_, which must be installed before
+compiling from source.
 
 Installing FreeTDS
 ------------------
@@ -46,7 +62,7 @@ using the system package manager on Debian-based systems, such as Ubuntu.
 
 .. code-block:: bash
 
-    sudo apt-get install freetds-dev python-dev
+    sudo apt-get install freetds-dev python3-dev
 
 
 Installation On Mac OS X
@@ -83,38 +99,46 @@ You'll need `Visual Studio 2022 Build Tools`_ and `CMake`_, and `7-Zip`_ install
 PIP Installation
 ----------------
 
-Once `FreeTDS`_ is installed, *cTDS* can be installed using `pip`_.
+Once `FreeTDS`_ is installed, *k-cTDS* can be installed from source
+using `pip`_.
 
-When using a non-system version of `FreeTDS`_, use the following to specify
-which `include` and `library` directories to compile and link *cTDS* against.
+When using a non-system version of `FreeTDS`_, set the following
+environment variables to point at your FreeTDS installation:
 
 .. code-block:: bash
 
-    # Assuming . is the root of the virtualenv.
-    # Note: In order to load the locally built version of the
-    # FreeTDS libraries either the working directory must be
-    # the same as when k-ctds was installed or LD_LIBRARY_PATH
-    # must be set correctly.
-    pip install --global-option=build_ext \
-        --global-option="--include-dirs=$(pwd)/include" \
-        --global-option=build_ext \
-        --global-option="--library-dirs=$(pwd)/lib" \
-        --global-option=build_ext --global-option="--rpath=./lib" \
-        k-ctds
-
-    # Alternatively, use the CTDS-specifc environment variables to
-    # specify the include and library directories:
     CTDS_INCLUDE_DIRS=$(pwd)/include \
         CTDS_LIBRARY_DIRS=$(pwd)/lib \
         CTDS_RUNTIME_LIBRARY_DIRS=$(pwd)/lib \
-        pip install k-ctds
+        pip install k-ctds --no-binary k-ctds
 
+The three ``CTDS_*`` environment variables are read by ``setup.py``
+during compilation of the C extension:
 
-When using the system version of `FreeTDS`_, use the following:
+.. list-table::
+   :widths: 35 65
+   :header-rows: 1
+
+   * - Variable
+     - Purpose
+   * - ``CTDS_INCLUDE_DIRS``
+     - Directories containing FreeTDS header files (``sybdb.h``,
+       ``ctpublic.h``). Passed to the C compiler as include paths.
+       Separate multiple directories with ``:``.
+   * - ``CTDS_LIBRARY_DIRS``
+     - Directories containing FreeTDS shared libraries (``libsybdb``,
+       ``libct``). Passed to the linker as library search paths.
+       Separate multiple directories with ``:``.
+   * - ``CTDS_RUNTIME_LIBRARY_DIRS``
+     - Baked into the compiled extension as an RPATH so the dynamic
+       linker can find FreeTDS at runtime without ``LD_LIBRARY_PATH``.
+       Not supported on Windows.
+
+When using the system version of `FreeTDS`_, no variables are needed:
 
 .. code-block:: bash
 
-    pip install k-ctds
+    pip install k-ctds --no-binary k-ctds
 
 When building on Windows, run the following in powershell:
 
@@ -140,11 +164,12 @@ searches ``PATH`` for DLL dependencies of extension modules, so
     os.add_dll_directory(r'C:\path\to\freetds\lib')
     import k_ctds
 
-
 .. _FreeTDS: https://www.freetds.org
+.. _OpenSSL: https://www.openssl.org/
+.. _PyPI: https://pypi.org/project/k-ctds/
 .. _homebrew: https://brew.sh/
 .. _pip: https://pip.pypa.io/en/stable/
-.. _virtualenv: http://virtualenv.readthedocs.org/en/latest/userguide.html
-.. _Visual Studio 2022 Build Tools: https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022 
+.. _virtualenv: https://virtualenv.pypa.io/en/latest/
+.. _Visual Studio 2022 Build Tools: https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022
 .. _CMake: https://cmake.org/
-.. _7-Zip: https://www.7-zip.org/   
+.. _7-Zip: https://www.7-zip.org/
