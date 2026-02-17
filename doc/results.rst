@@ -102,6 +102,27 @@ attribute of the row, or build a dictionary mapping column names to values.
             'Column3': 'Three',
         }
 
+**String representation**
+
+    ``repr(row)`` displays column name/value pairs, making rows easy to
+    inspect in the REPL or in log output:
+
+    .. code-block:: pycon
+
+        >>> repr(row)
+        "<k_ctds.Row(Column2=2, Column3='Three')>"
+
+    Unnamed columns show only their value:
+
+    .. code-block:: pycon
+
+        >>> cursor.execute("SELECT 42, 'hello' AS greeting")
+        >>> row = cursor.fetchone()
+        >>> repr(row)
+        "<k_ctds.Row(42, greeting='hello')>"
+
+    .. versionadded:: 2.1.0
+
 Advancing the Result Set
 ------------------------
 
