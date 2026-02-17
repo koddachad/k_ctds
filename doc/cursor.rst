@@ -7,21 +7,22 @@ Cursor
     :members:
     :special-members:
 
-    **String representation**
+String Representation
+---------------------
 
-    ``repr(cursor)`` shows whether the cursor is open or closed, and
-    the column count when a result set is active:
+``repr(cursor)`` shows whether the cursor is open or closed, and
+the column count when a result set is active:
 
-    .. code-block:: pycon
+.. code-block:: pycon
 
-        >>> cursor = conn.cursor()
-        >>> repr(cursor)
-        '<k_ctds.Cursor (open)>'
-        >>> cursor.execute('SELECT 1 AS a, 2 AS b')
-        >>> repr(cursor)
-        '<k_ctds.Cursor (open, 2 columns)>'
-        >>> cursor.close()
-        >>> repr(cursor)
-        '<k_ctds.Cursor (closed)>'
+    >>> cursor = conn.cursor()
+    >>> repr(cursor)
+    '<k_ctds.Cursor (open)>'
+    >>> cursor.execute('SELECT 1 AS a, 2 AS b')
+    >>> repr(cursor)
+    '<k_ctds.Cursor (open, 2 columns)>'
+    >>> cursor.close()
+    >>> repr(cursor)
+    '<k_ctds.Cursor (closed)>'
 
-    .. versionadded:: 2.1.0
+.. versionadded:: 2.1.0
