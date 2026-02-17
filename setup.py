@@ -21,7 +21,7 @@ import setuptools
 # ---------------------------------------------------------------------------
 CTDS_MAJOR_VERSION = 2
 CTDS_MINOR_VERSION = 1
-CTDS_PATCH_VERSION = 0
+CTDS_PATCH_VERSION = 1
 
 # ---------------------------------------------------------------------------
 # Build flags driven by environment variables

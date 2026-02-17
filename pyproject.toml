@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "k-ctds"
-version = "2.1.0"
+version = "2.1.1"
 description = "DB API 2.0-compliant driver for SQL Server"
 readme = "README.rst"
 license = {text = "MIT"}
@@ -85,7 +85,7 @@ before-all = """
     curl -sSf "https://www.freetds.org/files/stable/freetds-${FREETDS_VERSION}.tar.gz" -o /tmp/freetds.tar.gz
     tar -xzf /tmp/freetds.tar.gz -C /tmp
     cd /tmp/freetds-${FREETDS_VERSION}
-    ./configure --prefix=/usr/local --with-openssl --enable-msdblib
+    CFLAGS="-Wno-error=incompatible-pointer-types" ./configure --prefix=/usr/local --with-openssl --enable-msdblib
     make -j$(nproc)
     make install
     ldconfig || true
