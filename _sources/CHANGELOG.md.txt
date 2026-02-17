@@ -4,6 +4,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## v2.1.1
+
+### Fixed
+- FreeTDS 1.5.11 build failure on GCC 14+ due to -Wincompatible-pointer-types error in iconv.c.
+- Switched aarch64 wheel builds to native ARM runners, removing QEMU emulation.
+
 ## v2.1.0
 
 ### Added
