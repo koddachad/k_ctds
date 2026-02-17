@@ -1,3 +1,5 @@
+import warnings
+
 import k_ctds as ctds
 
 from .base import TestExternalDatabase
@@ -102,3 +104,30 @@ sequence of sequences.
                 self.assertEqual(cursor.nextset(), True)
                 self.assertEqual([tuple(row) for row in cursor.fetchall()], [(1,), (2,), (3,)])
                 self.assertEqual(cursor.nextset(), None)
+
+class TestCursorFetchallWarningAsError(TestExternalDatabase):
+    """Regression test for Cursor_fetchrows row-buffer leak (warning-as-error)."""
+
+    def test_fetchrows_warning_as_error(self):
+        with self.connect() as connection:
+            with connection.cursor() as cursor:
+                sproc = self.test_fetchrows_warning_as_error.__name__
+                with self.stored_procedure(
+                    cursor,
+                    sproc,
+                    '''
+                    AS
+                        SELECT 1 AS col1, 'hello' AS col2;
+                        RAISERROR (N'fetchrows leak test warning', 10, 1) WITH NOWAIT;
+                    '''
+                ):
+                    with warnings.catch_warnings():
+                        warnings.simplefilter('error', ctds.Warning)
+                        cursor.callproc(sproc, ())
+
+                        try:
+                            cursor.fetchall()
+                            self.fail('.fetchall() did not raise as expected')  # pragma: nocover
+                        except ctds.Warning as ex:
+                            self.assertIn('fetchrows leak test warning', str(ex))
+

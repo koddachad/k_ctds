@@ -31,7 +31,7 @@ Features
 
 * Supports `Microsoft SQL Server <https://www.microsoft.com/sql-server>`_ 2008 and up.
 * Complete `DB API-2.0`_ support.
-* Python 3.9-3.13 support.
+* Python 3.9-3.14 support.
 * Bulk insert (bcp) support.
 * Written entirely in C.
 * Pre-built wheels with bundled `FreeTDS`_ and `OpenSSL`_ for Linux, macOS, and Windows.

@@ -32,6 +32,9 @@ environment:
   - PYTHON: "C:\\Python313-x64"
     SQLSERVER_INSTANCENAME: "SQL2019"
 
+  - PYTHON: "C:\\Python314-x64"
+    SQLSERVER_INSTANCENAME: "SQL2019"
+
 # Note: Database services should *not* be specified in the services section.
 # The database service will be explicitly started by the script which enables
 # TCP/IP connections for the database.

@@ -20,7 +20,7 @@ import setuptools
 # These constants are compiled into the C extension via define_macros.
 # ---------------------------------------------------------------------------
 CTDS_MAJOR_VERSION = 2
-CTDS_MINOR_VERSION = 0
+CTDS_MINOR_VERSION = 1
 CTDS_PATCH_VERSION = 0
 
 # ---------------------------------------------------------------------------

@@ -18,6 +18,7 @@ jobs:
           - "1.4.23"
           - "1.5.11"
         python-version:
+          - "3.14"
           - "3.13"
           - "3.12"
           - "3.11"
@@ -99,6 +100,7 @@ jobs:
           - "3.11.7"
           - "3.12.1"
           - "3.13.0"
+          - "3.14.0"
     steps:
       - uses: actions/checkout@v4
       - name: 'valgrind Python ${{ matrix.python-version }}'

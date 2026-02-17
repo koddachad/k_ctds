@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "k-ctds"
-version = "2.0.0"
+version = "2.1.0"
 description = "DB API 2.0-compliant driver for SQL Server"
 readme = "README.rst"
 license = {text = "MIT"}
@@ -37,6 +37,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: SQL",
     "Topic :: Database",
@@ -62,7 +63,7 @@ k_ctds = []
 # ---------------------------------------------------------------------------
 [tool.cibuildwheel]
 # Build only CPython, skip 32-bit and musl for now
-build = "cp39-* cp310-* cp311-* cp312-* cp313-*"
+build = "cp39-* cp310-* cp311-* cp312-* cp313-* cp314-*"
 skip = "*-win32 *-manylinux_i686 *-musllinux*"
 
 # FreeTDS version to bundle — update this when upgrading

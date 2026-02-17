@@ -4,6 +4,23 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## v2.1.0
+
+### Added
+- Python 3.14 support.
+- `__repr__` for `Connection`, `Cursor`, and `Row` objects for easier
+  debugging. Examples:
+  - `<k_ctds.Connection database='master' spid=54>`
+  - `<k_ctds.Cursor (open, 3 columns)>`
+  - `<k_ctds.Row(Col1=1, Col2='hello')>`
+
+### Fixed
+- Memory leak in `Cursor.fetchall`/`fetchmany`/`fetchone` when a SQL Server
+  warning was promoted to a Python error via `warnings.filterwarnings('error')`.
+  Row buffers allocated during `dbnextrow` were not freed on the warning-as-error
+  exit path in `Cursor_fetchrows`. Detectable under Valgrind as definitely-lost
+  bytes.
+
 ## v2.0.0
 
 ### Breaking Changes
@@ -318,6 +335,7 @@ _NVARCHAR_ arguments to remote procedure calls.
 ## [1.0.0] - 2016-03-14
 Initial Release
 
-[Unreleased]: https://github.com/koddachad/ctds_k/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/koddachad/ctds_k/compare/v2.1.0...HEAD
+[2.1.0]: https://github.com/koddachad/k_ctds/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/koddachad/k_ctds/compare/v1.15.0...v2.0.0
 [1.15.0]: https://github.com/koddachad/ctds_k/compare/v1.14.0..v1.15.0

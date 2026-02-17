@@ -8,14 +8,16 @@ SUPPORTED_PYTHON_VERSIONS := \
     3.10 \
     3.11 \
     3.12 \
-    3.13
+    3.13 \
+    3.14
 
 CHECKED_PYTHON_VERSIONS := \
     3.9 \
     3.10 \
     3.11 \
     3.12 \
-    3.13
+    3.13 \
+    3.14
 
 
 VALGRIND_PYTHON_VERSIONS := \
@@ -23,7 +25,8 @@ VALGRIND_PYTHON_VERSIONS := \
     3.10.13 \
     3.11.7 \
     3.12.1 \
-    3.13.0
+    3.13.0 \
+    3.14.0
 
 # FreeTDS versions to test against. This should
 # be the latest of each minor release.

@@ -2378,6 +2378,25 @@ PyObject* Connection_create(const char* server, uint16_t port, const char* insta
     return (PyObject*)connection;
 }
 
+static PyObject* Connection_repr(PyObject* self)
+{
+    struct Connection* connection = (struct Connection*)self;
+    if (Connection_closed(connection))
+    {
+        return PyUnicode_FromString("<k_ctds.Connection (closed)>");
+    }
+    else
+    {
+        const char* database = dbname(connection->dbproc);
+        int spid = dbspid(connection->dbproc);
+        return PyUnicode_FromFormat(
+            "<k_ctds.Connection database='%s' spid=%d>",
+            database ? database : "?",
+            spid
+        );
+    }
+}
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 PyTypeObject ConnectionType = {
@@ -2394,7 +2413,7 @@ PyTypeObject ConnectionType = {
     NULL,                          /* tp_getattr */
     NULL,                          /* tp_setattr */
     NULL,                          /* tp_reserved */
-    NULL,                          /* tp_repr */
+    Connection_repr,               /* tp_repr */
     NULL,                          /* tp_as_number */
     NULL,                          /* tp_as_sequence */
     NULL,                          /* tp_as_mapping */

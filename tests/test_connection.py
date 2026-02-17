@@ -39,3 +39,18 @@ A connection to the database server.
                     pass
                 else:
                     self.fail('.execute() did not fail as expected') # pragma: nocover
+
+    def test___repr___open(self):
+        with self.connect() as connection:
+            r = repr(connection)
+            self.assertTrue(r.startswith('<k_ctds.Connection '))
+            self.assertIn("database='", r)
+            self.assertIn('spid=', r)
+            self.assertTrue(r.endswith('>'))
+            # Verify the database matches the actual property
+            self.assertIn(connection.database, r)
+
+    def test___repr___closed(self):
+        connection = self.connect()
+        connection.close()
+        self.assertEqual(repr(connection), '<k_ctds.Connection (closed)>')

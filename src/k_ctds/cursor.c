@@ -2939,6 +2939,59 @@ static PyMethodDef Row_methods[] = {
     { NULL,   NULL,     0,           NULL }
 };
 
+static PyObject* Row_repr(PyObject* self)
+{
+    struct Row* row = (struct Row*)self;
+    size_t ncols = row->description->ncolumns;
+    PyObject* pieces = PyList_New(0);
+    size_t ix;
+
+    if (!pieces) return NULL;
+
+    for (ix = 0; ix < ncols; ++ix)
+    {
+        const char* colname = row->description->columns[ix].dbcol.ActualName;
+        PyObject* value_repr = PyObject_Repr(row->values[ix]);
+        PyObject* piece;
+
+        if (!value_repr)
+        {
+            Py_DECREF(pieces);
+            return NULL;
+        }
+
+        if (colname[0] != '\0')
+        {
+            piece = PyUnicode_FromFormat("%s=%U", colname, value_repr);
+        }
+        else
+        {
+            piece = PyUnicode_FromFormat("%U", value_repr);
+        }
+        Py_DECREF(value_repr);
+
+        if (!piece || PyList_Append(pieces, piece) == -1)
+        {
+            Py_XDECREF(piece);
+            Py_DECREF(pieces);
+            return NULL;
+        }
+        Py_DECREF(piece);
+    }
+
+    {
+        PyObject* sep = PyUnicode_FromString(", ");
+        PyObject* joined = sep ? PyUnicode_Join(sep, pieces) : NULL;
+        PyObject* result = joined
+            ? PyUnicode_FromFormat("<k_ctds.Row(%U)>", joined)
+            : NULL;
+        Py_XDECREF(sep);
+        Py_XDECREF(joined);
+        Py_DECREF(pieces);
+        return result;
+    }
+}
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 PyTypeObject RowType = {
@@ -2955,7 +3008,7 @@ PyTypeObject RowType = {
     NULL,                                     /* tp_getattr */
     NULL,                                     /* tp_setattr */
     NULL,                                     /* tp_reserved */
-    NULL,                                     /* tp_repr */
+    Row_repr,                                 /* tp_repr */
     NULL,                                     /* tp_as_number */
     &s_Row_as_sequence,                       /* tp_as_sequence */
     &s_Row_as_mapping,                        /* tp_as_mapping */
@@ -3392,6 +3445,7 @@ static struct RowList* Cursor_fetchrows(struct Cursor* cursor, size_t n)
     if (0 != Connection_raise_lastwarning(cursor->connection))
     {
         assert(PyErr_Occurred());
+        ResultSetDescription_RowBuffer_free(description, rowbuffers);
         return NULL;
     }
 
@@ -3732,6 +3786,26 @@ PyObject* Cursor_create(struct Connection* connection, enum ParamStyle paramstyl
 }
 
 
+static PyObject* Cursor_repr(PyObject* self)
+{
+    struct Cursor* cursor = (struct Cursor*)self;
+    if (!cursor->connection)
+    {
+        return PyUnicode_FromString("<k_ctds.Cursor (closed)>");
+    }
+    else if (cursor->description)
+    {
+        return PyUnicode_FromFormat(
+            "<k_ctds.Cursor (open, %zd columns)>",
+            (Py_ssize_t)cursor->description->ncolumns
+        );
+    }
+    else
+    {
+        return PyUnicode_FromString("<k_ctds.Cursor (open)>");
+    }
+}
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 PyTypeObject CursorType = {
@@ -3748,7 +3822,7 @@ PyTypeObject CursorType = {
     NULL,                         /* tp_getattr */
     NULL,                         /* tp_setattr */
     NULL,                         /* tp_reserved */
-    NULL,                         /* tp_repr */
+    Cursor_repr,                  /* tp_repr */
     NULL,                         /* tp_as_number */
     NULL,                         /* tp_as_sequence */
     NULL,                         /* tp_as_mapping */

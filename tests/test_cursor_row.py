@@ -170,3 +170,34 @@ class TestCursorRow(TestExternalDatabase):
             4: 'another unnamed',
             'Col4': 4,
         })
+
+    def test___repr___named_columns(self):
+        with self.connect() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    '''
+                    SELECT
+                        1 AS Col1,
+                        'hello' AS Col2
+                    '''
+                )
+                rows = cursor.fetchall()
+
+        row = rows[0]
+        r = repr(row)
+        self.assertTrue(r.startswith('<k_ctds.Row('))
+        self.assertTrue(r.endswith(')>'))
+        self.assertIn('Col1=1', r)
+        self.assertIn("Col2='hello'", r)
+
+    def test___repr___unnamed_columns(self):
+        with self.connect() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT 42, 'anon'")
+                rows = cursor.fetchall()
+
+        row = rows[0]
+        r = repr(row)
+        self.assertTrue(r.startswith('<k_ctds.Row('))
+        self.assertIn('42', r)
+        self.assertIn("'anon'", r)
