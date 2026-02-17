@@ -1,0 +1,2273 @@
+        -:    0:Source:src/k_ctds/type.c
+        -:    0:Source is newer than graph
+        -:    1:#include "include/push_warnings.h"
+        -:    2:#include <Python.h>
+        -:    3:#include "structmember.h"
+        -:    4:#include <sybdb.h>
+        -:    5:#include "include/pop_warnings.h"
+        -:    6:
+        -:    7:#include <stdarg.h>
+        -:    8:#include <stddef.h>
+        -:    9:
+        -:   10:#include "include/c99int.h"
+        -:   11:
+        -:   12:#include "include/connection.h"
+        -:   13:#include "include/macros.h"
+        -:   14:#include "include/pyutils.h"
+        -:   15:#include "include/tds.h"
+        -:   16:#include "include/type.h"
+        -:   17:
+        -:   18:#ifdef __GNUC__
+        -:   19:/* Ignore "ISO C90 does not support 'long long' [-Werror=long-long]". */
+        -:   20:#  pragma GCC diagnostic ignored "-Wlong-long"
+        -:   21:#endif /* ifdef __GNUC__ */
+        -:   22:
+        -:   23:#ifdef __clang__
+        -:   24:# if PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION == 8
+        -:   25:/* Ignore "'tp_print' has been explicitly marked deprecated here" */
+        -:   26:#    pragma clang diagnostic push
+        -:   27:#    pragma clang diagnostic ignored "-Wdeprecated-declarations"
+        -:   28:#  endif /* if PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION == 8 */
+        -:   29:#endif /* ifdef __clang__ */
+        -:   30:
+        -:   31:
+        -:   32:#define _SqlType_init_base(_type, _value, _tdstype) \
+        -:   33:    Py_INCREF((_value)); \
+        -:   34:    ((struct SqlType*)(_type))->value = (_value); \
+        -:   35:    ((struct SqlType*)(_type))->tdstype = (_tdstype)
+        -:   36:
+        -:   37:#define SqlType_init_fixed(_type, _value, _tdstype, _member) \
+        -:   38:    _SqlType_init_base(_type, _value, _tdstype); \
+        -:   39:    ((struct SqlType*)(_type))->data = (Py_None == (_value)) ? NULL : (void*)&(_member); \
+        -:   40:    ((struct SqlType*)(_type))->ndata = (Py_None == (_value)) ? 0 : sizeof(_member); \
+        -:   41:    ((struct SqlType*)(_type))->data_free = NULL; \
+        -:   42:    ((struct SqlType*)(_type))->size = -1
+        -:   43:
+        -:   44:#define SqlType_init_variable(_type, _value, _tdstype, _size, _data, _ndata, _data_free) \
+        -:   45:    _SqlType_init_base(_type, _value, _tdstype); \
+        -:   46:    ((struct SqlType*)(_type))->data = _data; \
+        -:   47:    ((struct SqlType*)(_type))->ndata = _ndata; \
+        -:   48:    ((struct SqlType*)(_type))->data_free = _data_free; \
+        -:   49:    ((struct SqlType*)(_type))->size = _size
+        -:   50:
+function SqlType_dealloc called 0 returned 0% blocks executed 0%
+    #####:   51:static void SqlType_dealloc(PyObject* self)
+        -:   52:{
+    #####:   53:    struct SqlType* type = (struct SqlType*)self;
+    #####:   54:    Py_XDECREF(type->value);
+call    0 never executed
+        -:   55:
+    #####:   56:    if (type->data_free)
+branch  0 never executed
+branch  1 never executed
+        -:   57:    {
+    #####:   58:        type->data_free(type->data);
+call    0 never executed
+    #####:   59:        type->data = NULL;
+        -:   60:    }
+        -:   61:
+    #####:   62:    self->ob_type->tp_free(self);
+call    0 never executed
+    #####:   63:}
+        -:   64:
+function SqlType_repr called 0 returned 0% blocks executed 0%
+    #####:   65:static PyObject* SqlType_repr(PyObject* self)
+        -:   66:{
+    #####:   67:    const struct SqlType* type = (const struct SqlType*)self;
+    #####:   68:    PyObject* repr = NULL;
+        -:   69:
+    #####:   70:    bool include_size = (-1 != type->size);
+        -:   71:
+        -:   72:#if PY_MAJOR_VERSION < 3
+        -:   73:    /*
+        -:   74:        Python2.6's implementation of `PyUnicode_FromFormat` is buggy and
+        -:   75:        will crash when the '%R' format specifier is used. Additionally
+        -:   76:        a conversion to the `str` type is required. Avoid all this in Python2.
+        -:   77:    */
+        -:   78:    PyObject* value = PyObject_Repr(type->value);
+        -:   79:    if (value)
+        -:   80:    {
+        -:   81:        if (include_size)
+        -:   82:        {
+        -:   83:            repr = PyString_FromFormat(
+        -:   84:                "%s(%s, size=%d)",
+        -:   85:                Py_TYPE(self)->tp_name,
+        -:   86:                PyString_AS_STRING(value),
+        -:   87:                type->size
+        -:   88:            );
+        -:   89:        }
+        -:   90:        else
+        -:   91:        {
+        -:   92:            repr = PyString_FromFormat(
+        -:   93:                "%s(%s)",
+        -:   94:                Py_TYPE(self)->tp_name,
+        -:   95:                PyString_AS_STRING(value)
+        -:   96:            );
+        -:   97:        }
+        -:   98:        Py_DECREF(value);
+        -:   99:    }
+        -:  100:#else /* if PY_MAJOR_VERSION < 3 */
+    #####:  101:    if (include_size)
+branch  0 never executed
+branch  1 never executed
+        -:  102:    {
+    #####:  103:        repr = PyUnicode_FromFormat(
+        -:  104:            "%s(%R, size=%d)",
+    #####:  105:            Py_TYPE(self)->tp_name,
+call    0 never executed
+    #####:  106:            type->value,
+call    0 never executed
+        -:  107:            type->size
+        -:  108:        );
+        -:  109:    }
+        -:  110:    else
+        -:  111:    {
+    #####:  112:        repr = PyUnicode_FromFormat(
+        -:  113:            "%s(%R)",
+    #####:  114:            Py_TYPE(self)->tp_name,
+call    0 never executed
+    #####:  115:            type->value
+call    0 never executed
+        -:  116:        );
+        -:  117:    }
+        -:  118:#endif /* else if PY_MAJOR_VERSION < 3 */
+    #####:  119:    return repr;
+        -:  120:}
+        -:  121:
+        -:  122:static const char s_SqlType_members_doc_size[] =
+        -:  123:    "The size of the type. This will be -1 for fixed size values.";
+        -:  124:
+        -:  125:static const char s_SqlType_members_doc_tdstype[] =
+        -:  126:    "The TDS type code.";
+        -:  127:
+        -:  128:static const char s_SqlType_members_doc_value[] =
+        -:  129:    "The wrapped Python value.";
+        -:  130:
+        -:  131:static PyMemberDef s_SqlType_members[] = {
+        -:  132:    /* name, type, offset, flags, doc */
+        -:  133:    { (char*)"size",    T_INT,    offsetof(struct SqlType, size),    READONLY, (char*)s_SqlType_members_doc_size },
+        -:  134:    { (char*)"tdstype", T_USHORT, offsetof(struct SqlType, tdstype), READONLY, (char*)s_SqlType_members_doc_tdstype },
+        -:  135:    { (char*)"value",   T_OBJECT, offsetof(struct SqlType, value),   READONLY, (char*)s_SqlType_members_doc_value },
+        -:  136:    { NULL,             0,        0,                                 0,        NULL }
+        -:  137:};
+        -:  138:
+        -:  139:static const char s_tds_SqlType_doc[] =
+        -:  140:    "An object wrapper to explicitly specify which SQL type a Python object"
+        -:  141:    "should be serialized as.";
+        -:  142:#pragma GCC diagnostic push
+        -:  143:#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+        -:  144:PyTypeObject SqlTypeType = {
+        -:  145:    PyVarObject_HEAD_INIT(NULL, 0)
+        -:  146:    "k_ctds.SqlType",                           /* tp_name */
+        -:  147:    sizeof(struct SqlType),                   /* tp_basicsize */
+        -:  148:    0,                                        /* tp_itemsize */
+        -:  149:    SqlType_dealloc,                          /* tp_dealloc */
+        -:  150:#if PY_VERSION_HEX >= 0x03080000
+        -:  151:    0,                                        /* tp_vectorcall_offset */
+        -:  152:#else
+        -:  153:    NULL,                                     /* tp_print */
+        -:  154:#endif /* if PY_VERSION_HEX >= 0x03080000 */
+        -:  155:    NULL,                                     /* tp_getattr */
+        -:  156:    NULL,                                     /* tp_setattr */
+        -:  157:    NULL,                                     /* tp_reserved */
+        -:  158:    SqlType_repr,                             /* tp_repr */
+        -:  159:    NULL,                                     /* tp_as_number */
+        -:  160:    NULL,                                     /* tp_as_sequence */
+        -:  161:    NULL,                                     /* tp_as_mapping */
+        -:  162:    NULL,                                     /* tp_hash */
+        -:  163:    NULL,                                     /* tp_call */
+        -:  164:    NULL,                                     /* tp_str */
+        -:  165:    NULL,                                     /* tp_getattro */
+        -:  166:    NULL,                                     /* tp_setattro */
+        -:  167:    NULL,                                     /* tp_as_buffer */
+        -:  168:    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+        -:  169:    s_tds_SqlType_doc,                        /* tp_doc */
+        -:  170:    NULL,                                     /* tp_traverse */
+        -:  171:    NULL,                                     /* tp_clear */
+        -:  172:    NULL,                                     /* tp_richcompare */
+        -:  173:    0,                                        /* tp_weaklistoffset */
+        -:  174:    NULL,                                     /* tp_iter */
+        -:  175:    NULL,                                     /* tp_iternext */
+        -:  176:    NULL,                                     /* tp_methods */
+        -:  177:    s_SqlType_members,                        /* tp_members */
+        -:  178:    NULL,                                     /* tp_getset */
+        -:  179:    NULL,                                     /* tp_base */
+        -:  180:    NULL,                                     /* tp_dict */
+        -:  181:    NULL,                                     /* tp_descr_get */
+        -:  182:    NULL,                                     /* tp_descr_set */
+        -:  183:    0,                                        /* tp_dictoffset */
+        -:  184:    NULL,                                     /* tp_init */
+        -:  185:    NULL,                                     /* tp_alloc */
+        -:  186:    PyType_GenericNew,                        /* tp_new */
+        -:  187:    NULL,                                     /* tp_free */
+        -:  188:    NULL,                                     /* tp_is_gc */
+        -:  189:    NULL,                                     /* tp_bases */
+        -:  190:    NULL,                                     /* tp_mro */
+        -:  191:    NULL,                                     /* tp_cache */
+        -:  192:    NULL,                                     /* tp_subclasses */
+        -:  193:    NULL,                                     /* tp_weaklist */
+        -:  194:    NULL,                                     /* tp_del */
+        -:  195:    0,                                        /* tp_version_tag */
+        -:  196:#if PY_VERSION_HEX >= 0x03040000
+        -:  197:    NULL,                                     /* tp_finalize */
+        -:  198:#endif /* if PY_VERSION_HEX >= 0x03040000 */
+        -:  199:#if PY_VERSION_HEX >= 0x03080000
+        -:  200:    NULL,                                     /* tp_vectorcall */
+        -:  201:#  if PY_VERSION_HEX < 0x03090000
+        -:  202:    NULL,                                     /* tp_print */
+        -:  203:#  endif /* if PY_VERSION_HEX < 0x03090000 */
+        -:  204:#endif /* if PY_VERSION_HEX >= 0x03080000 */
+        -:  205:};
+        -:  206:#pragma GCC diagnostic pop
+        -:  207:
+function SqlType_Check called 0 returned 0% blocks executed 0%
+    #####:  208:int SqlType_Check(PyObject* o)
+        -:  209:{
+    #####:  210:    return PyObject_TypeCheck(o, &SqlTypeType);
+branch  0 never executed
+branch  1 never executed
+        -:  211:}
+        -:  212:
+        -:  213:#define SqlType_HEAD \
+        -:  214:    struct SqlType type
+        -:  215:
+        -:  216:#if PY_VERSION_HEX >= 0x03040000
+        -:  217:#  define _TP_FINALIZE NULL,
+        -:  218:#else
+        -:  219:#  define _TP_FINALIZE /* NULL */
+        -:  220:#endif
+        -:  221:
+        -:  222:#if PY_VERSION_HEX >= 0x03080000
+        -:  223:#  define _TP_VECTORCALL_OFFSET 0 /* tp_vectorcall_offset */
+        -:  224:#  define _TP_VECTORCALL NULL,
+        -:  225:#  if PY_VERSION_HEX < 0x03090000
+        -:  226:#    define _TP_PRINT NULL,
+        -:  227:#  else /* if PY_VERSION_HEX < 0x03090000 */
+        -:  228:#    define _TP_PRINT /* NULL */
+        -:  229:#  endif /* else if PY_VERSION_HEX < 0x03090000 */
+        -:  230:#else
+        -:  231:#  define _TP_VECTORCALL_OFFSET NULL
+        -:  232:#  define _TP_VECTORCALL /* NULL */
+        -:  233:#  define _TP_PRINT /* NULL */
+        -:  234:#endif /* if PY_VERSION_HEX >= 0x03080000 */
+        -:  235:
+        -:  236:#define SQL_TYPE_DEF(_type, _doc) \
+        -:  237:    PyTypeObject Sql ## _type ## Type; /* forward decl. */ \
+        -:  238:    PyObject* Sql ## _type ## _create(PyObject* self, PyObject* args, PyObject* kwargs) \
+        -:  239:    { \
+        -:  240:        struct Sql ## _type * sqltype = PyObject_New(struct Sql ## _type, &Sql ## _type ## Type); \
+        -:  241:        if (NULL != sqltype) \
+        -:  242:        { \
+        -:  243:            if (0 != (Sql ## _type ## Type).tp_init((PyObject*)sqltype, args, kwargs)) \
+        -:  244:            { \
+        -:  245:                Py_DECREF(sqltype); \
+        -:  246:                sqltype = NULL; \
+        -:  247:            } \
+        -:  248:        } \
+        -:  249:        else \
+        -:  250:        { \
+        -:  251:            PyErr_NoMemory(); \
+        -:  252:        } \
+        -:  253:        return (PyObject*)sqltype; \
+        -:  254:        UNUSED(self); \
+        -:  255:    } \
+        -:  256:    PyTypeObject* Sql ## _type ## Type_init(void) \
+        -:  257:    { \
+        -:  258:        return (PyType_Ready(&(Sql ## _type ## Type)) == 0) ? &(Sql ## _type ## Type) : NULL; \
+        -:  259:    } \
+        -:  260:    PyTypeObject Sql ## _type ## Type = { \
+        -:  261:        PyVarObject_HEAD_INIT(NULL, 0) \
+        -:  262:        "k_ctds.Sql" STRINGIFY(_type),                /* tp_name */ \
+        -:  263:        sizeof(struct Sql ## _type),                /* tp_basicsize */ \
+        -:  264:        0,                                          /* tp_itemsize */ \
+        -:  265:        NULL,                                       /* tp_dealloc */ \
+        -:  266:        _TP_VECTORCALL_OFFSET,                      /* tp_vectorcall_offset */ \
+        -:  267:        NULL,                                       /* tp_getattr */ \
+        -:  268:        NULL,                                       /* tp_setattr */ \
+        -:  269:        NULL,                                       /* tp_reserved */ \
+        -:  270:        NULL,                                       /* tp_repr */ \
+        -:  271:        NULL,                                       /* tp_as_number */ \
+        -:  272:        NULL,                                       /* tp_as_sequence */ \
+        -:  273:        NULL,                                       /* tp_as_mapping */ \
+        -:  274:        NULL,                                       /* tp_hash */ \
+        -:  275:        NULL,                                       /* tp_call */ \
+        -:  276:        NULL,                                       /* tp_str */ \
+        -:  277:        NULL,                                       /* tp_getattro */ \
+        -:  278:        NULL,                                       /* tp_setattro */ \
+        -:  279:        NULL,                                       /* tp_as_buffer */ \
+        -:  280:        Py_TPFLAGS_DEFAULT,                         /* tp_flags */ \
+        -:  281:        (_doc),                                     /* tp_doc */ \
+        -:  282:        NULL,                                       /* tp_traverse */ \
+        -:  283:        NULL,                                       /* tp_clear */ \
+        -:  284:        NULL,                                       /* tp_richcompare */ \
+        -:  285:        0,                                          /* tp_weaklistoffset */ \
+        -:  286:        NULL,                                       /* tp_iter */ \
+        -:  287:        NULL,                                       /* tp_iternext */ \
+        -:  288:        NULL,                                       /* tp_methods */ \
+        -:  289:        NULL,                                       /* tp_members */ \
+        -:  290:        NULL,                                       /* tp_getset */ \
+        -:  291:        &SqlTypeType,                               /* tp_base */ \
+        -:  292:        NULL,                                       /* tp_dict */ \
+        -:  293:        NULL,                                       /* tp_descr_get */ \
+        -:  294:        NULL,                                       /* tp_descr_set */ \
+        -:  295:        0,                                          /* tp_dictoffset */ \
+        -:  296:        Sql ## _type ## _init,                      /* tp_init */ \
+        -:  297:        NULL,                                       /* tp_alloc */ \
+        -:  298:        NULL,                                       /* tp_new */ \
+        -:  299:        NULL,                                       /* tp_free */ \
+        -:  300:        NULL,                                       /* tp_is_gc */ \
+        -:  301:        NULL,                                       /* tp_bases */ \
+        -:  302:        NULL,                                       /* tp_mro */ \
+        -:  303:        NULL,                                       /* tp_cache */ \
+        -:  304:        NULL,                                       /* tp_subclasses */ \
+        -:  305:        NULL,                                       /* tp_weaklist */ \
+        -:  306:        NULL,                                       /* tp_del */ \
+        -:  307:        0,                                          /* tp_version_tag */ \
+        -:  308:        _TP_FINALIZE                                /* tp_finalize */ \
+        -:  309:        _TP_VECTORCALL                              /* tp_vectorcall */ \
+        -:  310:        _TP_PRINT                                   /* tp_print */ \
+        -:  311:    }
+        -:  312:
+        -:  313:
+function SqlIntN_parse called 0 returned 0% blocks executed 0%
+    #####:  314:static int SqlIntN_parse(PyObject* args, const char* format, ...)
+        -:  315:{
+    #####:  316:    va_list vargs;
+    #####:  317:    int error;
+        -:  318:
+    #####:  319:    if ((PyTuple_GET_SIZE(args) == 1) &&
+branch  0 never executed
+branch  1 never executed
+    #####:  320:        (PyTuple_GET_ITEM(args, 0) == Py_None))
+branch  0 never executed
+branch  1 never executed
+        -:  321:    {
+        -:  322:        return 1;
+        -:  323:    }
+        -:  324:
+    #####:  325:    va_start(vargs, format);
+    #####:  326:    error = PyArg_VaParse(args, format, vargs);
+call    0 never executed
+    #####:  327:    va_end(vargs);
+        -:  328:
+    #####:  329:    return error;
+        -:  330:}
+        -:  331:
+        -:  332:struct SqlTinyInt
+        -:  333:{
+        -:  334:    SqlType_HEAD;
+        -:  335:    uint8_t uint8;
+        -:  336:};
+        -:  337:
+        -:  338:static const char s_SqlTinyInt_doc[] =
+        -:  339:    "SqlTinyInt(value)\n"
+        -:  340:    "\n"
+        -:  341:    "SQL TINYINT type wrapper.\n"
+        -:  342:    "\n"
+        -:  343:    ":param int value: The integer value to wrap or :py:data:`None`.\n";
+        -:  344:
+function SqlTinyInt_init called 0 returned 0% blocks executed 0%
+    #####:  345:static int SqlTinyInt_init(PyObject* self, PyObject* args, PyObject* kwargs)
+        -:  346:{
+    #####:  347:    struct SqlTinyInt* tinyint = (struct SqlTinyInt*)self;
+    #####:  348:    if (!SqlIntN_parse(args, "b", &tinyint->uint8))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  349:    {
+        -:  350:        return -1;
+        -:  351:    }
+        -:  352:
+    #####:  353:    SqlType_init_fixed(tinyint, PyTuple_GET_ITEM(args, 0), TDSTINYINT, tinyint->uint8);
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+    #####:  354:    return 0;
+    #####:  355:    UNUSED(kwargs);
+        -:  356:}
+        -:  357:
+        -:  358:#pragma GCC diagnostic push
+        -:  359:#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+    #####:  360:SQL_TYPE_DEF(TinyInt, s_SqlTinyInt_doc);
+------------------
+SqlTinyIntType_init:
+function SqlTinyIntType_init called 0 returned 0% blocks executed 0%
+    #####:  360:SQL_TYPE_DEF(TinyInt, s_SqlTinyInt_doc);
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+------------------
+SqlTinyInt_create:
+function SqlTinyInt_create called 0 returned 0% blocks executed 0%
+    #####:  360:SQL_TYPE_DEF(TinyInt, s_SqlTinyInt_doc);
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+branch  6 never executed
+branch  7 never executed
+call    8 never executed
+------------------
+        -:  361:#pragma GCC diagnostic pop
+        -:  362:
+        -:  363:struct SqlSmallInt
+        -:  364:{
+        -:  365:    SqlType_HEAD;
+        -:  366:    int16_t int16;
+        -:  367:};
+        -:  368:
+        -:  369:
+        -:  370:static const char s_SqlSmallInt_doc[] =
+        -:  371:    "SqlSmallInt(value)\n"
+        -:  372:    "\n"
+        -:  373:    "SQL SMALLINT type wrapper.\n"
+        -:  374:    "\n"
+        -:  375:    ":param int value: The integer value to wrap or :py:data:`None`.\n";
+        -:  376:
+function SqlSmallInt_init called 0 returned 0% blocks executed 0%
+    #####:  377:static int SqlSmallInt_init(PyObject* self, PyObject* args, PyObject* kwargs)
+        -:  378:{
+    #####:  379:    struct SqlSmallInt* smallint = (struct SqlSmallInt*)self;
+    #####:  380:    if (!SqlIntN_parse(args, "h", &smallint->int16))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  381:    {
+        -:  382:        return -1;
+        -:  383:    }
+        -:  384:
+    #####:  385:    SqlType_init_fixed(smallint, PyTuple_GET_ITEM(args, 0), TDSSMALLINT, smallint->int16);
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+branch  5 never executed
+    #####:  386:    return 0;
+    #####:  387:    UNUSED(kwargs);
+        -:  388:}
+        -:  389:
+        -:  390:#pragma GCC diagnostic push
+        -:  391:#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+    #####:  392:SQL_TYPE_DEF(SmallInt, s_SqlSmallInt_doc);
+------------------
+SqlSmallIntType_init:
+function SqlSmallIntType_init called 0 returned 0% blocks executed 0%
+    #####:  392:SQL_TYPE_DEF(SmallInt, s_SqlSmallInt_doc);
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+------------------
+SqlSmallInt_create:
+function SqlSmallInt_create called 0 returned 0% blocks executed 0%
+    #####:  392:SQL_TYPE_DEF(SmallInt, s_SqlSmallInt_doc);
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+branch  6 never executed
+branch  7 never executed
+call    8 never executed
+------------------
+        -:  393:#pragma GCC diagnostic pop
+        -:  394:
+        -:  395:struct SqlInt
+        -:  396:{
+        -:  397:    SqlType_HEAD;
+        -:  398:    int32_t int32;
+        -:  399:};
+        -:  400:
+        -:  401:static const char s_SqlInt_doc[] =
+        -:  402:    "SqlInt(value)\n"
+        -:  403:    "\n"
+        -:  404:    "SQL INT type wrapper.\n"
+        -:  405:    "\n"
+        -:  406:    ":param int value: The integer value to wrap or :py:data:`None`.\n";
+        -:  407:
+function SqlInt_init called 0 returned 0% blocks executed 0%
+    #####:  408:static int SqlInt_init(PyObject* self, PyObject* args, PyObject* kwargs)
+        -:  409:{
+    #####:  410:    struct SqlInt* int_ = (struct SqlInt*)self;
+    #####:  411:    if (!SqlIntN_parse(args, "i", &int_->int32))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  412:    {
+        -:  413:        return -1;
+        -:  414:    }
+        -:  415:
+    #####:  416:    SqlType_init_fixed(int_, PyTuple_GET_ITEM(args, 0), TDSINT, int_->int32);
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+branch  5 never executed
+    #####:  417:    return 0;
+    #####:  418:    UNUSED(kwargs);
+        -:  419:}
+        -:  420:
+        -:  421:#pragma GCC diagnostic push
+        -:  422:#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+    #####:  423:SQL_TYPE_DEF(Int, s_SqlInt_doc);
+------------------
+SqlIntType_init:
+function SqlIntType_init called 0 returned 0% blocks executed 0%
+    #####:  423:SQL_TYPE_DEF(Int, s_SqlInt_doc);
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+------------------
+SqlInt_create:
+function SqlInt_create called 0 returned 0% blocks executed 0%
+    #####:  423:SQL_TYPE_DEF(Int, s_SqlInt_doc);
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+branch  6 never executed
+branch  7 never executed
+call    8 never executed
+------------------
+        -:  424:#pragma GCC diagnostic pop
+        -:  425:
+        -:  426:struct SqlBigInt
+        -:  427:{
+        -:  428:    SqlType_HEAD;
+        -:  429:    int64_t int64;
+        -:  430:};
+        -:  431:
+        -:  432:static const char s_SqlBigInt_doc[] =
+        -:  433:    "SqlBigInt(value)\n"
+        -:  434:    "\n"
+        -:  435:    "SQL BIGINT type wrapper.\n"
+        -:  436:    "\n"
+        -:  437:    ":param int value: The integer value to wrap or :py:data:`None`.\n";
+        -:  438:
+function SqlBigInt_init called 0 returned 0% blocks executed 0%
+    #####:  439:static int SqlBigInt_init(PyObject* self, PyObject* args, PyObject* kwargs)
+        -:  440:{
+    #####:  441:    struct SqlBigInt* bigint = (struct SqlBigInt*)self;
+    #####:  442:    if (!SqlIntN_parse(args, "L", &bigint->int64))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  443:    {
+        -:  444:        return -1;
+        -:  445:    }
+        -:  446:
+    #####:  447:    SqlType_init_fixed(bigint, PyTuple_GET_ITEM(args, 0), TDSBIGINT, bigint->int64);
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+branch  5 never executed
+    #####:  448:    return 0;
+    #####:  449:    UNUSED(kwargs);
+        -:  450:}
+        -:  451:
+        -:  452:#pragma GCC diagnostic push
+        -:  453:#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+    #####:  454:SQL_TYPE_DEF(BigInt, s_SqlBigInt_doc);
+------------------
+SqlBigIntType_init:
+function SqlBigIntType_init called 0 returned 0% blocks executed 0%
+    #####:  454:SQL_TYPE_DEF(BigInt, s_SqlBigInt_doc);
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+------------------
+SqlBigInt_create:
+function SqlBigInt_create called 0 returned 0% blocks executed 0%
+    #####:  454:SQL_TYPE_DEF(BigInt, s_SqlBigInt_doc);
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+branch  6 never executed
+branch  7 never executed
+call    8 never executed
+------------------
+        -:  455:#pragma GCC diagnostic pop
+        -:  456:
+        -:  457:struct SqlBinary
+        -:  458:{
+        -:  459:    SqlType_HEAD;
+        -:  460:};
+        -:  461:
+        -:  462:static const char s_SqlBinary_doc[] =
+        -:  463:    "SqlBinary(value)\n"
+        -:  464:    "\n"
+        -:  465:    "SQL BINARY type wrapper.\n"
+        -:  466:    "\n"
+        -:  467:    ":param object value: The value to wrap or :py:data:`None`.\n";
+        -:  468:
+function SqlBinary_init called 0 returned 0% blocks executed 0%
+    #####:  469:static int SqlBinary_init(PyObject* self, PyObject* args, PyObject* kwargs)
+        -:  470:{
+    #####:  471:    const char* bytes = NULL;
+    #####:  472:    Py_ssize_t nbytes;
+    #####:  473:    if (!PyArg_ParseTuple(args, "z#", &bytes, &nbytes))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  474:    {
+        -:  475:        return -1;
+        -:  476:    }
+        -:  477:
+    #####:  478:    SqlType_init_variable(self,
+branch  0 never executed
+branch  1 never executed
+        -:  479:                          PyTuple_GET_ITEM(args, 0),
+        -:  480:                          TDSBINARY,
+        -:  481:                          (int)MAX(1, nbytes), /* BINARY type size must be >= 1 */
+        -:  482:                          (void*)bytes,
+        -:  483:                          (size_t)nbytes,
+        -:  484:                          NULL);
+    #####:  485:    return 0;
+    #####:  486:    UNUSED(kwargs);
+        -:  487:}
+        -:  488:
+        -:  489:#pragma GCC diagnostic push
+        -:  490:#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+    #####:  491:SQL_TYPE_DEF(Binary, s_SqlBinary_doc);
+------------------
+SqlBinaryType_init:
+function SqlBinaryType_init called 0 returned 0% blocks executed 0%
+    #####:  491:SQL_TYPE_DEF(Binary, s_SqlBinary_doc);
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+------------------
+SqlBinary_create:
+function SqlBinary_create called 0 returned 0% blocks executed 0%
+    #####:  491:SQL_TYPE_DEF(Binary, s_SqlBinary_doc);
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+branch  6 never executed
+branch  7 never executed
+call    8 never executed
+------------------
+        -:  492:#pragma GCC diagnostic pop
+        -:  493:
+        -:  494:struct SqlVarBinary
+        -:  495:{
+        -:  496:    SqlType_HEAD;
+        -:  497:};
+        -:  498:
+        -:  499:static const char s_SqlVarBinary_doc[] =
+        -:  500:    "SqlVarBinary(value, size=None)\n"
+        -:  501:    "\n"
+        -:  502:    "SQL VARBINARY type wrapper.\n"
+        -:  503:    "\n"
+        -:  504:    ":param object value: The value to wrap or :py:data:`None`.\n"
+        -:  505:    ":param int size: An optional size override. This value will be used for\n"
+        -:  506:    "    the output parameter buffer size. It can also be used to truncate\n"
+        -:  507:    "    the input parameter.\n";
+        -:  508:
+function SqlVarBinary_init called 0 returned 0% blocks executed 0%
+    #####:  509:static int SqlVarBinary_init(PyObject* self, PyObject* args, PyObject* kwargs)
+        -:  510:{
+    #####:  511:    const char* bytes = NULL;
+    #####:  512:    Py_ssize_t nbytes;
+    #####:  513:    Py_ssize_t size = (Py_ssize_t)-1;
+    #####:  514:    static char* s_kwlist[] =
+        -:  515:    {
+        -:  516:        "value",
+        -:  517:        "size",
+        -:  518:        NULL
+        -:  519:    };
+    #####:  520:    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "z#|n", s_kwlist, &bytes, &nbytes, &size))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  521:    {
+        -:  522:        return -1;
+        -:  523:    }
+        -:  524:
+    #####:  525:    SqlType_init_variable(self,
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+branch  5 never executed
+branch  6 never executed
+branch  7 never executed
+        -:  526:                          PyTuple_GET_ITEM(args, 0),
+        -:  527:                          TDSVARBINARY,
+        -:  528:                          /*
+        -:  529:                              If the size is not explicitly specified, infer it from the value.
+        -:  530:                              The VARBINARY type size must be >= 1.
+        -:  531:                          */
+        -:  532:                          (int)MAX(1, (((Py_ssize_t)-1 == size) ? nbytes : size)),
+        -:  533:                          (void*)bytes,
+        -:  534:                          (size_t)nbytes,
+        -:  535:                          NULL);
+    #####:  536:    return 0;
+    #####:  537:    UNUSED(kwargs);
+        -:  538:}
+        -:  539:
+        -:  540:#pragma GCC diagnostic push
+        -:  541:#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+    #####:  542:SQL_TYPE_DEF(VarBinary, s_SqlVarBinary_doc);
+------------------
+SqlVarBinaryType_init:
+function SqlVarBinaryType_init called 0 returned 0% blocks executed 0%
+    #####:  542:SQL_TYPE_DEF(VarBinary, s_SqlVarBinary_doc);
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+------------------
+SqlVarBinary_create:
+function SqlVarBinary_create called 0 returned 0% blocks executed 0%
+    #####:  542:SQL_TYPE_DEF(VarBinary, s_SqlVarBinary_doc);
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+branch  6 never executed
+branch  7 never executed
+call    8 never executed
+------------------
+        -:  543:#pragma GCC diagnostic pop
+        -:  544:
+        -:  545:struct SqlChar
+        -:  546:{
+        -:  547:    SqlType_HEAD;
+        -:  548:};
+        -:  549:
+        -:  550:static const char s_SqlChar_doc[] =
+        -:  551:    "SqlChar(value)\n"
+        -:  552:    "\n"
+        -:  553:    "SQL CHAR type wrapper. The value's UTF-8-encoded length must be <= " STRINGIFY(TDS_CHAR_MAX_SIZE) ".\n"
+        -:  554:    "\n"
+        -:  555:    ":param object value: The value to wrap or :py:data:`None`.\n";
+        -:  556:
+function SqlChar_init called 0 returned 0% blocks executed 0%
+    #####:  557:static int SqlChar_init(PyObject* self, PyObject* args, PyObject* kwargs)
+        -:  558:{
+    #####:  559:    char* utf8bytes = NULL;
+    #####:  560:    Py_ssize_t nutf8bytes = 0;
+    #####:  561:    if (!PyArg_ParseTuple(args, "et#", "utf-8", &utf8bytes, &nutf8bytes))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  562:    {
+    #####:  563:        PyObject* none;
+        -:  564:
+    #####:  565:        PyErr_Clear();
+call    0 never executed
+        -:  566:
+    #####:  567:        if (!PyArg_ParseTuple(args, "O", &none))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  568:        {
+    #####:  569:            return -1;
+        -:  570:        }
+    #####:  571:        if (Py_None != none)
+branch  0 never executed
+branch  1 never executed
+        -:  572:        {
+    #####:  573:            PyErr_SetObject(PyExc_TypeError, none);
+    #####:  574:            return -1;
+call    0 never executed
+        -:  575:        }
+        -:  576:    }
+        -:  577:
+    #####:  578:    if (nutf8bytes > TDS_CHAR_MAX_SIZE)
+branch  0 never executed
+branch  1 never executed
+        -:  579:    {
+    #####:  580:        PyMem_Free((void*)utf8bytes);
+call    0 never executed
+    #####:  581:        PyErr_SetObject(PyExc_ValueError, PyTuple_GET_ITEM(args, 0));
+    #####:  582:        return -1;
+call    0 never executed
+        -:  583:    }
+        -:  584:
+    #####:  585:    SqlType_init_variable(self,
+branch  0 never executed
+branch  1 never executed
+        -:  586:                          PyTuple_GET_ITEM(args, 0),
+        -:  587:                          TDSCHAR,
+        -:  588:                          (int)(int)MAX(1, nutf8bytes), /* CHAR type size must be >= 1 */
+        -:  589:                          (void*)utf8bytes,
+        -:  590:                          (size_t)nutf8bytes,
+        -:  591:                          PyMem_Free);
+        -:  592:
+    #####:  593:    return 0;
+    #####:  594:    UNUSED(kwargs);
+        -:  595:}
+        -:  596:
+        -:  597:#pragma GCC diagnostic push
+        -:  598:#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+    #####:  599:SQL_TYPE_DEF(Char, s_SqlChar_doc);
+------------------
+SqlCharType_init:
+function SqlCharType_init called 0 returned 0% blocks executed 0%
+    #####:  599:SQL_TYPE_DEF(Char, s_SqlChar_doc);
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+------------------
+SqlChar_create:
+function SqlChar_create called 0 returned 0% blocks executed 0%
+    #####:  599:SQL_TYPE_DEF(Char, s_SqlChar_doc);
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+branch  6 never executed
+branch  7 never executed
+call    8 never executed
+------------------
+        -:  600:#pragma GCC diagnostic pop
+        -:  601:
+        -:  602:struct SqlVarChar
+        -:  603:{
+        -:  604:    SqlType_HEAD;
+        -:  605:};
+        -:  606:
+        -:  607:static const char s_SqlVarChar_doc[] =
+        -:  608:    "SqlVarChar(value, size=None)\n"
+        -:  609:    "\n"
+        -:  610:    "SQL VARCHAR type wrapper.\n"
+        -:  611:    "\n"
+        -:  612:    ".. note:: Byte strings are passed through unchanged to the database.\n"
+        -:  613:    "\n"
+        -:  614:    ":param object value: The value to wrap or :py:data:`None`.\n"
+        -:  615:    ":param int size: An optional size override. This value will be used for\n"
+        -:  616:    "    the output parameter buffer size. It can also be used to truncate\n"
+        -:  617:    "    the input parameter.\n";
+        -:  618:
+function SqlVarChar_init called 0 returned 0% blocks executed 0%
+    #####:  619:static int SqlVarChar_init(PyObject* self, PyObject* args, PyObject* kwargs)
+        -:  620:{
+    #####:  621:    char* utf8bytes = NULL;
+    #####:  622:    Py_ssize_t nutf8bytes = 0;
+    #####:  623:    Py_ssize_t size = (Py_ssize_t)-1;
+    #####:  624:    static char* s_kwlist[] =
+        -:  625:    {
+        -:  626:        "value",
+        -:  627:        "size",
+        -:  628:        NULL
+        -:  629:    };
+    #####:  630:    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "et#|n", s_kwlist, "utf-8", &utf8bytes, &nutf8bytes, &size))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  631:    {
+    #####:  632:        PyObject* none;
+        -:  633:
+    #####:  634:        PyErr_Clear();
+call    0 never executed
+        -:  635:
+    #####:  636:        if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|n", s_kwlist, &none, &size))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  637:        {
+    #####:  638:            return -1;
+        -:  639:        }
+    #####:  640:        if (Py_None != none)
+branch  0 never executed
+branch  1 never executed
+        -:  641:        {
+    #####:  642:            PyErr_SetObject(PyExc_TypeError, none);
+    #####:  643:            return -1;
+call    0 never executed
+        -:  644:        }
+        -:  645:    }
+        -:  646:
+    #####:  647:    SqlType_init_variable(self,
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+branch  5 never executed
+branch  6 never executed
+branch  7 never executed
+branch  8 never executed
+branch  9 never executed
+        -:  648:                          PyTuple_GET_ITEM(args, 0),
+        -:  649:                          (nutf8bytes > TDS_CHAR_MAX_SIZE) ? TDSTEXT : TDSVARCHAR,
+        -:  650:                          /*
+        -:  651:                              If the size is not explicitly specified, infer it from the value.
+        -:  652:                              The VARCHAR type size must be >= 1.
+        -:  653:                          */
+        -:  654:                          (int)MAX(1, (((Py_ssize_t)-1 == size) ? nutf8bytes : size)),
+        -:  655:                          (void*)utf8bytes,
+        -:  656:                          (size_t)nutf8bytes,
+        -:  657:                          PyMem_Free);
+    #####:  658:    return 0;
+        -:  659:}
+        -:  660:
+        -:  661:#pragma GCC diagnostic push
+        -:  662:#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+    #####:  663:SQL_TYPE_DEF(VarChar, s_SqlVarChar_doc);
+------------------
+SqlVarCharType_init:
+function SqlVarCharType_init called 0 returned 0% blocks executed 0%
+    #####:  663:SQL_TYPE_DEF(VarChar, s_SqlVarChar_doc);
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+------------------
+SqlVarChar_create:
+function SqlVarChar_create called 0 returned 0% blocks executed 0%
+    #####:  663:SQL_TYPE_DEF(VarChar, s_SqlVarChar_doc);
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+branch  6 never executed
+branch  7 never executed
+call    8 never executed
+------------------
+        -:  664:#pragma GCC diagnostic pop
+        -:  665:
+        -:  666:struct SqlNVarChar
+        -:  667:{
+        -:  668:    SqlType_HEAD;
+        -:  669:};
+        -:  670:
+        -:  671:static const char s_SqlNVarChar_doc[] =
+        -:  672:    "SqlNVarChar(value, size=None)\n"
+        -:  673:    "\n"
+        -:  674:    "SQL NVARCHAR type wrapper.\n"
+        -:  675:    "\n"
+        -:  676:    ".. versionadded:: 1.1\n"
+        -:  677:    "\n"
+        -:  678:    ":param object value: The value to wrap or :py:data:`None`.\n"
+        -:  679:    ":param int size: An optional size override. This value will be used for\n"
+        -:  680:    "    the output parameter buffer size. It can also be used to truncate\n"
+        -:  681:    "    the input parameter.\n";
+        -:  682:
+function SqlNVarChar_init called 0 returned 0% blocks executed 0%
+    #####:  683:static int SqlNVarChar_init(PyObject* self, PyObject* args, PyObject* kwargs)
+        -:  684:{
+    #####:  685:    const char* utf8bytes = NULL;
+    #####:  686:    size_t nutf8bytes = 0;
+    #####:  687:    PyObject* encoded;
+    #####:  688:    enum TdsType tdstype;
+        -:  689:
+    #####:  690:    PyObject* unicode = NULL;
+    #####:  691:    size_t nchars = 0;
+    #####:  692:    Py_ssize_t size = (Py_ssize_t)-1;
+    #####:  693:    static char* s_kwlist[] =
+        -:  694:    {
+        -:  695:        "value",
+        -:  696:        "size",
+        -:  697:        NULL
+        -:  698:    };
+        -:  699:    /* Z# would be ideal here, but is not supported prior to Python 3. */
+    #####:  700:    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|n", s_kwlist, &unicode, &size))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  701:    {
+        -:  702:        return -1;
+        -:  703:    }
+        -:  704:
+    #####:  705:    if (Py_None == unicode)
+branch  0 never executed
+branch  1 never executed
+        -:  706:    {
+        -:  707:        /* `None` passed as argument. */
+    #####:  708:        encoded = PyTuple_GET_ITEM(args, 0);
+    #####:  709:        Py_INCREF(encoded);
+branch  0 never executed
+branch  1 never executed
+    #####:  710:        utf8bytes = NULL;
+        -:  711:    }
+    #####:  712:    else if (PyUnicode_Check(unicode))
+branch  0 never executed
+branch  1 never executed
+        -:  713:    {
+    #####:  714:        encoded = encode_for_dblib(unicode, &utf8bytes, &nutf8bytes, &nchars);
+call    0 never executed
+    #####:  715:        if (!encoded)
+branch  0 never executed
+branch  1 never executed
+        -:  716:        {
+        -:  717:            return -1;
+        -:  718:        }
+        -:  719:    }
+        -:  720:    else
+        -:  721:    {
+    #####:  722:        PyErr_SetObject(PyExc_TypeError, unicode);
+    #####:  723:        return -1;
+call    0 never executed
+        -:  724:    }
+        -:  725:    /*
+        -:  726:        FreeTDS doesn't have good support for NCHAR types prior
+        -:  727:        to 0.95. Fallback to VARCHAR with somewhat crippled
+        -:  728:        functionality.
+        -:  729:    */
+        -:  730:#if defined(CTDS_USE_NCHARS)
+    #####:  731:    tdstype = (nchars > TDS_NCHAR_MAX_SIZE) ? TDSNTEXT : TDSNVARCHAR;
+branch  0 never executed
+branch  1 never executed
+        -:  732:#else /* if defined(CTDS_USE_NCHARS) */
+        -:  733:    tdstype = (nchars > TDS_CHAR_MAX_SIZE) ? TDSTEXT : TDSVARCHAR;
+        -:  734:#endif /* else if defined(CTDS_USE_NCHARS) */
+        -:  735:
+    #####:  736:    SqlType_init_variable(self,
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+branch  5 never executed
+branch  6 never executed
+branch  7 never executed
+        -:  737:                          encoded,
+        -:  738:                          tdstype,
+        -:  739:                          /*
+        -:  740:                              If the size is not explicitly specified, infer it from the value.
+        -:  741:                              The NVARCHAR type size must be >= 1.
+        -:  742:                          */
+        -:  743:                          (int)MAX(1, (((Py_ssize_t)-1 == size) ? nchars : (size_t)size)),
+        -:  744:                          (void*)utf8bytes,
+        -:  745:                          nutf8bytes,
+        -:  746:                          NULL);
+        -:  747:
+    #####:  748:    Py_DECREF(encoded);
+branch  0 never executed
+branch  1 never executed
+        -:  749:
+        -:  750:    return 0;
+        -:  751:}
+        -:  752:
+        -:  753:#pragma GCC diagnostic push
+        -:  754:#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+    #####:  755:SQL_TYPE_DEF(NVarChar, s_SqlNVarChar_doc);
+------------------
+SqlNVarCharType_init:
+function SqlNVarCharType_init called 0 returned 0% blocks executed 0%
+    #####:  755:SQL_TYPE_DEF(NVarChar, s_SqlNVarChar_doc);
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+------------------
+SqlNVarChar_create:
+function SqlNVarChar_create called 0 returned 0% blocks executed 0%
+    #####:  755:SQL_TYPE_DEF(NVarChar, s_SqlNVarChar_doc);
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+branch  6 never executed
+branch  7 never executed
+call    8 never executed
+------------------
+        -:  756:#pragma GCC diagnostic pop
+        -:  757:
+        -:  758:struct SqlDate
+        -:  759:{
+        -:  760:    SqlType_HEAD;
+        -:  761:#if defined(CTDS_HAVE_TDS73_SUPPORT)
+        -:  762:    DBDATETIMEALL dbdatetime;
+        -:  763:#else /* if defined(CTDS_HAVE_TDS73_SUPPORT) */
+        -:  764:    DBDATETIME dbdatetime;
+        -:  765:#endif /* else if defined(CTDS_HAVE_TDS73_SUPPORT) */
+        -:  766:};
+        -:  767:
+        -:  768:static const char s_SqlDate_doc[] =
+        -:  769:    "SqlDate(value)\n"
+        -:  770:    "\n"
+        -:  771:    "SQL DATE type wrapper.\n"
+        -:  772:    "\n"
+        -:  773:    ":param datetime.date value: The date value to wrap or :py:data:`None`.\n";
+        -:  774:
+function SqlDate_init called 0 returned 0% blocks executed 0%
+    #####:  775:static int SqlDate_init(PyObject* self, PyObject* args, PyObject* kwargs)
+        -:  776:{
+    #####:  777:    struct SqlDate* date = (struct SqlDate*)self;
+        -:  778:
+    #####:  779:    PyObject* value;
+    #####:  780:    if (!PyArg_ParseTuple(args, "O", &value))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  781:    {
+        -:  782:        return -1;
+        -:  783:    }
+        -:  784:
+    #####:  785:    if (!PyDate_Check_(value) && (Py_None != value))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+        -:  786:    {
+    #####:  787:        PyErr_SetObject(PyExc_TypeError, value);
+    #####:  788:        return -1;
+call    0 never executed
+        -:  789:    }
+        -:  790:
+    #####:  791:    if (PyDate_Check_(value))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  792:    {
+    #####:  793:        enum TdsType unused = (enum TdsType)-1;
+    #####:  794:        DBINT result = datetime_to_sql(NULL,
+        -:  795:                                       value,
+        -:  796:                                       &unused,
+    #####:  797:                                       &date->dbdatetime,
+call    0 never executed
+        -:  798:                                       sizeof(date->dbdatetime));
+    #####:  799:        if (-1 == result)
+branch  0 never executed
+branch  1 never executed
+        -:  800:        {
+    #####:  801:            PyErr_SetObject(PyExc_ValueError, value);
+call    0 never executed
+    #####:  802:            return -1;
+        -:  803:        }
+        -:  804:    }
+        -:  805:
+    #####:  806:    SqlType_init_fixed(self,
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+branch  5 never executed
+        -:  807:                       value,
+        -:  808:                       TDSDATE,
+        -:  809:                       date->dbdatetime);
+        -:  810:
+    #####:  811:    return 0;
+    #####:  812:    UNUSED(kwargs);
+        -:  813:}
+        -:  814:
+        -:  815:#pragma GCC diagnostic push
+        -:  816:#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+    #####:  817:SQL_TYPE_DEF(Date, s_SqlDate_doc);
+------------------
+SqlDateType_init:
+function SqlDateType_init called 0 returned 0% blocks executed 0%
+    #####:  817:SQL_TYPE_DEF(Date, s_SqlDate_doc);
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+------------------
+SqlDate_create:
+function SqlDate_create called 0 returned 0% blocks executed 0%
+    #####:  817:SQL_TYPE_DEF(Date, s_SqlDate_doc);
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+branch  6 never executed
+branch  7 never executed
+call    8 never executed
+------------------
+        -:  818:#pragma GCC diagnostic pop 
+        -:  819:
+        -:  820:struct SqlDecimal
+        -:  821:{
+        -:  822:    SqlType_HEAD;
+        -:  823:    DBDECIMAL dbdecimal;
+        -:  824:};
+        -:  825:
+        -:  826:
+        -:  827:#define DECIMAL_DEFAULT_PRECISION 18
+        -:  828:#define DECIMAL_DEFAULT_SCALE 0
+        -:  829:
+        -:  830:static const char s_SqlDecimal_doc[] =
+        -:  831:    "SqlDecimal(value, precision=" STRINGIFY(DECIMAL_DEFAULT_PRECISION) ", scale=" STRINGIFY(DECIMAL_DEFAULT_SCALE) ")\n"
+        -:  832:    "\n"
+        -:  833:    "SQL DECIMAL type wrapper.\n"
+        -:  834:    "\n"
+        -:  835:    ":param object value: The value to wrap or :py:data:`None`.\n"
+        -:  836:    ":param int precision: The maximum number of total digits stored.\n"
+        -:  837:    "    This must be between 1 and 38.\n"
+        -:  838:    ":param int scale: The maximum number of digits stored to the right\n"
+        -:  839:    "    of the decimal point. 0 <= `scale` <= `precision`.\n";
+        -:  840:
+function SqlDecimal_init called 0 returned 0% blocks executed 0%
+    #####:  841:static int SqlDecimal_init(PyObject* self, PyObject* args, PyObject* kwargs)
+        -:  842:{
+    #####:  843:    struct SqlDecimal* decimal = (struct SqlDecimal*)self;
+        -:  844:
+    #####:  845:    DBINT size;
+    #####:  846:    PyObject* value;
+    #####:  847:    Py_ssize_t precision = DECIMAL_DEFAULT_PRECISION;
+    #####:  848:    Py_ssize_t scale = DECIMAL_DEFAULT_SCALE;
+    #####:  849:    static char* s_kwlist[] =
+        -:  850:    {
+        -:  851:        "value",
+        -:  852:        "precision",
+        -:  853:        "scale",
+        -:  854:        NULL
+        -:  855:    };
+    #####:  856:    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|nn", s_kwlist, &value, &precision, &scale))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  857:    {
+        -:  858:        return -1;
+        -:  859:    }
+    #####:  860:    if (!((1 <= precision) && (precision <= DECIMAL_MAX_PRECISION)))
+branch  0 never executed
+branch  1 never executed
+        -:  861:    {
+    #####:  862:        PyErr_Format(PyExc_ValueError, "invalid precision: %ld", precision);
+    #####:  863:        return -1;
+call    0 never executed
+        -:  864:    }
+    #####:  865:    if (!((0 <= scale) && (scale <= precision)))
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+        -:  866:    {
+    #####:  867:        PyErr_Format(PyExc_ValueError, "invalid scale: %ld", scale);
+    #####:  868:        return -1;
+call    0 never executed
+        -:  869:    }
+        -:  870:
+    #####:  871:    if (Py_None != value)
+branch  0 never executed
+branch  1 never executed
+        -:  872:    {
+    #####:  873:        PyObject* ostr = PyObject_Str(value);
+call    0 never executed
+    #####:  874:        if (ostr)
+branch  0 never executed
+branch  1 never executed
+        -:  875:        {
+    #####:  876:            DBTYPEINFO dbtypeinfo;
+    #####:  877:            Py_ssize_t nutf8;
+        -:  878:#if PY_MAJOR_VERSION < 3
+        -:  879:            const char* str = PyString_AS_STRING(ostr);
+        -:  880:            nutf8 = PyString_GET_SIZE(ostr);
+        -:  881:#else /* if PY_MAJOR_VERSION < 3 */
+    #####:  882:            const char* str = PyUnicode_AsUTF8AndSize(ostr, &nutf8);
+call    0 never executed
+        -:  883:#endif /* else if PY_MAJOR_VERSION < 3 */
+        -:  884:
+    #####:  885:            dbtypeinfo.precision = (DBINT)precision;
+    #####:  886:            dbtypeinfo.scale = (DBINT)scale;
+        -:  887:
+    #####:  888:            size = dbconvert_ps(NULL,
+        -:  889:                                TDSCHAR,
+        -:  890:                                (BYTE*)str,
+        -:  891:                                (DBINT)nutf8,
+        -:  892:                                TDSDECIMAL,
+    #####:  893:                                (BYTE*)&decimal->dbdecimal,
+call    0 never executed
+        -:  894:                                sizeof(decimal->dbdecimal),
+        -:  895:                                &dbtypeinfo);
+    #####:  896:            if (-1 == size)
+branch  0 never executed
+branch  1 never executed
+        -:  897:            {
+    #####:  898:                PyErr_Format(PyExc_RuntimeError, "failed to convert '%s'", str);
+call    0 never executed
+        -:  899:            }
+    #####:  900:            Py_DECREF(ostr);
+branch  0 never executed
+branch  1 never executed
+        -:  901:        }
+        -:  902:
+    #####:  903:        if (PyErr_Occurred())
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  904:        {
+        -:  905:            return -1;
+        -:  906:        }
+        -:  907:    }
+        -:  908:    else
+        -:  909:    {
+    #####:  910:        decimal->dbdecimal.precision = (BYTE)precision;
+    #####:  911:        decimal->dbdecimal.scale = (BYTE)scale;
+        -:  912:    }
+        -:  913:
+    #####:  914:    SqlType_init_fixed(self,
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+branch  5 never executed
+        -:  915:                       value,
+        -:  916:                       TDSDECIMAL,
+        -:  917:                       decimal->dbdecimal);
+        -:  918:
+    #####:  919:    return 0;
+        -:  920:}
+        -:  921:
+        -:  922:#pragma GCC diagnostic push
+        -:  923:#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+    #####:  924:SQL_TYPE_DEF(Decimal, s_SqlDecimal_doc);
+------------------
+SqlDecimalType_init:
+function SqlDecimalType_init called 0 returned 0% blocks executed 0%
+    #####:  924:SQL_TYPE_DEF(Decimal, s_SqlDecimal_doc);
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+------------------
+SqlDecimal_create:
+function SqlDecimal_create called 0 returned 0% blocks executed 0%
+    #####:  924:SQL_TYPE_DEF(Decimal, s_SqlDecimal_doc);
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+branch  6 never executed
+branch  7 never executed
+call    8 never executed
+------------------
+        -:  925:#pragma GCC diagnostic pop 
+        -:  926:
+        -:  927:/*
+        -:  928:    In order to properly use `dbdatecrack` without a DBPROCESS* handle,
+        -:  929:    it must be determined if freetds was comiled with MSDBLIB defined.
+        -:  930:    This will control the value for month returned by `dbdatecrack`.
+        -:  931:*/
+        -:  932:static bool s_freetds_msdblib = false;
+        -:  933:
+function SqlTypes_init called 0 returned 0% blocks executed 0%
+    #####:  934:int SqlTypes_init(void)
+        -:  935:{
+    #####:  936:    do
+        -:  937:    {
+    #####:  938:        if (0 != PyType_Ready(&SqlTypeType)) break;
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  939:        {
+    #####:  940:            DBDATEREC dbdaterec;
+    #####:  941:            DBDATETIME dbdatetime = { 0, 0 };
+    #####:  942:            (void)dbdatecrack(NULL, &dbdaterec, &dbdatetime);
+call    0 never executed
+        -:  943:            /* If compiled with MSDBLIB defined, the quarter value will be non-zero. */
+    #####:  944:            s_freetds_msdblib = (0 != dbdaterec.quarter);
+        -:  945:        }
+        -:  946:
+    #####:  947:        return 0;
+        -:  948:    } while (0);
+        -:  949:    return -1;
+        -:  950:}
+        -:  951:
+function SQLCHAR_topython called 0 returned 0% blocks executed 0%
+    #####:  952:static PyObject* SQLCHAR_topython(enum TdsType tdstype, const void* data, size_t ndata)
+        -:  953:{
+    #####:  954:    if (!data) Py_RETURN_NONE;
+branch  0 never executed
+branch  1 never executed
+        -:  955:
+    #####:  956:    return PyUnicode_DecodeUTF8((const char*)data, (Py_ssize_t)ndata, "strict");
+call    0 never executed
+        -:  957:
+    #####:  958:    UNUSED(tdstype);
+        -:  959:}
+        -:  960:
+function SQLINT_topython called 0 returned 0% blocks executed 0%
+    #####:  961:static PyObject* SQLINT_topython(enum TdsType tdstype, const void* data, size_t ndata)
+        -:  962:{
+    #####:  963:    PY_LONG_LONG value;
+    #####:  964:    if (!ndata) Py_RETURN_NONE;
+branch  0 never executed
+branch  1 never executed
+        -:  965:
+    #####:  966:    switch (tdstype)
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+        -:  967:    {
+    #####:  968:        case TDSTINYINT:
+        -:  969:        {
+    #####:  970:            assert(1 == ndata);
+        -:  971:
+        -:  972:            /* TDSTINYINT type is unsigned. */
+    #####:  973:            return PyLong_FromUnsignedLong(*((uint8_t*)data));
+call    0 never executed
+        -:  974:        }
+    #####:  975:        case TDSSMALLINT:
+        -:  976:        {
+    #####:  977:            assert(2 == ndata);
+    #####:  978:            value = *((int16_t*)data);
+    #####:  979:            break;
+        -:  980:        }
+    #####:  981:        case TDSINT:
+        -:  982:        {
+    #####:  983:            assert(4 == ndata);
+    #####:  984:            value = *((int32_t*)data);
+    #####:  985:            break;
+        -:  986:        }
+    #####:  987:        case TDSBIGINT:
+        -:  988:        {
+    #####:  989:            assert(8 == ndata);
+    #####:  990:            value = *((int64_t*)data);
+    #####:  991:            break;
+        -:  992:        }
+    #####:  993:        default:
+        -:  994:        {
+    #####:  995:            PyErr_Format(PyExc_RuntimeError, "unsupported integer width %ld", ndata);
+    #####:  996:            return NULL;
+call    0 never executed
+        -:  997:        }
+        -:  998:    }
+        -:  999:
+    #####: 1000:    return PyLong_FromLongLong(value);
+call    0 never executed
+    #####: 1001:    UNUSED(tdstype);
+        -: 1002:}
+        -: 1003:
+function SQLBIT_topython called 0 returned 0% blocks executed 0%
+    #####: 1004:static PyObject* SQLBIT_topython(enum TdsType tdstype, const void* data, size_t ndata)
+        -: 1005:{
+    #####: 1006:    long l = 0;
+    #####: 1007:    if (!ndata) Py_RETURN_NONE;
+branch  0 never executed
+branch  1 never executed
+        -: 1008:
+    #####: 1009:    memcpy(&l, data, ndata);
+    #####: 1010:    return PyBool_FromLong(l);
+call    0 never executed
+    #####: 1011:    UNUSED(tdstype);
+        -: 1012:}
+        -: 1013:
+function SQLBINARY_topython called 0 returned 0% blocks executed 0%
+    #####: 1014:static PyObject* SQLBINARY_topython(enum TdsType tdstype, const void* data, size_t ndata)
+        -: 1015:{
+    #####: 1016:    if (!ndata) Py_RETURN_NONE;
+branch  0 never executed
+branch  1 never executed
+        -: 1017:
+    #####: 1018:    return PyBytes_FromStringAndSize((const char*)data, (Py_ssize_t)ndata);
+call    0 never executed
+    #####: 1019:    UNUSED(tdstype);
+        -: 1020:}
+        -: 1021:
+function FLOAT_topython called 0 returned 0% blocks executed 0%
+    #####: 1022:static PyObject* FLOAT_topython(enum TdsType tdstype, const void* data, size_t ndata)
+        -: 1023:{
+    #####: 1024:    if (!ndata) Py_RETURN_NONE;
+branch  0 never executed
+branch  1 never executed
+        -: 1025:
+    #####: 1026:    return PyFloat_FromDouble((8 == ndata) ? *((double*)data) : *((float*)data));
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+    #####: 1027:    UNUSED(tdstype);
+        -: 1028:}
+        -: 1029:
+function NUMERIC_topython called 0 returned 0% blocks executed 0%
+    #####: 1030:static PyObject* NUMERIC_topython(enum TdsType tdstype, const void* data, size_t ndata)
+        -: 1031:{
+    #####: 1032:    char buffer[100];
+    #####: 1033:    DBINT size;
+        -: 1034:
+    #####: 1035:    if (!ndata) Py_RETURN_NONE;
+branch  0 never executed
+branch  1 never executed
+        -: 1036:
+        -: 1037:
+    #####: 1038:    size = dbconvert(NULL,
+call    0 never executed
+        -: 1039:                     tdstype,
+        -: 1040:                     data,
+        -: 1041:                     (DBINT)ndata,
+        -: 1042:                     SYBCHAR,
+        -: 1043:                     (BYTE*)buffer,
+        -: 1044:                     (DBINT)sizeof(buffer));
+    #####: 1045:    if (-1 == size)
+branch  0 never executed
+branch  1 never executed
+        -: 1046:    {
+    #####: 1047:        PyErr_Format(PyExc_RuntimeError, "failed to convert NUMERIC to string");
+    #####: 1048:        return NULL;
+call    0 never executed
+        -: 1049:    }
+    #####: 1050:    return PyDecimal_FromString(buffer, (Py_ssize_t)size);
+call    0 never executed
+        -: 1051:}
+        -: 1052:
+function MONEY_topython called 0 returned 0% blocks executed 0%
+    #####: 1053:static PyObject* MONEY_topython(enum TdsType tdstype, const void* data, size_t ndata)
+        -: 1054:{
+        -: 1055:    /*
+        -: 1056:        Note: dbconvert incorrectly rounds to the nearest hundredth of the monetary unit.
+        -: 1057:        MSDN indicates that MONEY types are to the nearest ten-thousandth of the monetary
+        -: 1058:        unit. See https://msdn.microsoft.com/en-us/library/ms179882.aspx.
+        -: 1059:
+        -: 1060:        To work around this, convert to NUMERIC first with the appropriate scale.
+        -: 1061:    */
+        -: 1062:
+    #####: 1063:    DBNUMERIC dbnumeric;
+    #####: 1064:    DBTYPEINFO dbtypeinfo;
+    #####: 1065:    DBINT size;
+    #####: 1066:    if (!ndata) Py_RETURN_NONE;
+branch  0 never executed
+branch  1 never executed
+        -: 1067:
+    #####: 1068:    dbtypeinfo.precision = 38 /* maximum */;
+    #####: 1069:    dbtypeinfo.scale = 4 /* nearest hundredth */;
+    #####: 1070:    size = dbconvert_ps(NULL,
+call    0 never executed
+        -: 1071:                        tdstype,
+        -: 1072:                        (BYTE*)data,
+        -: 1073:                        (DBINT)ndata,
+        -: 1074:                        SYBNUMERIC,
+        -: 1075:                        (BYTE*)&dbnumeric,
+        -: 1076:                        (DBINT)sizeof(dbnumeric),
+        -: 1077:                        &dbtypeinfo);
+    #####: 1078:    if (-1 == size)
+branch  0 never executed
+branch  1 never executed
+        -: 1079:    {
+    #####: 1080:        PyErr_Format(PyExc_RuntimeError, "failed to convert NUMERIC to MONEY");
+    #####: 1081:        return NULL;
+call    0 never executed
+        -: 1082:    }
+    #####: 1083:    return NUMERIC_topython(TDSNUMERIC,
+call    0 never executed
+        -: 1084:                            (const uint8_t*)&dbnumeric,
+        -: 1085:                            (size_t)size);
+        -: 1086:}
+        -: 1087:
+function DATETIME_topython called 0 returned 0% blocks executed 0%
+    #####: 1088:static PyObject* DATETIME_topython(enum TdsType tdstype, const void* data, size_t ndata)
+        -: 1089:{
+    #####: 1090:    DBDATETIME dbdatetime;
+    #####: 1091:    if (!ndata) Py_RETURN_NONE;
+branch  0 never executed
+branch  1 never executed
+        -: 1092:
+    #####: 1093:    switch (tdstype)
+branch  0 never executed
+branch  1 never executed
+        -: 1094:    {
+    #####: 1095:        default:
+        -: 1096:        {
+    #####: 1097:            DBINT size = dbconvert(NULL,
+call    0 never executed
+        -: 1098:                                   tdstype,
+        -: 1099:                                   data,
+        -: 1100:                                   (DBINT)ndata,
+        -: 1101:                                   SYBDATETIME,
+        -: 1102:                                   (BYTE*)&dbdatetime, -1);
+    #####: 1103:            if (-1 == size)
+branch  0 never executed
+branch  1 never executed
+        -: 1104:            {
+    #####: 1105:                PyErr_Format(PyExc_RuntimeError, "failed to convert DATETIME");
+    #####: 1106:                return NULL;
+call    0 never executed
+        -: 1107:            }
+        -: 1108:
+    #####: 1109:            ndata = (size_t)size;
+        -: 1110:#if defined(__GNUC__) && (__GNUC__ > 7)
+        -: 1111:#  pragma GCC diagnostic push
+        -: 1112:#  pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+        -: 1113:#endif /* if defined(__GNUC__) && (__GNUC__ > 7) */
+    #####: 1114:            data = (const uint8_t*)&dbdatetime;
+        -: 1115:#if defined(__GNUC__) && (__GNUC__ > 7)
+        -: 1116:#  pragma GCC diagnostic pop
+        -: 1117:#endif
+        -: 1118:            /* Intentional fall-through. */
+        -: 1119:        }
+        -: 1120:#if defined(CTDS_HAVE_TDS73_SUPPORT)
+    #####: 1121:        case TDSDATE:
+        -: 1122:        case TDSTIME:
+        -: 1123:        case TDSDATETIME2:
+        -: 1124:        case TDSDATETIMEOFFSET:
+        -: 1125:        case TDSSMALLDATETIME:
+        -: 1126:#endif /* if defined(CTDS_HAVE_TDS73_SUPPORT) */
+        -: 1127:        case TDSDATETIME:
+        -: 1128:        case TDSDATETIMEN:
+        -: 1129:        {
+    #####: 1130:            int usecond;
+        -: 1131:#if defined(CTDS_HAVE_TDS73_SUPPORT)
+    #####: 1132:            DBDATEREC2 dbdaterec;
+    #####: 1133:            (void)dbanydatecrack(NULL, &dbdaterec, tdstype, data);
+call    0 never executed
+        -: 1134:
+    #####: 1135:            usecond = dbdaterec.nanosecond / 1000;
+        -: 1136:#else /* if defined(CTDS_HAVE_TDS73_SUPPORT) */
+        -: 1137:            DBDATEREC dbdaterec;
+        -: 1138:            (void)dbdatecrack(NULL, &dbdaterec, (DBDATETIME*)data);
+        -: 1139:            usecond = dbdaterec.millisecond * 1000;
+        -: 1140:#endif /* else if defined(CTDS_HAVE_TDS73_SUPPORT) */
+        -: 1141:
+        -: 1142:            /*
+        -: 1143:                If freetds was not compiled with MSDBLIB defined, the month,
+        -: 1144:                quarter, day of week are 0-based values.
+        -: 1145:            */
+    #####: 1146:            if (!s_freetds_msdblib)
+branch  0 never executed
+branch  1 never executed
+        -: 1147:            {
+    #####: 1148:                dbdaterec.quarter++;
+    #####: 1149:                dbdaterec.month++;
+    #####: 1150:                dbdaterec.weekday++;
+        -: 1151:            }
+    #####: 1152:            switch (tdstype)
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+        -: 1153:            {
+    #####: 1154:                case TDSDATE:
+        -: 1155:                {
+    #####: 1156:                    return PyDate_FromDate_(dbdaterec.year,
+call    0 never executed
+        -: 1157:                                            dbdaterec.month,
+        -: 1158:                                            dbdaterec.day);
+        -: 1159:                }
+    #####: 1160:                case TDSTIME:
+        -: 1161:                {
+    #####: 1162:                    return PyTime_FromTime_(dbdaterec.hour,
+call    0 never executed
+        -: 1163:                                            dbdaterec.minute,
+        -: 1164:                                            dbdaterec.second,
+        -: 1165:                                            usecond);
+        -: 1166:                }
+    #####: 1167:                case TDSDATETIMEOFFSET:
+        -: 1168:                {
+        -: 1169:                    /*
+        -: 1170:                        dbdaterec.tzone contains the UTC offset in minutes
+        -: 1171:                        (e.g., -300 for US Eastern, +330 for IST).
+        -: 1172:                        Build a Python timezone-aware datetime.
+        -: 1173:                    */
+    #####: 1174:                    PyObject* timedelta = PyDelta_FromDSU_(0, dbdaterec.tzone * 60, 0);
+call    0 never executed
+    #####: 1175:                    if (!timedelta) return NULL;
+branch  0 never executed
+branch  1 never executed
+        -: 1176:
+    #####: 1177:                    PyObject* tz = PyTimeZone_FromOffset_(timedelta);
+call    0 never executed
+    #####: 1178:                    Py_DECREF(timedelta);
+branch  0 never executed
+branch  1 never executed
+    #####: 1179:                    if (!tz) return NULL;
+branch  0 never executed
+branch  1 never executed
+        -: 1180:
+    #####: 1181:                    PyObject* result = PyDateTime_FromDateAndTimeAndTZ_(
+call    0 never executed
+        -: 1182:                        dbdaterec.year,
+        -: 1183:                        dbdaterec.month,
+        -: 1184:                        dbdaterec.day,
+        -: 1185:                        dbdaterec.hour,
+        -: 1186:                        dbdaterec.minute,
+        -: 1187:                        dbdaterec.second,
+        -: 1188:                        usecond,
+        -: 1189:                        tz);
+    #####: 1190:                    Py_DECREF(tz);
+branch  0 never executed
+branch  1 never executed
+        -: 1191:                    return result;
+        -: 1192:                }
+    #####: 1193:                default:
+        -: 1194:                {
+    #####: 1195:                    return PyDateTime_FromDateAndTime_(dbdaterec.year,
+call    0 never executed
+        -: 1196:                                                       dbdaterec.month,
+        -: 1197:                                                       dbdaterec.day,
+        -: 1198:                                                       dbdaterec.hour,
+        -: 1199:                                                       dbdaterec.minute,
+        -: 1200:                                                       dbdaterec.second,
+        -: 1201:                                                       usecond);
+        -: 1202:                }
+        -: 1203:            }
+    #####: 1204:            break;
+        -: 1205:        }
+        -: 1206:    }
+        -: 1207:}
+        -: 1208:
+function GUID_topython called 0 returned 0% blocks executed 0%
+    #####: 1209:static PyObject* GUID_topython(enum TdsType tdstype, const void* data, size_t ndata)
+        -: 1210:{
+    #####: 1211:    if (!ndata) Py_RETURN_NONE;
+branch  0 never executed
+branch  1 never executed
+        -: 1212:
+    #####: 1213:    return PyUuid_FromBytes((const char*)data, (Py_ssize_t)ndata);
+call    0 never executed
+    #####: 1214:    UNUSED(tdstype);
+        -: 1215:}
+        -: 1216:
+        -: 1217:
+        -: 1218:static const struct {
+        -: 1219:    enum TdsType tdstype;
+        -: 1220:    sql_topython topython;
+        -: 1221:} s_tdstypes[] = {
+        -: 1222:    { TDSCHAR,          SQLCHAR_topython },
+        -: 1223:    { TDSVARCHAR,       SQLCHAR_topython },
+        -: 1224:    { TDSTEXT,          SQLCHAR_topython },
+        -: 1225:
+        -: 1226:    /* Map the XML type to Python string. */
+        -: 1227:    { TDSXML,           SQLCHAR_topython },
+        -: 1228:
+        -: 1229:    { TDSBINARY,        SQLBINARY_topython },
+        -: 1230:    { TDSVARBINARY,     SQLBINARY_topython },
+        -: 1231:    { TDSIMAGE,         SQLBINARY_topython },
+        -: 1232:
+        -: 1233:    { TDSBIT,           SQLBIT_topython },
+        -: 1234:    { TDSBITN,          SQLBIT_topython },
+        -: 1235:    { TDSINTN,          SQLINT_topython },
+        -: 1236:    { TDSTINYINT,       SQLINT_topython },
+        -: 1237:    { TDSSMALLINT,      SQLINT_topython },
+        -: 1238:    { TDSINT,           SQLINT_topython },
+        -: 1239:    { TDSBIGINT,        SQLINT_topython },
+        -: 1240:
+        -: 1241:    { TDSFLOAT,         FLOAT_topython },
+        -: 1242:    { TDSFLOATN,        FLOAT_topython },
+        -: 1243:    { TDSREAL,          FLOAT_topython },
+        -: 1244:
+        -: 1245:    { TDSSMALLMONEY,    MONEY_topython },
+        -: 1246:    { TDSMONEY,         MONEY_topython },
+        -: 1247:    { TDSMONEYN,        MONEY_topython },
+        -: 1248:
+        -: 1249:    { TDSDECIMAL,       NUMERIC_topython },
+        -: 1250:    { TDSNUMERIC,       NUMERIC_topython },
+        -: 1251:
+        -: 1252:    { TDSDATE,          DATETIME_topython },
+        -: 1253:    { TDSDATETIME,      DATETIME_topython },
+        -: 1254:    { TDSDATETIME2,     DATETIME_topython },
+        -: 1255:    { TDSDATETIMEOFFSET,DATETIME_topython },
+        -: 1256:    { TDSDATETIMEN,     DATETIME_topython },
+        -: 1257:    { TDSSMALLDATETIME, DATETIME_topython },
+        -: 1258:    { TDSTIME,          DATETIME_topython },
+        -: 1259:
+        -: 1260:    { TDSGUID,          GUID_topython },
+        -: 1261:    { TDSVOID,          NULL },
+        -: 1262:};
+        -: 1263:
+        -: 1264:
+function sql_topython_lookup called 0 returned 0% blocks executed 0%
+    #####: 1265:sql_topython sql_topython_lookup(enum TdsType tdstype)
+        -: 1266:{
+    #####: 1267:    size_t ix;
+    #####: 1268:    for (ix = 0; ix < ARRAYSIZE(s_tdstypes); ++ix)
+branch  0 never executed
+branch  1 never executed
+        -: 1269:    {
+    #####: 1270:        if (tdstype == s_tdstypes[ix].tdstype)
+branch  0 never executed
+branch  1 never executed
+        -: 1271:        {
+    #####: 1272:            return s_tdstypes[ix].topython;
+        -: 1273:        }
+        -: 1274:    }
+        -: 1275:    return NULL;
+        -: 1276:}
+        -: 1277:
+        -: 1278:#if !defined(CTDS_USE_UTF16)
+        -: 1279:
+        -: 1280:#ifdef _MSC_VER
+        -: 1281:#  include <wchar.h>
+        -: 1282:#  define __WCHAR_MAX__ WCHAR_MAX
+        -: 1283:#endif
+        -: 1284:
+        -: 1285:#if __WCHAR_MAX__ > 0xFFFF
+        -: 1286:#  define WCHAR_T_UCS4 1
+        -: 1287:#endif
+        -: 1288:
+        -: 1289:static PyObject* translate_to_ucs2(PyObject* o)
+        -: 1290:{
+        -: 1291:    PyObject* translated = NULL;
+        -: 1292:    Py_ssize_t len;
+        -: 1293:    wchar_t* unicode;
+        -: 1294:
+        -: 1295:    assert(PyUnicode_Check(o));
+        -: 1296:#if PY_MAJOR_VERSION < 3
+        -: 1297:    len = PyUnicode_GetSize(o);
+        -: 1298:    do
+        -: 1299:    {
+        -: 1300:        unicode = tds_mem_malloc((size_t)len * sizeof(wchar_t));
+        -: 1301:        if (!unicode)
+        -: 1302:        {
+        -: 1303:            PyErr_NoMemory();
+        -: 1304:            break;
+        -: 1305:        }
+        -: 1306:        if (-1 == PyUnicode_AsWideChar((PyUnicodeObject*)o, unicode, len))
+        -: 1307:        {
+        -: 1308:            break;
+        -: 1309:        }
+        -: 1310:    }
+        -: 1311:    while (0);
+        -: 1312:#else /* if PY_MAJOR_VERSION < 3 */
+        -: 1313:    unicode = PyUnicode_AsWideCharString(o, &len);
+        -: 1314:#endif /* else if PY_MAJOR_VERSION < 3 */
+        -: 1315:
+        -: 1316:    if (!PyErr_Occurred())
+        -: 1317:    {
+        -: 1318:        Py_ssize_t ixsrc, ixdst = 0;
+        -: 1319:        for (ixsrc = 0; ixsrc < len; ++ixsrc, ++ixdst)
+        -: 1320:        {
+        -: 1321:#if defined(WCHAR_T_UCS4)
+        -: 1322:            if (0xFFFF < unicode[ixsrc])
+        -: 1323:#else /* if defined(WCHAR_T_UCS4) */
+        -: 1324:            if (Py_UNICODE_IS_SURROGATE(unicode[ixsrc]))
+        -: 1325:#endif /* else if defined(WCHAR_T_UCS4) */
+        -: 1326:            {
+        -: 1327:                static const char s_fmt[] =
+        -: 1328:                    "Unicode codepoint U+%08X is not representable in UCS-2; replaced with U+FFFD";
+        -: 1329:                char buffer[ARRAYSIZE(s_fmt) + 8 /* for codepoint chars */];
+        -: 1330:#if defined(WCHAR_T_UCS4)
+        -: 1331:                uint32_t codepoint = (uint32_t)unicode[ixsrc];
+        -: 1332:#else /* if defined(WCHAR_T_UCS4) */
+        -: 1333:                uint32_t codepoint;
+        -: 1334:                assert(((ixsrc + 1) < len) && Py_UNICODE_IS_SURROGATE(unicode[ixsrc + 1]));
+        -: 1335:                codepoint = Py_UNICODE_JOIN_SURROGATES(unicode[ixsrc], unicode[ixsrc + 1]);
+        -: 1336:                ++ixsrc;
+        -: 1337:#endif /* else if defined(WCHAR_T_UCS4) */
+        -: 1338:                (void)sprintf(buffer, s_fmt, codepoint);
+        -: 1339:                if (0 != PyErr_WarnEx(PyExc_UnicodeWarning, buffer, 1))
+        -: 1340:                {
+        -: 1341:                    break;
+        -: 1342:                }
+        -: 1343:
+        -: 1344:                unicode[ixdst] = 0xFFFD; /* unicode replacement character */
+        -: 1345:            }
+        -: 1346:#if !defined(WCHAR_T_UCS4)
+        -: 1347:            else
+        -: 1348:            {
+        -: 1349:                unicode[ixdst] = unicode[ixsrc];
+        -: 1350:            }
+        -: 1351:#endif /* if !defined(WCHAR_T_UCS4) */
+        -: 1352:        }
+        -: 1353:
+        -: 1354:        if (!PyErr_Occurred())
+        -: 1355:        {
+        -: 1356:            translated = PyUnicode_FromWideChar(unicode, ixdst);
+        -: 1357:        }
+        -: 1358:    }
+        -: 1359:#if PY_MAJOR_VERSION < 3
+        -: 1360:    tds_mem_free(unicode);
+        -: 1361:#else /* if PY_MAJOR_VERSION < 3 */
+        -: 1362:    PyMem_Free(unicode);
+        -: 1363:#endif /* else if PY_MAJOR_VERSION < 3 */
+        -: 1364:
+        -: 1365:    return translated;
+        -: 1366:}
+        -: 1367:
+        -: 1368:#endif /* if !defined(CTDS_USE_UTF16) */
+        -: 1369:
+function encode_for_dblib called 0 returned 0% blocks executed 0%
+    #####: 1370:PyObject* encode_for_dblib(PyObject* unicode, const char** utf8bytes, size_t* nutf8bytes, size_t* width)
+        -: 1371:{
+    #####: 1372:    PyObject* encoded = NULL;
+        -: 1373:
+    #####: 1374:    do
+    #####: 1375:    {
+        -: 1376:#if PY_MAJOR_VERSION >= 3
+    #####: 1377:        Py_ssize_t size;
+        -: 1378:#endif /* if PY_MAJOR_VERSION >= 3 */
+        -: 1379:
+    #####: 1380:        PyObject* encodable;
+        -: 1381:
+        -: 1382:#if defined(CTDS_USE_UTF16)
+    #####: 1383:        size_t ix;
+        -: 1384:
+        -: 1385:        /* FreeTDS supports encoding to UTF-16, so the whole string is encodable. */
+    #####: 1386:        encodable = unicode;
+    #####: 1387:        Py_INCREF(encodable);
+branch  0 never executed
+branch  1 never executed
+        -: 1388:#else /* if defined(CTDS_USE_UTF16) */
+        -: 1389:        /*
+        -: 1390:            FreeTDS will only convert strings to UCS-2, so translate all
+        -: 1391:            strings to UCS-2 prior to binding.
+        -: 1392:        */
+        -: 1393:        encodable = translate_to_ucs2(unicode);
+        -: 1394:        if (!encodable)
+        -: 1395:        {
+        -: 1396:            break;
+        -: 1397:        }
+        -: 1398:        /*
+        -: 1399:            If the string was translated to UCS-2, the SQL NCHAR width is simply
+        -: 1400:            the string length.
+        -: 1401:        */
+        -: 1402:#  if PY_VERSION_HEX >= 0x03030000
+        -: 1403:        *width = (size_t)PyUnicode_GET_LENGTH(encodable);
+        -: 1404:#  else
+        -: 1405:        *width = (size_t)PyUnicode_GET_SIZE(encodable);
+        -: 1406:#  endif
+        -: 1407:#endif /* else if defined(CTDS_USE_UTF16) */
+        -: 1408:
+        -: 1409:#if PY_MAJOR_VERSION < 3
+        -: 1410:        encoded = PyUnicode_AsUTF8String(encodable);
+        -: 1411:        Py_DECREF(encodable);
+        -: 1412:        if (!encoded)
+        -: 1413:        {
+        -: 1414:            break;
+        -: 1415:        }
+        -: 1416:
+        -: 1417:        *utf8bytes = PyString_AS_STRING(encoded);
+        -: 1418:        *nutf8bytes = (size_t)PyString_GET_SIZE(encoded);
+        -: 1419:#else /* if PY_MAJOR_VERSION < 3 */
+    #####: 1420:        encoded = encodable; /* steal reference */
+        -: 1421:
+    #####: 1422:        *utf8bytes = PyUnicode_AsUTF8AndSize(encoded, &size);
+call    0 never executed
+    #####: 1423:        *nutf8bytes = (size_t)size;
+        -: 1424:#endif /* else if PY_MAJOR_VERSION < 3 */
+        -: 1425:
+        -: 1426:#if defined(CTDS_USE_UTF16)
+        -: 1427:        /*
+        -: 1428:            Compute the SQL type width, which is really the number of UTF-16
+        -: 1429:            sequences.
+        -: 1430:        */
+        -: 1431:#define IS_UTF8_SINGLE_BYTE(b)       (((b) & 0x80) == 0)
+        -: 1432:#define IS_UTF8_CONTINUATION_BYTE(b) (((b) & 0xC0) == 0x80)
+        -: 1433:#define IS_UTF8_FIRST_BYTE_OF_2(b)   (((b) & 0xE0) == 0xC0)
+        -: 1434:#define IS_UTF8_FIRST_BYTE_OF_3(b)   (((b) & 0xF0) == 0xE0)
+        -: 1435:#define IS_UTF8_FIRST_BYTE_OF_4(b)   (((b) & 0xF8) == 0xF0)
+        -: 1436:
+    #####: 1437:        *width = 0;
+    #####: 1438:        for (ix = 0; ix < *nutf8bytes;)
+branch  0 never executed
+branch  1 never executed
+        -: 1439:        {
+    #####: 1440:            if (IS_UTF8_SINGLE_BYTE((*utf8bytes)[ix]))
+branch  0 never executed
+branch  1 never executed
+        -: 1441:            {
+    #####: 1442:                ++(*width);
+    #####: 1443:                ix += 1;
+        -: 1444:            }
+    #####: 1445:            else if (IS_UTF8_FIRST_BYTE_OF_2((*utf8bytes)[ix]))
+branch  0 never executed
+branch  1 never executed
+        -: 1446:            {
+    #####: 1447:                ++(*width);
+    #####: 1448:                ix += 2;
+        -: 1449:            }
+    #####: 1450:            else if (IS_UTF8_FIRST_BYTE_OF_3((*utf8bytes)[ix]))
+branch  0 never executed
+branch  1 never executed
+        -: 1451:            {
+    #####: 1452:                ++(*width);
+    #####: 1453:                ix += 3;
+        -: 1454:            }
+        -: 1455:            else
+        -: 1456:            {
+        -: 1457:                /* Two-byte UTF-16 sequences require double the width. */
+    #####: 1458:                assert(IS_UTF8_FIRST_BYTE_OF_4((*utf8bytes)[ix]));
+    #####: 1459:                (*width) += 2;
+    #####: 1460:                ix += 4;
+        -: 1461:            }
+        -: 1462:        }
+        -: 1463:#endif /* if defined(CTDS_USE_UTF16) */
+        -: 1464:
+        -: 1465:    }
+        -: 1466:    while (0);
+        -: 1467:
+    #####: 1468:    return encoded;
+        -: 1469:}
+        -: 1470:
+function datetime_to_sql called 0 returned 0% blocks executed 0%
+    #####: 1471:int datetime_to_sql(DBPROCESS* dbproc,
+        -: 1472:                    PyObject* o,
+        -: 1473:                    enum TdsType* tdstype,
+        -: 1474:                    void* converted,
+        -: 1475:                    size_t cbconverted)
+        -: 1476:{
+    #####: 1477:    int written = 0;
+        -: 1478:    /* Python only supports microsecond precision. */
+    #####: 1479:    char buffer[ARRAYSIZE("YYYY-MM-DD HH:MM:SS.nnnnnn +HH:MM")];
+        -: 1480:
+        -: 1481:#if defined(CTDS_HAVE_TDS73_SUPPORT)
+    #####: 1482:    bool tds73plus = ((NULL == dbproc) || (DBTDS(dbproc) >= DBTDS_7_3));
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+        -: 1483:#else /* if defined(CTDS_HAVE_TDS73_SUPPORT) */
+        -: 1484:    bool tds73plus = false;
+        -: 1485:#endif /* else if defined(CTDS_HAVE_TDS73_SUPPORT) */
+        -: 1486:
+        -: 1487:    /*
+        -: 1488:        The best _supported_ TDS type. Default to DATETIME which is widely
+        -: 1489:        supported across TDS and FreeTDS versions.
+        -: 1490:    */
+    #####: 1491:    *tdstype = TDSDATETIME;
+        -: 1492:
+    #####: 1493:    if (PyDate_Check_(o))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1494:    {
+    #####: 1495:        written += sprintf(&buffer[written],
+call    0 never executed
+call    1 never executed
+call    2 never executed
+        -: 1496:                           "%04d-%02d-%02d",
+        -: 1497:                           PyDateTime_GET_YEAR_(o),
+        -: 1498:                           PyDateTime_GET_MONTH_(o),
+        -: 1499:                           PyDateTime_GET_DAY_(o));
+        -: 1500:    }
+    #####: 1501:    if (PyDateTime_Check_(o))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1502:    {
+    #####: 1503:        written += sprintf(&buffer[written], " ");
+        -: 1504:    }
+    #####: 1505:    if (PyTime_Check_(o) || PyDateTime_Check_(o))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+        -: 1506:    {
+    #####: 1507:        int hours = (PyDateTime_Check_(o)) ?
+call    0 never executed
+    #####: 1508:            PyDateTime_DATE_GET_HOUR_(o) : PyDateTime_TIME_GET_HOUR_(o);
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+call    3 never executed
+    #####: 1509:        int minutes = (PyDateTime_Check_(o)) ?
+call    0 never executed
+    #####: 1510:            PyDateTime_DATE_GET_MINUTE_(o) : PyDateTime_TIME_GET_MINUTE_(o);
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+call    3 never executed
+    #####: 1511:        int seconds = (PyDateTime_Check_(o)) ?
+call    0 never executed
+    #####: 1512:            PyDateTime_DATE_GET_SECOND_(o) : PyDateTime_TIME_GET_SECOND_(o);
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+call    3 never executed
+    #####: 1513:        int useconds = (PyDateTime_Check_(o)) ?
+call    0 never executed
+    #####: 1514:            PyDateTime_DATE_GET_MICROSECOND_(o) : PyDateTime_TIME_GET_MICROSECOND_(o);
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+call    3 never executed
+        -: 1515:
+    #####: 1516:        written += sprintf(&buffer[written],
+        -: 1517:                           "%02d:%02d:%02d",
+        -: 1518:                           hours,
+        -: 1519:                           minutes,
+        -: 1520:                           seconds);
+        -: 1521:
+    #####: 1522:        if (useconds)
+branch  0 never executed
+branch  1 never executed
+        -: 1523:        {
+    #####: 1524:            if (tds73plus)
+branch  0 never executed
+branch  1 never executed
+        -: 1525:            {
+    #####: 1526:                written += sprintf(&buffer[written], ".%06d", useconds);
+        -: 1527:                /* Always use DATETIME2 to preserve fractional second precision. */
+    #####: 1528:                *tdstype = (PyDateTime_Check_(o)) ? TDSDATETIME2 : TDSTIME;
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1529:            }
+        -: 1530:            else
+        -: 1531:            {
+        -: 1532:                /*
+        -: 1533:                    For compatibility with the MS SQL DATETIME type, only include
+        -: 1534:                    microsecond granularity.
+        -: 1535:                */
+    #####: 1536:                written += sprintf(&buffer[written], ".%03d", useconds / 1000);
+        -: 1537:            }
+        -: 1538:        }
+    #####: 1539:        else if (tds73plus && !PyDateTime_Check_(o))
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+        -: 1540:        {
+    #####: 1541:            *tdstype = TDSTIME;
+        -: 1542:        }
+        -: 1543:        /*
+        -: 1544:            If the datetime is timezone-aware and TDS 7.3+ is available,
+        -: 1545:            use DATETIMEOFFSET.
+        -: 1546:            
+        -: 1547:            We construct the DBDATETIMEALL struct directly rather than going
+        -: 1548:            through dbconvert, because:
+        -: 1549:            1. FreeTDS dbconvert does not support SYBCHAR -> SYBMSDATETIMEOFFSET
+        -: 1550:            2. FreeTDS string parser applies 2-digit year windowing (year 1 -> 2001)
+        -: 1551:            3. Direct construction is more efficient (no string formatting/parsing)
+        -: 1552:            
+        -: 1553:            DBDATETIMEALL stores UTC time internally. FreeTDS BCP adds the
+        -: 1554:            timezone offset when serializing to the wire format.
+        -: 1555:        */
+    #####: 1556:        if (tds73plus && PyDateTime_Check_(o))
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+        -: 1557:        {
+    #####: 1558:            PyObject* tzinfo = PyDateTime_GetTZInfo_(o);
+call    0 never executed
+    #####: 1559:            if (tzinfo)
+branch  0 never executed
+branch  1 never executed
+        -: 1560:            {
+    #####: 1561:                long offset_seconds = 0;
+    #####: 1562:                long offset_minutes;
+    #####: 1563:                DBDATETIMEALL* dtall;
+    #####: 1564:                PyObject* utc_dt;
+    #####: 1565:                int utc_year, utc_month, utc_day;
+    #####: 1566:                int utc_hour, utc_minute, utc_second, utc_usecond;
+    #####: 1567:                DBINT days_since_epoch;
+    #####: 1568:                DBUBIGINT time_ticks;
+        -: 1569:
+    #####: 1570:                if (-1 == PyDateTime_GetUTCOffsetSeconds_(o, &offset_seconds))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1571:                {
+        -: 1572:                    return -1;
+        -: 1573:                }
+        -: 1574:
+    #####: 1575:                offset_minutes = offset_seconds / 60;
+        -: 1576:
+        -: 1577:                /*
+        -: 1578:                    Convert to UTC via Python's astimezone(timezone.utc).
+        -: 1579:                */
+        -: 1580:                {
+    #####: 1581:                    PyObject* zero_delta = PyDelta_FromDSU_(0, 0, 0);
+call    0 never executed
+    #####: 1582:                    PyObject* utc_tz;
+    #####: 1583:                    if (!zero_delta) return -1;
+branch  0 never executed
+branch  1 never executed
+        -: 1584:
+    #####: 1585:                    utc_tz = PyTimeZone_FromOffset_(zero_delta);
+call    0 never executed
+    #####: 1586:                    Py_DECREF(zero_delta);
+branch  0 never executed
+branch  1 never executed
+    #####: 1587:                    if (!utc_tz) return -1;
+branch  0 never executed
+branch  1 never executed
+        -: 1588:
+    #####: 1589:                    utc_dt = PyObject_CallMethod(o, "astimezone", "(O)", utc_tz);
+call    0 never executed
+    #####: 1590:                    Py_DECREF(utc_tz);
+branch  0 never executed
+branch  1 never executed
+    #####: 1591:                    if (!utc_dt) return -1;
+branch  0 never executed
+branch  1 never executed
+        -: 1592:                }
+        -: 1593:
+        -: 1594:                /* Extract UTC components. */
+    #####: 1595:                utc_year   = PyDateTime_GET_YEAR_(utc_dt);
+call    0 never executed
+    #####: 1596:                utc_month  = PyDateTime_GET_MONTH_(utc_dt);
+call    0 never executed
+    #####: 1597:                utc_day    = PyDateTime_GET_DAY_(utc_dt);
+call    0 never executed
+    #####: 1598:                utc_hour   = PyDateTime_DATE_GET_HOUR_(utc_dt);
+call    0 never executed
+    #####: 1599:                utc_minute = PyDateTime_DATE_GET_MINUTE_(utc_dt);
+call    0 never executed
+    #####: 1600:                utc_second = PyDateTime_DATE_GET_SECOND_(utc_dt);
+call    0 never executed
+    #####: 1601:                utc_usecond = PyDateTime_DATE_GET_MICROSECOND_(utc_dt);
+call    0 never executed
+    #####: 1602:                Py_DECREF(utc_dt);
+branch  0 never executed
+branch  1 never executed
+        -: 1603:
+        -: 1604:                /*
+        -: 1605:                    Compute days since 1900-01-01 using the Julian Day Number
+        -: 1606:                    algorithm. JDN of 1900-01-01 = 2415021.
+        -: 1607:                */
+        -: 1608:                {
+    #####: 1609:                    int a = (14 - utc_month) / 12;
+    #####: 1610:                    int y = utc_year + 4800 - a;
+    #####: 1611:                    int m = utc_month + 12 * a - 3;
+    #####: 1612:                    long jdn = utc_day
+    #####: 1613:                             + (153 * m + 2) / 5
+    #####: 1614:                             + 365 * y
+    #####: 1615:                             + y / 4
+    #####: 1616:                             - y / 100
+    #####: 1617:                             + y / 400
+    #####: 1618:                             - 32045;
+    #####: 1619:                    days_since_epoch = (DBINT)(jdn - 2415021);
+        -: 1620:                }
+        -: 1621:
+        -: 1622:                /*
+        -: 1623:                    Time in 100-nanosecond ticks since midnight.
+        -: 1624:                    DBDATETIMEALL.time has 7-digit (100ns) precision.
+        -: 1625:                */
+    #####: 1626:                time_ticks = (
+    #####: 1627:                         ((DBUBIGINT)utc_hour * (DBUBIGINT)3600 +
+    #####: 1628:                         (DBUBIGINT)utc_minute * (DBUBIGINT)60 +
+    #####: 1629:                         (DBUBIGINT)utc_second) * (DBUBIGINT)10000000 +
+    #####: 1630:                         (DBUBIGINT)utc_usecond * (DBUBIGINT)10  // ← Cast utc_usecond to DBUBIGINT first
+        -: 1631:                        );
+        -: 1632:                /* Fill in the DBDATETIMEALL struct directly. */
+    #####: 1633:                dtall = (DBDATETIMEALL*)converted;
+    #####: 1634:                dtall->time      = time_ticks;
+    #####: 1635:                dtall->date      = days_since_epoch;
+    #####: 1636:                dtall->offset    = (DBSMALLINT)offset_minutes;
+    #####: 1637:                dtall->time_prec = 6;  /* microsecond precision (Python's max) */
+    #####: 1638:                dtall->has_time   = 1;
+    #####: 1639:                dtall->has_date   = 1;
+    #####: 1640:                dtall->has_offset = 1;
+        -: 1641:
+    #####: 1642:                *tdstype = TDSDATETIMEOFFSET;
+    #####: 1643:                return (int)sizeof(DBDATETIMEALL);
+        -: 1644:            }
+        -: 1645:        }    
+        -: 1646:    }
+    #####: 1647:    return (int)dbconvert(dbproc,
+call    0 never executed
+        -: 1648:                          TDSCHAR,
+        -: 1649:                          (const BYTE*)buffer,
+        -: 1650:                          (DBINT)written,
+        -: 1651:                          *tdstype,
+        -: 1652:                          (BYTE*)converted,
+        -: 1653:                          (DBINT)cbconverted);
+        -: 1654:}

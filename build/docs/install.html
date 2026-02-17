@@ -1,0 +1,276 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Getting Started &mdash; k-ctds 2.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=20623aea"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Basic Example" href="example.html" />
+    <link rel="prev" title="cTDS" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            k-ctds
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of Contents</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Getting Started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#building-from-source">Building From Source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#installing-freetds">Installing FreeTDS</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#installation-from-source">Installation From Source</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#installation-on-debian-based-systems">Installation On Debian-based Systems</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#installation-on-mac-os-x">Installation On Mac OS X</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#installation-on-windows">Installation On Windows</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#pip-installation">PIP Installation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="example.html">Basic Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="execute.html">Executing SQL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="callproc.html">Calling Stored Procedures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="results.html">Reading Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="transactions.html">Transactions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bulk_insert.html">Bulk Insert</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pooling.html">Connection Pooling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="encryption.html">TLS/SSL Encryption</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Change Log</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">k-ctds</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Getting Started</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/install.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="getting-started">
+<h1>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading"></a></h1>
+<p>The easiest way to install <cite>k-cTDS</cite> is from <a class="reference external" href="https://pypi.org/project/k-ctds/">PyPI</a> using <a class="reference external" href="https://pip.pypa.io/en/stable/">pip</a>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">k</span><span class="o">-</span><span class="n">ctds</span>
+</pre></div>
+</div>
+<p>Pre-built wheels are available for Linux (x86_64, aarch64), macOS
+(x86_64, arm64), and Windows (AMD64). The wheels bundle <a class="reference external" href="https://www.freetds.org">FreeTDS</a> and
+<a class="reference external" href="https://www.openssl.org/">OpenSSL</a> so there is nothing else to install.</p>
+<p>The rest of this page covers building from source, which is only
+necessary when linking against a custom build of <a class="reference external" href="https://www.freetds.org">FreeTDS</a>.</p>
+<section id="building-from-source">
+<h2>Building From Source<a class="headerlink" href="#building-from-source" title="Link to this heading"></a></h2>
+<p><cite>k-cTDS</cite> is built on top of <a class="reference external" href="https://www.freetds.org">FreeTDS</a>, which must be installed before
+compiling from source.</p>
+</section>
+<section id="installing-freetds">
+<h2>Installing FreeTDS<a class="headerlink" href="#installing-freetds" title="Link to this heading"></a></h2>
+<p>It is <strong>highly</strong> recommended to use the latest stable version of <a class="reference external" href="https://www.freetds.org">FreeTDS</a>, if
+possible. If this is not possible, <a class="reference external" href="https://www.freetds.org">FreeTDS</a> can be installed using your
+system’s package manager.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><a class="reference external" href="https://www.freetds.org">FreeTDS</a> <em>1.0</em> or later is required. Older versions are not
+supported.</p>
+</div>
+<section id="installation-from-source">
+<h3>Installation From Source<a class="headerlink" href="#installation-from-source" title="Link to this heading"></a></h3>
+<p><a class="reference external" href="https://www.freetds.org">FreeTDS</a> can be easily built from the latest stable source for use in a
+<a class="reference external" href="https://virtualenv.pypa.io/en/latest/">virtualenv</a> using the following:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create the virtual environment.</span>
+python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>ctds-venv<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>ctds-venv
+wget<span class="w"> </span><span class="s1">&#39;https://www.freetds.org/files/stable/freetds-patched.tar.gz&#39;</span>
+tar<span class="w"> </span>-xzf<span class="w"> </span>freetds-patched.tar.gz
+<span class="nb">pushd</span><span class="w"> </span>freetds-*
+
+<span class="c1"># The &quot;--with-openssl&quot; argument is required to connect to some databases,</span>
+<span class="c1"># such as Microsoft Azure.</span>
+./configure<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>--prefix<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>dirname<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">))</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>--with-openssl<span class="o">=</span><span class="k">$(</span>openssl<span class="w"> </span>version<span class="w"> </span>-d<span class="w"> </span><span class="p">|</span><span class="w"> </span>sed<span class="w">  </span>-r<span class="w"> </span><span class="s1">&#39;s/OPENSSLDIR: &quot;([^&quot;]*)&quot;/\1/&#39;</span><span class="k">)</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="o">&amp;&amp;</span><span class="w"> </span>make<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>make<span class="w"> </span>install
+<span class="nb">popd</span>
+</pre></div>
+</div>
+</section>
+<section id="installation-on-debian-based-systems">
+<h3>Installation On Debian-based Systems<a class="headerlink" href="#installation-on-debian-based-systems" title="Link to this heading"></a></h3>
+<p>Both <em>FreeTDS</em> and the <em>Python</em> development headers can easily be installed
+using the system package manager on Debian-based systems, such as Ubuntu.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>freetds-dev<span class="w"> </span>python3-dev
+</pre></div>
+</div>
+</section>
+<section id="installation-on-mac-os-x">
+<h3>Installation On Mac OS X<a class="headerlink" href="#installation-on-mac-os-x" title="Link to this heading"></a></h3>
+<p>On OS X, <a class="reference external" href="https://brew.sh/">homebrew</a> is recommended for installing <a class="reference external" href="https://www.freetds.org">FreeTDS</a>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>brew<span class="w"> </span>update
+brew<span class="w"> </span>install<span class="w"> </span>freetds
+</pre></div>
+</div>
+</section>
+<section id="installation-on-windows">
+<h3>Installation On Windows<a class="headerlink" href="#installation-on-windows" title="Link to this heading"></a></h3>
+<p>On Windows, <a class="reference external" href="https://www.freetds.org">FreeTDS</a> should be installed from the latest source code.
+A powershell script is included which may aid in this.</p>
+<p>You’ll need <a class="reference external" href="https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022">Visual Studio 2022 Build Tools</a> and <a class="reference external" href="https://cmake.org/">CMake</a>, and <a class="reference external" href="https://www.7-zip.org/">7-Zip</a> installed.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>64-bit Python is required. The build toolchain targets <code class="docutils literal notranslate"><span class="pre">amd64</span></code> and is
+only tested against 64-bit Python in CI.</p>
+</div>
+<div class="highlight-powershell notranslate"><div class="highlight"><pre><span></span><span class="c"># Add cmake to the path if necessary, using:  $env:Path += &quot;;c:\Program Files\CMake\bin\&quot;</span>
+<span class="p">./</span><span class="n">windows</span><span class="p">/</span><span class="n">freetds-install</span><span class="p">.</span><span class="n">ps1</span>
+<span class="c"># FreeTDS headers and include files are installed to ./build/include</span>
+<span class="c"># and ./build/lib</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="pip-installation">
+<h2>PIP Installation<a class="headerlink" href="#pip-installation" title="Link to this heading"></a></h2>
+<p>Once <a class="reference external" href="https://www.freetds.org">FreeTDS</a> is installed, <em>k-cTDS</em> can be installed from source
+using <a class="reference external" href="https://pip.pypa.io/en/stable/">pip</a>.</p>
+<p>When using a non-system version of <a class="reference external" href="https://www.freetds.org">FreeTDS</a>, set the following
+environment variables to point at your FreeTDS installation:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">CTDS_INCLUDE_DIRS</span><span class="o">=</span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/include<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="nv">CTDS_LIBRARY_DIRS</span><span class="o">=</span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/lib<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="nv">CTDS_RUNTIME_LIBRARY_DIRS</span><span class="o">=</span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/lib<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>pip<span class="w"> </span>install<span class="w"> </span>k-ctds<span class="w"> </span>--no-binary<span class="w"> </span>k-ctds
+</pre></div>
+</div>
+<p>The three <code class="docutils literal notranslate"><span class="pre">CTDS_*</span></code> environment variables are read by <code class="docutils literal notranslate"><span class="pre">setup.py</span></code>
+during compilation of the C extension:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 35.0%" />
+<col style="width: 65.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Variable</p></th>
+<th class="head"><p>Purpose</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CTDS_INCLUDE_DIRS</span></code></p></td>
+<td><p>Directories containing FreeTDS header files (<code class="docutils literal notranslate"><span class="pre">sybdb.h</span></code>,
+<code class="docutils literal notranslate"><span class="pre">ctpublic.h</span></code>). Passed to the C compiler as include paths.
+Separate multiple directories with <code class="docutils literal notranslate"><span class="pre">:</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CTDS_LIBRARY_DIRS</span></code></p></td>
+<td><p>Directories containing FreeTDS shared libraries (<code class="docutils literal notranslate"><span class="pre">libsybdb</span></code>,
+<code class="docutils literal notranslate"><span class="pre">libct</span></code>). Passed to the linker as library search paths.
+Separate multiple directories with <code class="docutils literal notranslate"><span class="pre">:</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CTDS_RUNTIME_LIBRARY_DIRS</span></code></p></td>
+<td><p>Baked into the compiled extension as an RPATH so the dynamic
+linker can find FreeTDS at runtime without <code class="docutils literal notranslate"><span class="pre">LD_LIBRARY_PATH</span></code>.
+Not supported on Windows.</p></td>
+</tr>
+</tbody>
+</table>
+<p>When using the system version of <a class="reference external" href="https://www.freetds.org">FreeTDS</a>, no variables are needed:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>k-ctds<span class="w"> </span>--no-binary<span class="w"> </span>k-ctds
+</pre></div>
+</div>
+<p>When building on Windows, run the following in powershell:</p>
+<div class="highlight-powershell notranslate"><div class="highlight"><pre><span></span><span class="c"># current directory must be the k-ctds root</span>
+<span class="nv">$Env:CTDS_INCLUDE_DIRS</span> <span class="p">=</span> <span class="s2">&quot;</span><span class="p">$(</span><span class="n">pwd</span><span class="p">)</span><span class="s2">/build/include&quot;</span>
+<span class="nv">$Env:CTDS_LIBRARY_DIRS</span> <span class="p">=</span> <span class="s2">&quot;</span><span class="p">$(</span><span class="n">pwd</span><span class="p">)</span><span class="s2">/build/lib&quot;</span>
+<span class="nv">$Env:CTDS_RUNTIME_LIBRARY_DIRS</span> <span class="p">=</span> <span class="s2">&quot;</span><span class="p">$(</span><span class="n">pwd</span><span class="p">)</span><span class="s2">/build/lib&quot;</span>
+<span class="n">pip</span> <span class="n">install</span> <span class="n">-e</span> <span class="p">.</span>
+
+<span class="c"># After pip install, copy FreeTDS DLLs alongside the installed extension:</span>
+<span class="nb">Copy-Item</span> <span class="s2">&quot;$Env:CTDS_LIBRARY_DIRS\*.dll&quot;</span> <span class="s2">&quot;</span><span class="p">$(</span><span class="n">python</span> <span class="n">-c</span> <span class="s1">&#39;import site; print(site.getsitepackages()[0])&#39;</span><span class="p">)</span><span class="s2">&quot;</span>
+</pre></div>
+</div>
+<p>Alternatively, if you prefer not to copy DLLs, you can register the
+directory at runtime before importing. On Python 3.8+, Windows no longer
+searches <code class="docutils literal notranslate"><span class="pre">PATH</span></code> for DLL dependencies of extension modules, so
+<code class="docutils literal notranslate"><span class="pre">os.add_dll_directory</span></code> must be called before the first import:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="n">os</span><span class="o">.</span><span class="n">add_dll_directory</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;C:\path\to\freetds\lib&#39;</span><span class="p">)</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">k_ctds</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="cTDS" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="example.html" class="btn btn-neutral float-right" title="Basic Example" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026-, Kodda Labs, Inc..</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

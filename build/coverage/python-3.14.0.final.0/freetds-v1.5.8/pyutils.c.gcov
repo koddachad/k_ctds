@@ -1,0 +1,420 @@
+        -:    0:Source:src/k_ctds/pyutils.c
+        -:    0:Source is newer than graph
+        -:    1:#include "include/push_warnings.h"
+        -:    2:#include <Python.h>
+        -:    3:/* `datetime.h` must only be included here. */
+        -:    4:#include <datetime.h>
+        -:    5:#include "include/pop_warnings.h"
+        -:    6:
+        -:    7:#include <sys/types.h>
+        -:    8:
+        -:    9:#include "include/pyutils.h"
+        -:   10:
+function PyObject_SetAttrStringLongValue called 0 returned 0% blocks executed 0%
+    #####:   11:int PyObject_SetAttrStringLongValue(PyObject* o, const char* name, long v)
+        -:   12:{
+    #####:   13:    int result = -1;
+    #####:   14:    PyObject* value = PyLong_FromLong(v);
+call    0 never executed
+    #####:   15:    if (value)
+branch  0 never executed
+branch  1 never executed
+        -:   16:    {
+    #####:   17:        result = PyObject_SetAttrString(o, name, value);
+call    0 never executed
+        -:   18:    }
+    #####:   19:    Py_XDECREF(value);
+call    0 never executed
+    #####:   20:    return result;
+        -:   21:}
+        -:   22:
+function PyDict_SetItemStringLongValue called 0 returned 0% blocks executed 0%
+    #####:   23:int PyDict_SetItemStringLongValue(PyObject* d, const char* name, long v)
+        -:   24:{
+    #####:   25:    int result = -1;
+    #####:   26:    PyObject* value = PyLong_FromLong(v);
+call    0 never executed
+    #####:   27:    if (value)
+branch  0 never executed
+branch  1 never executed
+        -:   28:    {
+    #####:   29:        result = PyDict_SetItemString(d, name, value);
+call    0 never executed
+        -:   30:    }
+    #####:   31:    Py_XDECREF(value);
+call    0 never executed
+    #####:   32:    return result;
+        -:   33:}
+        -:   34:
+function PyDict_SetItemStringStringValue called 0 returned 0% blocks executed 0%
+    #####:   35:int PyDict_SetItemStringStringValue(PyObject* d, const char* name, const char* v)
+        -:   36:{
+    #####:   37:    int result = -1;
+    #####:   38:    PyObject* value = PyUnicode_FromString(v);
+call    0 never executed
+    #####:   39:    if (value)
+branch  0 never executed
+branch  1 never executed
+        -:   40:    {
+    #####:   41:        result = PyDict_SetItemString(d, name, value);
+call    0 never executed
+        -:   42:    }
+    #####:   43:    Py_XDECREF(value);
+call    0 never executed
+    #####:   44:    return result;
+        -:   45:}
+        -:   46:
+        -:   47:
+        -:   48:/* decimal.Decimal reference. */
+        -:   49:static PyObject* PyDecimalType = NULL;
+        -:   50:
+function PyDecimalType_init called 0 returned 0% blocks executed 0%
+    #####:   51:int PyDecimalType_init(void)
+        -:   52:{
+    #####:   53:    PyObject* moddecimal;
+    #####:   54:    assert(!PyDecimalType); /* should not be importing multiple times. */
+    #####:   55:    moddecimal = PyImport_ImportModule("decimal");
+call    0 never executed
+    #####:   56:    if (moddecimal)
+branch  0 never executed
+branch  1 never executed
+        -:   57:    {
+    #####:   58:        PyDecimalType = PyObject_GetAttrString(moddecimal, "Decimal");
+call    0 never executed
+    #####:   59:        Py_DECREF(moddecimal);
+branch  0 never executed
+branch  1 never executed
+        -:   60:    }
+    #####:   61:    return !!PyDecimalType;
+        -:   62:}
+        -:   63:
+function PyDecimalType_free called 0 returned 0% blocks executed 0%
+    #####:   64:void PyDecimalType_free(void)
+        -:   65:{
+    #####:   66:    Py_XDECREF(PyDecimalType);
+call    0 never executed
+    #####:   67:}
+        -:   68:
+function PyDecimal_Check called 0 returned 0% blocks executed 0%
+    #####:   69:int PyDecimal_Check(PyObject* o)
+        -:   70:{
+    #####:   71:    return PyObject_TypeCheck(o, (PyTypeObject*)PyDecimalType);
+branch  0 never executed
+branch  1 never executed
+        -:   72:}
+        -:   73:
+function PyDecimal_FromString called 0 returned 0% blocks executed 0%
+    #####:   74:PyObject* PyDecimal_FromString(const char* str, Py_ssize_t size)
+        -:   75:{
+    #####:   76:    return PyObject_CallFunction(PyDecimalType, "s#", str, size);
+call    0 never executed
+        -:   77:}
+        -:   78:
+function PyDecimal_ToString called 0 returned 0% blocks executed 0%
+    #####:   79:PyObject* PyDecimal_ToString(PyObject* odecimal)
+        -:   80:{
+    #####:   81:    PyObject* ostr = NULL;
+        -:   82:
+        -:   83:#if PY_MAJOR_VERSION < 3
+        -:   84:    PyObject* oformat = oformat = PyString_FromString("{0:f}");
+        -:   85:#else /* if PY_MAJOR_VERSION < 3 */
+    #####:   86:    PyObject* oformat = PyUnicode_FromString("{0:f}");
+call    0 never executed
+        -:   87:#endif /* else if PY_MAJOR_VERSION < 3 */
+        -:   88:
+    #####:   89:    if (oformat)
+branch  0 never executed
+branch  1 never executed
+        -:   90:    {
+    #####:   91:        ostr = PyObject_CallMethod(oformat, "format", "(O)", odecimal);
+call    0 never executed
+    #####:   92:        Py_DECREF(oformat);
+branch  0 never executed
+branch  1 never executed
+        -:   93:    }
+    #####:   94:    return ostr;
+        -:   95:}
+        -:   96:
+        -:   97:/* uuid.UUID reference */
+        -:   98:static PyObject* PyUuidType = NULL;
+        -:   99:
+function PyUuidType_init called 0 returned 0% blocks executed 0%
+    #####:  100:int PyUuidType_init(void)
+        -:  101:{
+    #####:  102:    PyObject* moduuid;
+    #####:  103:    assert(!PyUuidType);
+    #####:  104:    moduuid = PyImport_ImportModule("uuid"); /* should not be importing multiple times. */
+call    0 never executed
+    #####:  105:    if (moduuid)
+branch  0 never executed
+branch  1 never executed
+        -:  106:    {
+    #####:  107:        PyUuidType = PyObject_GetAttrString(moduuid, "UUID");
+call    0 never executed
+    #####:  108:        Py_DECREF(moduuid);
+branch  0 never executed
+branch  1 never executed
+        -:  109:    }
+    #####:  110:    return !!PyUuidType;
+        -:  111:}
+        -:  112:
+function PyUuidType_free called 0 returned 0% blocks executed 0%
+    #####:  113:void PyUuidType_free(void)
+        -:  114:{
+    #####:  115:    Py_XDECREF(PyUuidType);
+call    0 never executed
+    #####:  116:}
+        -:  117:
+function PyUuid_Check called 0 returned 0% blocks executed 0%
+    #####:  118:int PyUuid_Check(PyObject* o)
+        -:  119:{
+    #####:  120:    return PyObject_TypeCheck(o, (PyTypeObject*)PyUuidType);
+branch  0 never executed
+branch  1 never executed
+        -:  121:}
+        -:  122:
+function PyUuid_FromBytes called 0 returned 0% blocks executed 0%
+    #####:  123:PyObject* PyUuid_FromBytes(const char* bytes, Py_ssize_t size)
+        -:  124:{
+    #####:  125:    PyObject* args = NULL;
+    #####:  126:    PyObject* kwargs = NULL;
+    #####:  127:    PyObject* obytes = NULL;
+        -:  128:
+    #####:  129:    PyObject* uuid = NULL;
+    #####:  130:    do
+    #####:  131:    {
+    #####:  132:        args = PyTuple_New(0);
+call    0 never executed
+    #####:  133:        if (!args) break;
+branch  0 never executed
+branch  1 never executed
+        -:  134:
+    #####:  135:        kwargs = PyDict_New();
+call    0 never executed
+    #####:  136:        if (!kwargs) break;
+branch  0 never executed
+branch  1 never executed
+        -:  137:
+    #####:  138:        obytes = PyBytes_FromStringAndSize(bytes, size);
+call    0 never executed
+    #####:  139:        if (!obytes) break;
+branch  0 never executed
+branch  1 never executed
+        -:  140:
+        -:  141:#ifdef __BIG_ENDIAN__
+        -:  142:#  define UUID_BYTES "bytes"
+        -:  143:#else
+        -:  144:#  define UUID_BYTES "bytes_le"
+        -:  145:#endif
+    #####:  146:        if (0 != PyDict_SetItemString(kwargs, UUID_BYTES, obytes)) break;
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  147:
+    #####:  148:        uuid = PyObject_Call(PyUuidType, args, kwargs);
+call    0 never executed
+        -:  149:    }
+        -:  150:    while (0);
+        -:  151:
+    #####:  152:    Py_XDECREF(args);
+call    0 never executed
+    #####:  153:    Py_XDECREF(kwargs);
+call    0 never executed
+    #####:  154:    Py_XDECREF(obytes);
+call    0 never executed
+        -:  155:
+    #####:  156:    return uuid;
+        -:  157:}
+        -:  158:
+        -:  159:
+function PyDateTimeType_init called 0 returned 0% blocks executed 0%
+    #####:  160:int PyDateTimeType_init(void)
+        -:  161:{
+    #####:  162:    assert(!PyDateTimeAPI);
+    #####:  163:    return !!(PyDateTime_IMPORT);
+call    0 never executed
+        -:  164:}
+        -:  165:
+function PyDateTimeType_free called 0 returned 0% blocks executed 0%
+    #####:  166:void PyDateTimeType_free(void)
+        -:  167:{
+    #####:  168:    PyDateTimeAPI = NULL;
+    #####:  169:}
+        -:  170:
+function PyDateTime_Check_ called 0 returned 0% blocks executed 0%
+    #####:  171:int PyDateTime_Check_(PyObject* o) { return PyDateTime_Check(o); }
+branch  0 never executed
+branch  1 never executed
+function PyDate_Check_ called 0 returned 0% blocks executed 0%
+    #####:  172:int PyDate_Check_(PyObject* o) { return PyDate_Check(o); }
+branch  0 never executed
+branch  1 never executed
+function PyTime_Check_ called 0 returned 0% blocks executed 0%
+    #####:  173:int PyTime_Check_(PyObject* o) { return PyTime_Check(o); }
+branch  0 never executed
+branch  1 never executed
+        -:  174:
+function PyDateTime_FromDateAndTime_ called 0 returned 0% blocks executed 0%
+    #####:  175:PyObject* PyDateTime_FromDateAndTime_(int year, int month, int day, int hour, int minute, int second, int usecond)
+        -:  176:{
+    #####:  177:    return PyDateTime_FromDateAndTime(year, month, day, hour, minute, second, usecond);
+call    0 never executed
+        -:  178:}
+        -:  179:
+function PyDateTime_FromTimestamp_ called 0 returned 0% blocks executed 0%
+    #####:  180:PyObject* PyDateTime_FromTimestamp_(PyObject* args)
+        -:  181:{
+    #####:  182:    return PyDateTime_FromTimestamp(args);
+call    0 never executed
+        -:  183:}
+        -:  184:
+function PyDate_FromDate_ called 0 returned 0% blocks executed 0%
+    #####:  185:PyObject* PyDate_FromDate_(int year, int month, int day)
+        -:  186:{
+    #####:  187:    return PyDate_FromDate(year, month, day);
+call    0 never executed
+        -:  188:}
+        -:  189:
+function PyDate_FromTimestamp_ called 0 returned 0% blocks executed 0%
+    #####:  190:PyObject* PyDate_FromTimestamp_(PyObject* args)
+        -:  191:{
+    #####:  192:    return PyDate_FromTimestamp(args);
+call    0 never executed
+        -:  193:}
+        -:  194:
+function PyTime_FromTime_ called 0 returned 0% blocks executed 0%
+    #####:  195:PyObject* PyTime_FromTime_(int hour, int minute, int second, int usecond)
+        -:  196:{
+    #####:  197:    return PyTime_FromTime(hour, minute, second, usecond);
+call    0 never executed
+        -:  198:}
+        -:  199:
+function PyDelta_FromDSU_ called 0 returned 0% blocks executed 0%
+    #####:  200:PyObject* PyDelta_FromDSU_(int days, int seconds, int useconds)
+        -:  201:{
+    #####:  202:    return PyDelta_FromDSU(days, seconds, useconds);
+call    0 never executed
+        -:  203:}
+        -:  204:
+function PyTimeZone_FromOffset_ called 0 returned 0% blocks executed 0%
+    #####:  205:PyObject* PyTimeZone_FromOffset_(PyObject* offset)
+        -:  206:{
+    #####:  207:    return PyTimeZone_FromOffset(offset);
+call    0 never executed
+        -:  208:}
+        -:  209:
+function PyDateTime_FromDateAndTimeAndTZ_ called 0 returned 0% blocks executed 0%
+    #####:  210:PyObject* PyDateTime_FromDateAndTimeAndTZ_(int year, int month, int day,
+        -:  211:                                           int hour, int minute, int second,
+        -:  212:                                           int usecond, PyObject* tzinfo)
+        -:  213:{
+    #####:  214:    return PyDateTimeAPI->DateTime_FromDateAndTime(
+call    0 never executed
+        -:  215:        year, month, day, hour, minute, second, usecond,
+        -:  216:        tzinfo, PyDateTimeAPI->DateTimeType);
+        -:  217:}
+        -:  218:
+function PyDateTime_GetTZInfo_ called 0 returned 0% blocks executed 0%
+    #####:  219:PyObject* PyDateTime_GetTZInfo_(PyObject* o)
+        -:  220:{
+    #####:  221:    if (PyDateTime_Check(o))
+branch  0 never executed
+branch  1 never executed
+        -:  222:    {
+        -:  223:        #if PY_VERSION_HEX >= 0x030a0000
+    #####:  224:            PyObject* tzinfo = PyDateTime_DATE_GET_TZINFO(o);
+branch  0 never executed
+branch  1 never executed
+        -:  225:        #else
+        -:  226:            PyObject* tzinfo = ((_PyDateTime_BaseTZInfo *)(o))->hastzinfo
+        -:  227:                ? ((PyDateTime_DateTime *)(o))->tzinfo
+        -:  228:                : Py_None;
+        -:  229:        #endif
+    #####:  230:        if (tzinfo == Py_None) return NULL;
+branch  0 never executed
+branch  1 never executed
+    #####:  231:        return tzinfo;
+        -:  232:    }
+        -:  233:    return NULL;
+        -:  234:}
+        -:  235:
+function PyDateTime_GetUTCOffsetSeconds_ called 0 returned 0% blocks executed 0%
+    #####:  236:int PyDateTime_GetUTCOffsetSeconds_(PyObject* o, long* offset_seconds)
+        -:  237:{
+    #####:  238:    PyObject* tzinfo;
+    #####:  239:    PyObject* offset;
+    #####:  240:    PyObject* total;
+        -:  241:
+    #####:  242:    *offset_seconds = 0;
+        -:  243:
+    #####:  244:    tzinfo = PyDateTime_GetTZInfo_(o);
+call    0 never executed
+    #####:  245:    if (!tzinfo) return 0; /* naive datetime, not an error */
+branch  0 never executed
+branch  1 never executed
+        -:  246:
+        -:  247:    /* Call tzinfo.utcoffset(o) to get a timedelta. */
+    #####:  248:    offset = PyObject_CallMethod(tzinfo, "utcoffset", "(O)", o);
+call    0 never executed
+    #####:  249:    if (!offset) return -1;
+branch  0 never executed
+branch  1 never executed
+        -:  250:
+    #####:  251:    if (offset == Py_None)
+branch  0 never executed
+branch  1 never executed
+        -:  252:    {
+    #####:  253:        Py_DECREF(offset);
+branch  0 never executed
+branch  1 never executed
+    #####:  254:        return 0;
+        -:  255:    }
+        -:  256:
+        -:  257:    /* Call timedelta.total_seconds() to get a float, then truncate to long. */
+    #####:  258:    total = PyObject_CallMethod(offset, "total_seconds", NULL);
+call    0 never executed
+    #####:  259:    Py_DECREF(offset);
+branch  0 never executed
+branch  1 never executed
+    #####:  260:    if (!total) return -1;
+branch  0 never executed
+branch  1 never executed
+        -:  261:
+    #####:  262:    *offset_seconds = (long)PyFloat_AsDouble(total);
+call    0 never executed
+    #####:  263:    Py_DECREF(total);
+branch  0 never executed
+branch  1 never executed
+        -:  264:
+    #####:  265:    if (PyErr_Occurred()) return -1;
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  266:
+        -:  267:    return 0;
+        -:  268:}
+        -:  269:
+function PyDateTime_GET_YEAR_ called 0 returned 0% blocks executed 0%
+    #####:  270:int PyDateTime_GET_YEAR_(PyObject* o) { return PyDateTime_GET_YEAR(o); }
+function PyDateTime_GET_MONTH_ called 0 returned 0% blocks executed 0%
+    #####:  271:int PyDateTime_GET_MONTH_(PyObject* o) { return PyDateTime_GET_MONTH(o); }
+function PyDateTime_GET_DAY_ called 0 returned 0% blocks executed 0%
+    #####:  272:int PyDateTime_GET_DAY_(PyObject* o) { return PyDateTime_GET_DAY(o); }
+function PyDateTime_DATE_GET_HOUR_ called 0 returned 0% blocks executed 0%
+    #####:  273:int PyDateTime_DATE_GET_HOUR_(PyObject* o) { return PyDateTime_DATE_GET_HOUR(o); }
+function PyDateTime_DATE_GET_MINUTE_ called 0 returned 0% blocks executed 0%
+    #####:  274:int PyDateTime_DATE_GET_MINUTE_(PyObject* o) { return PyDateTime_DATE_GET_MINUTE(o); }
+function PyDateTime_DATE_GET_SECOND_ called 0 returned 0% blocks executed 0%
+    #####:  275:int PyDateTime_DATE_GET_SECOND_(PyObject* o) { return PyDateTime_DATE_GET_SECOND(o); }
+function PyDateTime_DATE_GET_MICROSECOND_ called 0 returned 0% blocks executed 0%
+    #####:  276:int PyDateTime_DATE_GET_MICROSECOND_(PyObject* o) { return PyDateTime_DATE_GET_MICROSECOND(o); }
+        -:  277:
+function PyDateTime_TIME_GET_HOUR_ called 0 returned 0% blocks executed 0%
+    #####:  278:int PyDateTime_TIME_GET_HOUR_(PyObject* o) { return PyDateTime_TIME_GET_HOUR(o); }
+function PyDateTime_TIME_GET_MINUTE_ called 0 returned 0% blocks executed 0%
+    #####:  279:int PyDateTime_TIME_GET_MINUTE_(PyObject* o) { return PyDateTime_TIME_GET_MINUTE(o); }
+function PyDateTime_TIME_GET_SECOND_ called 0 returned 0% blocks executed 0%
+    #####:  280:int PyDateTime_TIME_GET_SECOND_(PyObject* o) { return PyDateTime_TIME_GET_SECOND(o); }
+function PyDateTime_TIME_GET_MICROSECOND_ called 0 returned 0% blocks executed 0%
+    #####:  281:int PyDateTime_TIME_GET_MICROSECOND_(PyObject* o) { return PyDateTime_TIME_GET_MICROSECOND(o); }
+        -:  282:

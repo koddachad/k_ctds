@@ -1,0 +1,1683 @@
+        -:    0:Source:/home/ec2-user/.pyenv/versions/3.12.8/include/python3.12/object.h
+        -:    1:#ifndef Py_OBJECT_H
+        -:    2:#define Py_OBJECT_H
+        -:    3:#ifdef __cplusplus
+        -:    4:extern "C" {
+        -:    5:#endif
+        -:    6:
+        -:    7:
+        -:    8:/* Object and type object interface */
+        -:    9:
+        -:   10:/*
+        -:   11:Objects are structures allocated on the heap.  Special rules apply to
+        -:   12:the use of objects to ensure they are properly garbage-collected.
+        -:   13:Objects are never allocated statically or on the stack; they must be
+        -:   14:accessed through special macros and functions only.  (Type objects are
+        -:   15:exceptions to the first rule; the standard types are represented by
+        -:   16:statically initialized type objects, although work on type/class unification
+        -:   17:for Python 2.2 made it possible to have heap-allocated type objects too).
+        -:   18:
+        -:   19:An object has a 'reference count' that is increased or decreased when a
+        -:   20:pointer to the object is copied or deleted; when the reference count
+        -:   21:reaches zero there are no references to the object left and it can be
+        -:   22:removed from the heap.
+        -:   23:
+        -:   24:An object has a 'type' that determines what it represents and what kind
+        -:   25:of data it contains.  An object's type is fixed when it is created.
+        -:   26:Types themselves are represented as objects; an object contains a
+        -:   27:pointer to the corresponding type object.  The type itself has a type
+        -:   28:pointer pointing to the object representing the type 'type', which
+        -:   29:contains a pointer to itself!.
+        -:   30:
+        -:   31:Objects do not float around in memory; once allocated an object keeps
+        -:   32:the same size and address.  Objects that must hold variable-size data
+        -:   33:can contain pointers to variable-size parts of the object.  Not all
+        -:   34:objects of the same type have the same size; but the size cannot change
+        -:   35:after allocation.  (These restrictions are made so a reference to an
+        -:   36:object can be simply a pointer -- moving an object would require
+        -:   37:updating all the pointers, and changing an object's size would require
+        -:   38:moving it if there was another object right next to it.)
+        -:   39:
+        -:   40:Objects are always accessed through pointers of the type 'PyObject *'.
+        -:   41:The type 'PyObject' is a structure that only contains the reference count
+        -:   42:and the type pointer.  The actual memory allocated for an object
+        -:   43:contains other data that can only be accessed after casting the pointer
+        -:   44:to a pointer to a longer structure type.  This longer type must start
+        -:   45:with the reference count and type fields; the macro PyObject_HEAD should be
+        -:   46:used for this (to accommodate for future changes).  The implementation
+        -:   47:of a particular object type can cast the object pointer to the proper
+        -:   48:type and back.
+        -:   49:
+        -:   50:A standard interface exists for objects that contain an array of items
+        -:   51:whose size is determined when the object is allocated.
+        -:   52:*/
+        -:   53:
+        -:   54:#include "pystats.h"
+        -:   55:
+        -:   56:/* Py_DEBUG implies Py_REF_DEBUG. */
+        -:   57:#if defined(Py_DEBUG) && !defined(Py_REF_DEBUG)
+        -:   58:#  define Py_REF_DEBUG
+        -:   59:#endif
+        -:   60:
+        -:   61:#if defined(Py_LIMITED_API) && defined(Py_TRACE_REFS)
+        -:   62:#  error Py_LIMITED_API is incompatible with Py_TRACE_REFS
+        -:   63:#endif
+        -:   64:
+        -:   65:#ifdef Py_TRACE_REFS
+        -:   66:/* Define pointers to support a doubly-linked list of all live heap objects. */
+        -:   67:#define _PyObject_HEAD_EXTRA            \
+        -:   68:    PyObject *_ob_next;           \
+        -:   69:    PyObject *_ob_prev;
+        -:   70:
+        -:   71:#define _PyObject_EXTRA_INIT _Py_NULL, _Py_NULL,
+        -:   72:
+        -:   73:#else
+        -:   74:#  define _PyObject_HEAD_EXTRA
+        -:   75:#  define _PyObject_EXTRA_INIT
+        -:   76:#endif
+        -:   77:
+        -:   78:/* PyObject_HEAD defines the initial segment of every PyObject. */
+        -:   79:#define PyObject_HEAD                   PyObject ob_base;
+        -:   80:
+        -:   81:/*
+        -:   82:Immortalization:
+        -:   83:
+        -:   84:The following indicates the immortalization strategy depending on the amount
+        -:   85:of available bits in the reference count field. All strategies are backwards
+        -:   86:compatible but the specific reference count value or immortalization check
+        -:   87:might change depending on the specializations for the underlying system.
+        -:   88:
+        -:   89:Proper deallocation of immortal instances requires distinguishing between
+        -:   90:statically allocated immortal instances vs those promoted by the runtime to be
+        -:   91:immortal. The latter should be the only instances that require
+        -:   92:cleanup during runtime finalization.
+        -:   93:*/
+        -:   94:
+        -:   95:#if SIZEOF_VOID_P > 4
+        -:   96:/*
+        -:   97:In 64+ bit systems, an object will be marked as immortal by setting all of the
+        -:   98:lower 32 bits of the reference count field, which is equal to: 0xFFFFFFFF
+        -:   99:
+        -:  100:Using the lower 32 bits makes the value backwards compatible by allowing
+        -:  101:C-Extensions without the updated checks in Py_INCREF and Py_DECREF to safely
+        -:  102:increase and decrease the objects reference count. The object would lose its
+        -:  103:immortality, but the execution would still be correct.
+        -:  104:
+        -:  105:Reference count increases will use saturated arithmetic, taking advantage of
+        -:  106:having all the lower 32 bits set, which will avoid the reference count to go
+        -:  107:beyond the refcount limit. Immortality checks for reference count decreases will
+        -:  108:be done by checking the bit sign flag in the lower 32 bits.
+        -:  109:*/
+        -:  110:#define _Py_IMMORTAL_REFCNT UINT_MAX
+        -:  111:
+        -:  112:#else
+        -:  113:/*
+        -:  114:In 32 bit systems, an object will be marked as immortal by setting all of the
+        -:  115:lower 30 bits of the reference count field, which is equal to: 0x3FFFFFFF
+        -:  116:
+        -:  117:Using the lower 30 bits makes the value backwards compatible by allowing
+        -:  118:C-Extensions without the updated checks in Py_INCREF and Py_DECREF to safely
+        -:  119:increase and decrease the objects reference count. The object would lose its
+        -:  120:immortality, but the execution would still be correct.
+        -:  121:
+        -:  122:Reference count increases and decreases will first go through an immortality
+        -:  123:check by comparing the reference count field to the immortality reference count.
+        -:  124:*/
+        -:  125:#define _Py_IMMORTAL_REFCNT (UINT_MAX >> 2)
+        -:  126:#endif
+        -:  127:
+        -:  128:// Make all internal uses of PyObject_HEAD_INIT immortal while preserving the
+        -:  129:// C-API expectation that the refcnt will be set to 1.
+        -:  130:#ifdef Py_BUILD_CORE
+        -:  131:#define PyObject_HEAD_INIT(type)    \
+        -:  132:    {                               \
+        -:  133:        _PyObject_EXTRA_INIT        \
+        -:  134:        { _Py_IMMORTAL_REFCNT },    \
+        -:  135:        (type)                      \
+        -:  136:    },
+        -:  137:#else
+        -:  138:#define PyObject_HEAD_INIT(type) \
+        -:  139:    {                            \
+        -:  140:        _PyObject_EXTRA_INIT     \
+        -:  141:        { 1 },                   \
+        -:  142:        (type)                   \
+        -:  143:    },
+        -:  144:#endif /* Py_BUILD_CORE */
+        -:  145:
+        -:  146:#define PyVarObject_HEAD_INIT(type, size) \
+        -:  147:    {                                     \
+        -:  148:        PyObject_HEAD_INIT(type)          \
+        -:  149:        (size)                            \
+        -:  150:    },
+        -:  151:
+        -:  152:/* PyObject_VAR_HEAD defines the initial segment of all variable-size
+        -:  153: * container objects.  These end with a declaration of an array with 1
+        -:  154: * element, but enough space is malloc'ed so that the array actually
+        -:  155: * has room for ob_size elements.  Note that ob_size is an element count,
+        -:  156: * not necessarily a byte count.
+        -:  157: */
+        -:  158:#define PyObject_VAR_HEAD      PyVarObject ob_base;
+        -:  159:#define Py_INVALID_SIZE (Py_ssize_t)-1
+        -:  160:
+        -:  161:/* Nothing is actually declared to be a PyObject, but every pointer to
+        -:  162: * a Python object can be cast to a PyObject*.  This is inheritance built
+        -:  163: * by hand.  Similarly every pointer to a variable-size Python object can,
+        -:  164: * in addition, be cast to PyVarObject*.
+        -:  165: */
+        -:  166:struct _object {
+        -:  167:    _PyObject_HEAD_EXTRA
+        -:  168:
+        -:  169:#if (defined(__GNUC__) || defined(__clang__)) \
+        -:  170:        && !(defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112L)
+        -:  171:    // On C99 and older, anonymous union is a GCC and clang extension
+        -:  172:    __extension__
+        -:  173:#endif
+        -:  174:#ifdef _MSC_VER
+        -:  175:    // Ignore MSC warning C4201: "nonstandard extension used:
+        -:  176:    // nameless struct/union"
+        -:  177:    __pragma(warning(push))
+        -:  178:    __pragma(warning(disable: 4201))
+        -:  179:#endif
+        -:  180:    union {
+        -:  181:       Py_ssize_t ob_refcnt;
+        -:  182:#if SIZEOF_VOID_P > 4
+        -:  183:       PY_UINT32_T ob_refcnt_split[2];
+        -:  184:#endif
+        -:  185:    };
+        -:  186:#ifdef _MSC_VER
+        -:  187:    __pragma(warning(pop))
+        -:  188:#endif
+        -:  189:
+        -:  190:    PyTypeObject *ob_type;
+        -:  191:};
+        -:  192:
+        -:  193:/* Cast argument to PyObject* type. */
+        -:  194:#define _PyObject_CAST(op) _Py_CAST(PyObject*, (op))
+        -:  195:
+        -:  196:typedef struct {
+        -:  197:    PyObject ob_base;
+        -:  198:    Py_ssize_t ob_size; /* Number of items in variable part */
+        -:  199:} PyVarObject;
+        -:  200:
+        -:  201:/* Cast argument to PyVarObject* type. */
+        -:  202:#define _PyVarObject_CAST(op) _Py_CAST(PyVarObject*, (op))
+        -:  203:
+        -:  204:
+        -:  205:// Test if the 'x' object is the 'y' object, the same as "x is y" in Python.
+        -:  206:PyAPI_FUNC(int) Py_Is(PyObject *x, PyObject *y);
+        -:  207:#define Py_Is(x, y) ((x) == (y))
+        -:  208:
+        -:  209:
+        -:  210:static inline Py_ssize_t Py_REFCNT(PyObject *ob) {
+        -:  211:    return ob->ob_refcnt;
+        -:  212:}
+        -:  213:#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+        -:  214:#  define Py_REFCNT(ob) Py_REFCNT(_PyObject_CAST(ob))
+        -:  215:#endif
+        -:  216:
+        -:  217:
+        -:  218:// bpo-39573: The Py_SET_TYPE() function must be used to set an object type.
+    #####:  219:static inline PyTypeObject* Py_TYPE(PyObject *ob) {
+    #####:  220:    return ob->ob_type;
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+branch  5 never executed
+branch  6 never executed
+branch  7 never executed
+branch  8 never executed
+branch  9 never executed
+branch 10 never executed
+branch 11 never executed
+branch 12 never executed
+branch 13 never executed
+call   14 never executed
+call   15 never executed
+        -:  221:}
+        -:  222:#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+        -:  223:#  define Py_TYPE(ob) Py_TYPE(_PyObject_CAST(ob))
+        -:  224:#endif
+        -:  225:
+        -:  226:PyAPI_DATA(PyTypeObject) PyLong_Type;
+        -:  227:PyAPI_DATA(PyTypeObject) PyBool_Type;
+        -:  228:
+        -:  229:// bpo-39573: The Py_SET_SIZE() function must be used to set an object size.
+    #####:  230:static inline Py_ssize_t Py_SIZE(PyObject *ob) {
+    #####:  231:    assert(ob->ob_type != &PyLong_Type);
+    #####:  232:    assert(ob->ob_type != &PyBool_Type);
+    #####:  233:    return  _PyVarObject_CAST(ob)->ob_size;
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+branch  5 never executed
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+branch  9 never executed
+branch 10 never executed
+        -:  234:}
+        -:  235:#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+        -:  236:#  define Py_SIZE(ob) Py_SIZE(_PyObject_CAST(ob))
+        -:  237:#endif
+        -:  238:
+    #####:  239:static inline Py_ALWAYS_INLINE int _Py_IsImmortal(PyObject *op)
+        -:  240:{
+        -:  241:#if SIZEOF_VOID_P > 4
+    #####:  242:    return _Py_CAST(PY_INT32_T, op->ob_refcnt) < 0;
+        -:  243:#else
+        -:  244:    return op->ob_refcnt == _Py_IMMORTAL_REFCNT;
+        -:  245:#endif
+        -:  246:}
+        -:  247:#define _Py_IsImmortal(op) _Py_IsImmortal(_PyObject_CAST(op))
+        -:  248:
+    #####:  249:static inline int Py_IS_TYPE(PyObject *ob, PyTypeObject *type) {
+    #####:  250:    return Py_TYPE(ob) == type;
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+branch  5 never executed
+        -:  251:}
+        -:  252:#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+        -:  253:#  define Py_IS_TYPE(ob, type) Py_IS_TYPE(_PyObject_CAST(ob), (type))
+        -:  254:#endif
+        -:  255:
+        -:  256:
+        -:  257:static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
+        -:  258:    // This immortal check is for code that is unaware of immortal objects.
+        -:  259:    // The runtime tracks these objects and we should avoid as much
+        -:  260:    // as possible having extensions inadvertently change the refcnt
+        -:  261:    // of an immortalized object.
+        -:  262:    if (_Py_IsImmortal(ob)) {
+        -:  263:        return;
+        -:  264:    }
+        -:  265:    ob->ob_refcnt = refcnt;
+        -:  266:}
+        -:  267:#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+        -:  268:#  define Py_SET_REFCNT(ob, refcnt) Py_SET_REFCNT(_PyObject_CAST(ob), (refcnt))
+        -:  269:#endif
+        -:  270:
+        -:  271:
+        -:  272:static inline void Py_SET_TYPE(PyObject *ob, PyTypeObject *type) {
+        -:  273:    ob->ob_type = type;
+        -:  274:}
+        -:  275:#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+        -:  276:#  define Py_SET_TYPE(ob, type) Py_SET_TYPE(_PyObject_CAST(ob), type)
+        -:  277:#endif
+        -:  278:
+        -:  279:static inline void Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size) {
+        -:  280:    assert(ob->ob_base.ob_type != &PyLong_Type);
+        -:  281:    assert(ob->ob_base.ob_type != &PyBool_Type);
+        -:  282:    ob->ob_size = size;
+        -:  283:}
+        -:  284:#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+        -:  285:#  define Py_SET_SIZE(ob, size) Py_SET_SIZE(_PyVarObject_CAST(ob), (size))
+        -:  286:#endif
+        -:  287:
+        -:  288:
+        -:  289:/*
+        -:  290:Type objects contain a string containing the type name (to help somewhat
+        -:  291:in debugging), the allocation parameters (see PyObject_New() and
+        -:  292:PyObject_NewVar()),
+        -:  293:and methods for accessing objects of the type.  Methods are optional, a
+        -:  294:nil pointer meaning that particular kind of access is not available for
+        -:  295:this type.  The Py_DECREF() macro uses the tp_dealloc method without
+        -:  296:checking for a nil pointer; it should always be implemented except if
+        -:  297:the implementation can guarantee that the reference count will never
+        -:  298:reach zero (e.g., for statically allocated type objects).
+        -:  299:
+        -:  300:NB: the methods for certain type groups are now contained in separate
+        -:  301:method blocks.
+        -:  302:*/
+        -:  303:
+        -:  304:typedef PyObject * (*unaryfunc)(PyObject *);
+        -:  305:typedef PyObject * (*binaryfunc)(PyObject *, PyObject *);
+        -:  306:typedef PyObject * (*ternaryfunc)(PyObject *, PyObject *, PyObject *);
+        -:  307:typedef int (*inquiry)(PyObject *);
+        -:  308:typedef Py_ssize_t (*lenfunc)(PyObject *);
+        -:  309:typedef PyObject *(*ssizeargfunc)(PyObject *, Py_ssize_t);
+        -:  310:typedef PyObject *(*ssizessizeargfunc)(PyObject *, Py_ssize_t, Py_ssize_t);
+        -:  311:typedef int(*ssizeobjargproc)(PyObject *, Py_ssize_t, PyObject *);
+        -:  312:typedef int(*ssizessizeobjargproc)(PyObject *, Py_ssize_t, Py_ssize_t, PyObject *);
+        -:  313:typedef int(*objobjargproc)(PyObject *, PyObject *, PyObject *);
+        -:  314:
+        -:  315:typedef int (*objobjproc)(PyObject *, PyObject *);
+        -:  316:typedef int (*visitproc)(PyObject *, void *);
+        -:  317:typedef int (*traverseproc)(PyObject *, visitproc, void *);
+        -:  318:
+        -:  319:
+        -:  320:typedef void (*freefunc)(void *);
+        -:  321:typedef void (*destructor)(PyObject *);
+        -:  322:typedef PyObject *(*getattrfunc)(PyObject *, char *);
+        -:  323:typedef PyObject *(*getattrofunc)(PyObject *, PyObject *);
+        -:  324:typedef int (*setattrfunc)(PyObject *, char *, PyObject *);
+        -:  325:typedef int (*setattrofunc)(PyObject *, PyObject *, PyObject *);
+        -:  326:typedef PyObject *(*reprfunc)(PyObject *);
+        -:  327:typedef Py_hash_t (*hashfunc)(PyObject *);
+        -:  328:typedef PyObject *(*richcmpfunc) (PyObject *, PyObject *, int);
+        -:  329:typedef PyObject *(*getiterfunc) (PyObject *);
+        -:  330:typedef PyObject *(*iternextfunc) (PyObject *);
+        -:  331:typedef PyObject *(*descrgetfunc) (PyObject *, PyObject *, PyObject *);
+        -:  332:typedef int (*descrsetfunc) (PyObject *, PyObject *, PyObject *);
+        -:  333:typedef int (*initproc)(PyObject *, PyObject *, PyObject *);
+        -:  334:typedef PyObject *(*newfunc)(PyTypeObject *, PyObject *, PyObject *);
+        -:  335:typedef PyObject *(*allocfunc)(PyTypeObject *, Py_ssize_t);
+        -:  336:
+        -:  337:#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030c0000 // 3.12
+        -:  338:typedef PyObject *(*vectorcallfunc)(PyObject *callable, PyObject *const *args,
+        -:  339:                                    size_t nargsf, PyObject *kwnames);
+        -:  340:#endif
+        -:  341:
+        -:  342:typedef struct{
+        -:  343:    int slot;    /* slot id, see below */
+        -:  344:    void *pfunc; /* function pointer */
+        -:  345:} PyType_Slot;
+        -:  346:
+        -:  347:typedef struct{
+        -:  348:    const char* name;
+        -:  349:    int basicsize;
+        -:  350:    int itemsize;
+        -:  351:    unsigned int flags;
+        -:  352:    PyType_Slot *slots; /* terminated by slot==0. */
+        -:  353:} PyType_Spec;
+        -:  354:
+        -:  355:PyAPI_FUNC(PyObject*) PyType_FromSpec(PyType_Spec*);
+        -:  356:#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
+        -:  357:PyAPI_FUNC(PyObject*) PyType_FromSpecWithBases(PyType_Spec*, PyObject*);
+        -:  358:#endif
+        -:  359:#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03040000
+        -:  360:PyAPI_FUNC(void*) PyType_GetSlot(PyTypeObject*, int);
+        -:  361:#endif
+        -:  362:#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
+        -:  363:PyAPI_FUNC(PyObject*) PyType_FromModuleAndSpec(PyObject *, PyType_Spec *, PyObject *);
+        -:  364:PyAPI_FUNC(PyObject *) PyType_GetModule(PyTypeObject *);
+        -:  365:PyAPI_FUNC(void *) PyType_GetModuleState(PyTypeObject *);
+        -:  366:#endif
+        -:  367:#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030B0000
+        -:  368:PyAPI_FUNC(PyObject *) PyType_GetName(PyTypeObject *);
+        -:  369:PyAPI_FUNC(PyObject *) PyType_GetQualName(PyTypeObject *);
+        -:  370:#endif
+        -:  371:#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030C0000
+        -:  372:PyAPI_FUNC(PyObject *) PyType_FromMetaclass(PyTypeObject*, PyObject*, PyType_Spec*, PyObject*);
+        -:  373:PyAPI_FUNC(void *) PyObject_GetTypeData(PyObject *obj, PyTypeObject *cls);
+        -:  374:PyAPI_FUNC(Py_ssize_t) PyType_GetTypeDataSize(PyTypeObject *cls);
+        -:  375:#endif
+        -:  376:
+        -:  377:/* Generic type check */
+        -:  378:PyAPI_FUNC(int) PyType_IsSubtype(PyTypeObject *, PyTypeObject *);
+        -:  379:
+    #####:  380:static inline int PyObject_TypeCheck(PyObject *ob, PyTypeObject *type) {
+    #####:  381:    return Py_IS_TYPE(ob, type) || PyType_IsSubtype(Py_TYPE(ob), type);
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+branch  5 never executed
+branch  6 never executed
+call    7 never executed
+branch  8 never executed
+branch  9 never executed
+branch 10 never executed
+branch 11 never executed
+call   12 never executed
+branch 13 never executed
+branch 14 never executed
+branch 15 never executed
+branch 16 never executed
+call   17 never executed
+branch 18 never executed
+branch 19 never executed
+branch 20 never executed
+branch 21 never executed
+call   22 never executed
+branch 23 never executed
+branch 24 never executed
+branch 25 never executed
+branch 26 never executed
+call   27 never executed
+branch 28 never executed
+branch 29 never executed
+branch 30 never executed
+branch 31 never executed
+call   32 never executed
+branch 33 never executed
+branch 34 never executed
+branch 35 never executed
+branch 36 never executed
+call   37 never executed
+branch 38 never executed
+branch 39 never executed
+branch 40 never executed
+branch 41 never executed
+call   42 never executed
+branch 43 never executed
+branch 44 never executed
+branch 45 never executed
+branch 46 never executed
+call   47 never executed
+branch 48 never executed
+branch 49 never executed
+branch 50 never executed
+branch 51 never executed
+call   52 never executed
+branch 53 never executed
+branch 54 never executed
+        -:  382:}
+        -:  383:#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+        -:  384:#  define PyObject_TypeCheck(ob, type) PyObject_TypeCheck(_PyObject_CAST(ob), (type))
+        -:  385:#endif
+        -:  386:
+        -:  387:PyAPI_DATA(PyTypeObject) PyType_Type; /* built-in 'type' */
+        -:  388:PyAPI_DATA(PyTypeObject) PyBaseObject_Type; /* built-in 'object' */
+        -:  389:PyAPI_DATA(PyTypeObject) PySuper_Type; /* built-in 'super' */
+        -:  390:
+        -:  391:PyAPI_FUNC(unsigned long) PyType_GetFlags(PyTypeObject*);
+        -:  392:
+        -:  393:PyAPI_FUNC(int) PyType_Ready(PyTypeObject *);
+        -:  394:PyAPI_FUNC(PyObject *) PyType_GenericAlloc(PyTypeObject *, Py_ssize_t);
+        -:  395:PyAPI_FUNC(PyObject *) PyType_GenericNew(PyTypeObject *,
+        -:  396:                                               PyObject *, PyObject *);
+        -:  397:PyAPI_FUNC(unsigned int) PyType_ClearCache(void);
+        -:  398:PyAPI_FUNC(void) PyType_Modified(PyTypeObject *);
+        -:  399:
+        -:  400:/* Generic operations on objects */
+        -:  401:PyAPI_FUNC(PyObject *) PyObject_Repr(PyObject *);
+        -:  402:PyAPI_FUNC(PyObject *) PyObject_Str(PyObject *);
+        -:  403:PyAPI_FUNC(PyObject *) PyObject_ASCII(PyObject *);
+        -:  404:PyAPI_FUNC(PyObject *) PyObject_Bytes(PyObject *);
+        -:  405:PyAPI_FUNC(PyObject *) PyObject_RichCompare(PyObject *, PyObject *, int);
+        -:  406:PyAPI_FUNC(int) PyObject_RichCompareBool(PyObject *, PyObject *, int);
+        -:  407:PyAPI_FUNC(PyObject *) PyObject_GetAttrString(PyObject *, const char *);
+        -:  408:PyAPI_FUNC(int) PyObject_SetAttrString(PyObject *, const char *, PyObject *);
+        -:  409:PyAPI_FUNC(int) PyObject_HasAttrString(PyObject *, const char *);
+        -:  410:PyAPI_FUNC(PyObject *) PyObject_GetAttr(PyObject *, PyObject *);
+        -:  411:PyAPI_FUNC(int) PyObject_SetAttr(PyObject *, PyObject *, PyObject *);
+        -:  412:PyAPI_FUNC(int) PyObject_HasAttr(PyObject *, PyObject *);
+        -:  413:PyAPI_FUNC(PyObject *) PyObject_SelfIter(PyObject *);
+        -:  414:PyAPI_FUNC(PyObject *) PyObject_GenericGetAttr(PyObject *, PyObject *);
+        -:  415:PyAPI_FUNC(int) PyObject_GenericSetAttr(PyObject *, PyObject *, PyObject *);
+        -:  416:#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
+        -:  417:PyAPI_FUNC(int) PyObject_GenericSetDict(PyObject *, PyObject *, void *);
+        -:  418:#endif
+        -:  419:PyAPI_FUNC(Py_hash_t) PyObject_Hash(PyObject *);
+        -:  420:PyAPI_FUNC(Py_hash_t) PyObject_HashNotImplemented(PyObject *);
+        -:  421:PyAPI_FUNC(int) PyObject_IsTrue(PyObject *);
+        -:  422:PyAPI_FUNC(int) PyObject_Not(PyObject *);
+        -:  423:PyAPI_FUNC(int) PyCallable_Check(PyObject *);
+        -:  424:PyAPI_FUNC(void) PyObject_ClearWeakRefs(PyObject *);
+        -:  425:
+        -:  426:/* PyObject_Dir(obj) acts like Python builtins.dir(obj), returning a
+        -:  427:   list of strings.  PyObject_Dir(NULL) is like builtins.dir(),
+        -:  428:   returning the names of the current locals.  In this case, if there are
+        -:  429:   no current locals, NULL is returned, and PyErr_Occurred() is false.
+        -:  430:*/
+        -:  431:PyAPI_FUNC(PyObject *) PyObject_Dir(PyObject *);
+        -:  432:
+        -:  433:/* Pickle support. */
+        -:  434:#ifndef Py_LIMITED_API
+        -:  435:PyAPI_FUNC(PyObject *) _PyObject_GetState(PyObject *);
+        -:  436:#endif
+        -:  437:
+        -:  438:
+        -:  439:/* Helpers for printing recursive container types */
+        -:  440:PyAPI_FUNC(int) Py_ReprEnter(PyObject *);
+        -:  441:PyAPI_FUNC(void) Py_ReprLeave(PyObject *);
+        -:  442:
+        -:  443:/* Flag bits for printing: */
+        -:  444:#define Py_PRINT_RAW    1       /* No string quotes etc. */
+        -:  445:
+        -:  446:/*
+        -:  447:Type flags (tp_flags)
+        -:  448:
+        -:  449:These flags are used to change expected features and behavior for a
+        -:  450:particular type.
+        -:  451:
+        -:  452:Arbitration of the flag bit positions will need to be coordinated among
+        -:  453:all extension writers who publicly release their extensions (this will
+        -:  454:be fewer than you might expect!).
+        -:  455:
+        -:  456:Most flags were removed as of Python 3.0 to make room for new flags.  (Some
+        -:  457:flags are not for backwards compatibility but to indicate the presence of an
+        -:  458:optional feature; these flags remain of course.)
+        -:  459:
+        -:  460:Type definitions should use Py_TPFLAGS_DEFAULT for their tp_flags value.
+        -:  461:
+        -:  462:Code can use PyType_HasFeature(type_ob, flag_value) to test whether the
+        -:  463:given type object has a specified feature.
+        -:  464:*/
+        -:  465:
+        -:  466:#ifndef Py_LIMITED_API
+        -:  467:
+        -:  468:/* Track types initialized using _PyStaticType_InitBuiltin(). */
+        -:  469:#define _Py_TPFLAGS_STATIC_BUILTIN (1 << 1)
+        -:  470:
+        -:  471:/* Placement of weakref pointers are managed by the VM, not by the type.
+        -:  472: * The VM will automatically set tp_weaklistoffset.
+        -:  473: */
+        -:  474:#define Py_TPFLAGS_MANAGED_WEAKREF (1 << 3)
+        -:  475:
+        -:  476:/* Placement of dict (and values) pointers are managed by the VM, not by the type.
+        -:  477: * The VM will automatically set tp_dictoffset.
+        -:  478: */
+        -:  479:#define Py_TPFLAGS_MANAGED_DICT (1 << 4)
+        -:  480:
+        -:  481:#define Py_TPFLAGS_PREHEADER (Py_TPFLAGS_MANAGED_WEAKREF | Py_TPFLAGS_MANAGED_DICT)
+        -:  482:
+        -:  483:/* Set if instances of the type object are treated as sequences for pattern matching */
+        -:  484:#define Py_TPFLAGS_SEQUENCE (1 << 5)
+        -:  485:/* Set if instances of the type object are treated as mappings for pattern matching */
+        -:  486:#define Py_TPFLAGS_MAPPING (1 << 6)
+        -:  487:#endif
+        -:  488:
+        -:  489:/* Disallow creating instances of the type: set tp_new to NULL and don't create
+        -:  490: * the "__new__" key in the type dictionary. */
+        -:  491:#define Py_TPFLAGS_DISALLOW_INSTANTIATION (1UL << 7)
+        -:  492:
+        -:  493:/* Set if the type object is immutable: type attributes cannot be set nor deleted */
+        -:  494:#define Py_TPFLAGS_IMMUTABLETYPE (1UL << 8)
+        -:  495:
+        -:  496:/* Set if the type object is dynamically allocated */
+        -:  497:#define Py_TPFLAGS_HEAPTYPE (1UL << 9)
+        -:  498:
+        -:  499:/* Set if the type allows subclassing */
+        -:  500:#define Py_TPFLAGS_BASETYPE (1UL << 10)
+        -:  501:
+        -:  502:/* Set if the type implements the vectorcall protocol (PEP 590) */
+        -:  503:#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030C0000
+        -:  504:#define Py_TPFLAGS_HAVE_VECTORCALL (1UL << 11)
+        -:  505:#ifndef Py_LIMITED_API
+        -:  506:// Backwards compatibility alias for API that was provisional in Python 3.8
+        -:  507:#define _Py_TPFLAGS_HAVE_VECTORCALL Py_TPFLAGS_HAVE_VECTORCALL
+        -:  508:#endif
+        -:  509:#endif
+        -:  510:
+        -:  511:/* Set if the type is 'ready' -- fully initialized */
+        -:  512:#define Py_TPFLAGS_READY (1UL << 12)
+        -:  513:
+        -:  514:/* Set while the type is being 'readied', to prevent recursive ready calls */
+        -:  515:#define Py_TPFLAGS_READYING (1UL << 13)
+        -:  516:
+        -:  517:/* Objects support garbage collection (see objimpl.h) */
+        -:  518:#define Py_TPFLAGS_HAVE_GC (1UL << 14)
+        -:  519:
+        -:  520:/* These two bits are preserved for Stackless Python, next after this is 17 */
+        -:  521:#ifdef STACKLESS
+        -:  522:#define Py_TPFLAGS_HAVE_STACKLESS_EXTENSION (3UL << 15)
+        -:  523:#else
+        -:  524:#define Py_TPFLAGS_HAVE_STACKLESS_EXTENSION 0
+        -:  525:#endif
+        -:  526:
+        -:  527:/* Objects behave like an unbound method */
+        -:  528:#define Py_TPFLAGS_METHOD_DESCRIPTOR (1UL << 17)
+        -:  529:
+        -:  530:/* Object has up-to-date type attribute cache */
+        -:  531:#define Py_TPFLAGS_VALID_VERSION_TAG  (1UL << 19)
+        -:  532:
+        -:  533:/* Type is abstract and cannot be instantiated */
+        -:  534:#define Py_TPFLAGS_IS_ABSTRACT (1UL << 20)
+        -:  535:
+        -:  536:// This undocumented flag gives certain built-ins their unique pattern-matching
+        -:  537:// behavior, which allows a single positional subpattern to match against the
+        -:  538:// subject itself (rather than a mapped attribute on it):
+        -:  539:#define _Py_TPFLAGS_MATCH_SELF (1UL << 22)
+        -:  540:
+        -:  541:/* Items (ob_size*tp_itemsize) are found at the end of an instance's memory */
+        -:  542:#define Py_TPFLAGS_ITEMS_AT_END (1UL << 23)
+        -:  543:
+        -:  544:/* These flags are used to determine if a type is a subclass. */
+        -:  545:#define Py_TPFLAGS_LONG_SUBCLASS        (1UL << 24)
+        -:  546:#define Py_TPFLAGS_LIST_SUBCLASS        (1UL << 25)
+        -:  547:#define Py_TPFLAGS_TUPLE_SUBCLASS       (1UL << 26)
+        -:  548:#define Py_TPFLAGS_BYTES_SUBCLASS       (1UL << 27)
+        -:  549:#define Py_TPFLAGS_UNICODE_SUBCLASS     (1UL << 28)
+        -:  550:#define Py_TPFLAGS_DICT_SUBCLASS        (1UL << 29)
+        -:  551:#define Py_TPFLAGS_BASE_EXC_SUBCLASS    (1UL << 30)
+        -:  552:#define Py_TPFLAGS_TYPE_SUBCLASS        (1UL << 31)
+        -:  553:
+        -:  554:#define Py_TPFLAGS_DEFAULT  ( \
+        -:  555:                 Py_TPFLAGS_HAVE_STACKLESS_EXTENSION | \
+        -:  556:                0)
+        -:  557:
+        -:  558:/* NOTE: Some of the following flags reuse lower bits (removed as part of the
+        -:  559: * Python 3.0 transition). */
+        -:  560:
+        -:  561:/* The following flags are kept for compatibility; in previous
+        -:  562: * versions they indicated presence of newer tp_* fields on the
+        -:  563: * type struct.
+        -:  564: * Starting with 3.8, binary compatibility of C extensions across
+        -:  565: * feature releases of Python is not supported anymore (except when
+        -:  566: * using the stable ABI, in which all classes are created dynamically,
+        -:  567: * using the interpreter's memory layout.)
+        -:  568: * Note that older extensions using the stable ABI set these flags,
+        -:  569: * so the bits must not be repurposed.
+        -:  570: */
+        -:  571:#define Py_TPFLAGS_HAVE_FINALIZE (1UL << 0)
+        -:  572:#define Py_TPFLAGS_HAVE_VERSION_TAG   (1UL << 18)
+        -:  573:
+        -:  574:
+        -:  575:/*
+        -:  576:The macros Py_INCREF(op) and Py_DECREF(op) are used to increment or decrement
+        -:  577:reference counts.  Py_DECREF calls the object's deallocator function when
+        -:  578:the refcount falls to 0; for
+        -:  579:objects that don't contain references to other objects or heap memory
+        -:  580:this can be the standard function free().  Both macros can be used
+        -:  581:wherever a void expression is allowed.  The argument must not be a
+        -:  582:NULL pointer.  If it may be NULL, use Py_XINCREF/Py_XDECREF instead.
+        -:  583:The macro _Py_NewReference(op) initialize reference counts to 1, and
+        -:  584:in special builds (Py_REF_DEBUG, Py_TRACE_REFS) performs additional
+        -:  585:bookkeeping appropriate to the special build.
+        -:  586:
+        -:  587:We assume that the reference count field can never overflow; this can
+        -:  588:be proven when the size of the field is the same as the pointer size, so
+        -:  589:we ignore the possibility.  Provided a C int is at least 32 bits (which
+        -:  590:is implicitly assumed in many parts of this code), that's enough for
+        -:  591:about 2**31 references to an object.
+        -:  592:
+        -:  593:XXX The following became out of date in Python 2.2, but I'm not sure
+        -:  594:XXX what the full truth is now.  Certainly, heap-allocated type objects
+        -:  595:XXX can and should be deallocated.
+        -:  596:Type objects should never be deallocated; the type pointer in an object
+        -:  597:is not considered to be a reference to the type object, to save
+        -:  598:complications in the deallocation function.  (This is actually a
+        -:  599:decision that's up to the implementer of each new type so if you want,
+        -:  600:you can count such references to the type object.)
+        -:  601:*/
+        -:  602:
+        -:  603:#if defined(Py_REF_DEBUG) && !defined(Py_LIMITED_API)
+        -:  604:PyAPI_FUNC(void) _Py_NegativeRefcount(const char *filename, int lineno,
+        -:  605:                                      PyObject *op);
+        -:  606:PyAPI_FUNC(void) _Py_INCREF_IncRefTotal(void);
+        -:  607:PyAPI_FUNC(void) _Py_DECREF_DecRefTotal(void);
+        -:  608:#endif  // Py_REF_DEBUG && !Py_LIMITED_API
+        -:  609:
+        -:  610:PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
+        -:  611:
+        -:  612:/*
+        -:  613:These are provided as conveniences to Python runtime embedders, so that
+        -:  614:they can have object code that is not dependent on Python compilation flags.
+        -:  615:*/
+        -:  616:PyAPI_FUNC(void) Py_IncRef(PyObject *);
+        -:  617:PyAPI_FUNC(void) Py_DecRef(PyObject *);
+        -:  618:
+        -:  619:// Similar to Py_IncRef() and Py_DecRef() but the argument must be non-NULL.
+        -:  620:// Private functions used by Py_INCREF() and Py_DECREF().
+        -:  621:PyAPI_FUNC(void) _Py_IncRef(PyObject *);
+        -:  622:PyAPI_FUNC(void) _Py_DecRef(PyObject *);
+        -:  623:
+    #####:  624:static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
+        -:  625:{
+        -:  626:#if defined(Py_LIMITED_API) && (Py_LIMITED_API+0 >= 0x030c0000 || defined(Py_REF_DEBUG))
+        -:  627:    // Stable ABI implements Py_INCREF() as a function call on limited C API
+        -:  628:    // version 3.12 and newer, and on Python built in debug mode. _Py_IncRef()
+        -:  629:    // was added to Python 3.10.0a7, use Py_IncRef() on older Python versions.
+        -:  630:    // Py_IncRef() accepts NULL whereas _Py_IncRef() doesn't.
+        -:  631:#  if Py_LIMITED_API+0 >= 0x030a00A7
+        -:  632:    _Py_IncRef(op);
+        -:  633:#  else
+        -:  634:    Py_IncRef(op);
+        -:  635:#  endif
+        -:  636:#else
+        -:  637:    // Non-limited C API and limited C API for Python 3.9 and older access
+        -:  638:    // directly PyObject.ob_refcnt.
+        -:  639:#if SIZEOF_VOID_P > 4
+        -:  640:    // Portable saturated add, branching on the carry flag and set low bits
+    #####:  641:    PY_UINT32_T cur_refcnt = op->ob_refcnt_split[PY_BIG_ENDIAN];
+    #####:  642:    PY_UINT32_T new_refcnt = cur_refcnt + 1;
+    #####:  643:    if (new_refcnt == 0) {
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+branch  5 never executed
+branch  6 never executed
+branch  7 never executed
+branch  8 never executed
+branch  9 never executed
+branch 10 never executed
+branch 11 never executed
+branch 12 never executed
+branch 13 never executed
+branch 14 never executed
+branch 15 never executed
+branch 16 never executed
+branch 17 never executed
+branch 18 never executed
+branch 19 never executed
+branch 20 never executed
+branch 21 never executed
+branch 22 never executed
+branch 23 never executed
+branch 24 never executed
+branch 25 never executed
+branch 26 never executed
+branch 27 never executed
+branch 28 never executed
+branch 29 never executed
+branch 30 never executed
+branch 31 never executed
+branch 32 never executed
+branch 33 never executed
+branch 34 never executed
+branch 35 never executed
+branch 36 never executed
+branch 37 never executed
+branch 38 never executed
+branch 39 never executed
+branch 40 never executed
+branch 41 never executed
+branch 42 never executed
+branch 43 never executed
+branch 44 never executed
+branch 45 never executed
+branch 46 never executed
+branch 47 never executed
+branch 48 never executed
+branch 49 never executed
+branch 50 never executed
+branch 51 never executed
+branch 52 never executed
+branch 53 never executed
+branch 54 never executed
+branch 55 never executed
+branch 56 never executed
+branch 57 never executed
+branch 58 never executed
+branch 59 never executed
+branch 60 never executed
+branch 61 never executed
+branch 62 never executed
+branch 63 never executed
+branch 64 never executed
+branch 65 never executed
+branch 66 never executed
+branch 67 never executed
+branch 68 never executed
+branch 69 never executed
+branch 70 never executed
+branch 71 never executed
+branch 72 never executed
+branch 73 never executed
+branch 74 never executed
+branch 75 never executed
+branch 76 never executed
+branch 77 never executed
+branch 78 never executed
+branch 79 never executed
+branch 80 never executed
+branch 81 never executed
+branch 82 never executed
+branch 83 never executed
+branch 84 never executed
+branch 85 never executed
+branch 86 never executed
+branch 87 never executed
+branch 88 never executed
+branch 89 never executed
+branch 90 never executed
+branch 91 never executed
+branch 92 never executed
+branch 93 never executed
+branch 94 never executed
+branch 95 never executed
+branch 96 never executed
+branch 97 never executed
+        -:  644:        return;
+        -:  645:    }
+    #####:  646:    op->ob_refcnt_split[PY_BIG_ENDIAN] = new_refcnt;
+        -:  647:#else
+        -:  648:    // Explicitly check immortality against the immortal value
+        -:  649:    if (_Py_IsImmortal(op)) {
+        -:  650:        return;
+        -:  651:    }
+        -:  652:    op->ob_refcnt++;
+        -:  653:#endif
+    #####:  654:    _Py_INCREF_STAT_INC();
+call    0 never executed
+call    1 never executed
+call    2 never executed
+call    3 never executed
+call    4 never executed
+call    5 never executed
+call    6 never executed
+call    7 never executed
+call    8 never executed
+call    9 never executed
+call   10 never executed
+call   11 never executed
+call   12 never executed
+call   13 never executed
+branch 14 never executed
+branch 15 never executed
+branch 16 never executed
+branch 17 never executed
+branch 18 never executed
+branch 19 never executed
+branch 20 never executed
+branch 21 never executed
+branch 22 never executed
+branch 23 never executed
+branch 24 never executed
+branch 25 never executed
+branch 26 never executed
+branch 27 never executed
+branch 28 never executed
+branch 29 never executed
+branch 30 never executed
+branch 31 never executed
+        -:  655:#ifdef Py_REF_DEBUG
+        -:  656:    _Py_INCREF_IncRefTotal();
+        -:  657:#endif
+        -:  658:#endif
+        -:  659:}
+        -:  660:#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+        -:  661:#  define Py_INCREF(op) Py_INCREF(_PyObject_CAST(op))
+        -:  662:#endif
+        -:  663:
+        -:  664:#if defined(Py_LIMITED_API) && (Py_LIMITED_API+0 >= 0x030c0000 || defined(Py_REF_DEBUG))
+        -:  665:// Stable ABI implements Py_DECREF() as a function call on limited C API
+        -:  666:// version 3.12 and newer, and on Python built in debug mode. _Py_DecRef() was
+        -:  667:// added to Python 3.10.0a7, use Py_DecRef() on older Python versions.
+        -:  668:// Py_DecRef() accepts NULL whereas _Py_IncRef() doesn't.
+        -:  669:static inline void Py_DECREF(PyObject *op) {
+        -:  670:#  if Py_LIMITED_API+0 >= 0x030a00A7
+        -:  671:    _Py_DecRef(op);
+        -:  672:#  else
+        -:  673:    Py_DecRef(op);
+        -:  674:#  endif
+        -:  675:}
+        -:  676:#define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
+        -:  677:
+        -:  678:#elif defined(Py_REF_DEBUG)
+        -:  679:static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
+        -:  680:{
+        -:  681:    if (op->ob_refcnt <= 0) {
+        -:  682:        _Py_NegativeRefcount(filename, lineno, op);
+        -:  683:    }
+        -:  684:    if (_Py_IsImmortal(op)) {
+        -:  685:        return;
+        -:  686:    }
+        -:  687:    _Py_DECREF_STAT_INC();
+        -:  688:    _Py_DECREF_DecRefTotal();
+        -:  689:    if (--op->ob_refcnt == 0) {
+        -:  690:        _Py_Dealloc(op);
+        -:  691:    }
+        -:  692:}
+        -:  693:#define Py_DECREF(op) Py_DECREF(__FILE__, __LINE__, _PyObject_CAST(op))
+        -:  694:
+        -:  695:#else
+    #####:  696:static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
+        -:  697:{
+        -:  698:    // Non-limited C API and limited C API for Python 3.9 and older access
+        -:  699:    // directly PyObject.ob_refcnt.
+    #####:  700:    if (_Py_IsImmortal(op)) {
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+branch  5 never executed
+branch  6 never executed
+branch  7 never executed
+branch  8 never executed
+branch  9 never executed
+branch 10 never executed
+branch 11 never executed
+branch 12 never executed
+branch 13 never executed
+branch 14 never executed
+branch 15 never executed
+branch 16 never executed
+branch 17 never executed
+branch 18 never executed
+branch 19 never executed
+branch 20 never executed
+branch 21 never executed
+branch 22 never executed
+branch 23 never executed
+branch 24 never executed
+branch 25 never executed
+branch 26 never executed
+branch 27 never executed
+branch 28 never executed
+branch 29 never executed
+branch 30 never executed
+branch 31 never executed
+branch 32 never executed
+branch 33 never executed
+branch 34 never executed
+branch 35 never executed
+branch 36 never executed
+branch 37 never executed
+branch 38 never executed
+branch 39 never executed
+branch 40 never executed
+branch 41 never executed
+branch 42 never executed
+branch 43 never executed
+branch 44 never executed
+branch 45 never executed
+branch 46 never executed
+branch 47 never executed
+branch 48 never executed
+branch 49 never executed
+branch 50 never executed
+branch 51 never executed
+branch 52 never executed
+branch 53 never executed
+branch 54 never executed
+branch 55 never executed
+branch 56 never executed
+branch 57 never executed
+branch 58 never executed
+branch 59 never executed
+branch 60 never executed
+branch 61 never executed
+branch 62 never executed
+branch 63 never executed
+branch 64 never executed
+branch 65 never executed
+branch 66 never executed
+branch 67 never executed
+branch 68 never executed
+branch 69 never executed
+branch 70 never executed
+branch 71 never executed
+branch 72 never executed
+branch 73 never executed
+branch 74 never executed
+branch 75 never executed
+branch 76 never executed
+branch 77 never executed
+branch 78 never executed
+branch 79 never executed
+branch 80 never executed
+branch 81 never executed
+branch 82 never executed
+branch 83 never executed
+branch 84 never executed
+branch 85 never executed
+branch 86 never executed
+branch 87 never executed
+branch 88 never executed
+branch 89 never executed
+branch 90 never executed
+branch 91 never executed
+branch 92 never executed
+branch 93 never executed
+branch 94 never executed
+branch 95 never executed
+branch 96 never executed
+branch 97 never executed
+branch 98 never executed
+branch 99 never executed
+branch 100 never executed
+branch 101 never executed
+branch 102 never executed
+branch 103 never executed
+branch 104 never executed
+branch 105 never executed
+branch 106 never executed
+branch 107 never executed
+branch 108 never executed
+branch 109 never executed
+branch 110 never executed
+branch 111 never executed
+branch 112 never executed
+branch 113 never executed
+branch 114 never executed
+branch 115 never executed
+branch 116 never executed
+branch 117 never executed
+branch 118 never executed
+branch 119 never executed
+branch 120 never executed
+branch 121 never executed
+branch 122 never executed
+branch 123 never executed
+        -:  701:        return;
+        -:  702:    }
+    #####:  703:    _Py_DECREF_STAT_INC();
+    #####:  704:    if (--op->ob_refcnt == 0) {
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+branch  5 never executed
+branch  6 never executed
+branch  7 never executed
+branch  8 never executed
+branch  9 never executed
+branch 10 never executed
+branch 11 never executed
+branch 12 never executed
+branch 13 never executed
+branch 14 never executed
+branch 15 never executed
+branch 16 never executed
+branch 17 never executed
+branch 18 never executed
+branch 19 never executed
+branch 20 never executed
+branch 21 never executed
+branch 22 never executed
+branch 23 never executed
+branch 24 never executed
+branch 25 never executed
+branch 26 never executed
+branch 27 never executed
+branch 28 never executed
+branch 29 never executed
+branch 30 never executed
+branch 31 never executed
+branch 32 never executed
+branch 33 never executed
+branch 34 never executed
+branch 35 never executed
+branch 36 never executed
+branch 37 never executed
+branch 38 never executed
+branch 39 never executed
+branch 40 never executed
+branch 41 never executed
+branch 42 never executed
+branch 43 never executed
+branch 44 never executed
+branch 45 never executed
+branch 46 never executed
+branch 47 never executed
+branch 48 never executed
+branch 49 never executed
+branch 50 never executed
+branch 51 never executed
+branch 52 never executed
+branch 53 never executed
+branch 54 never executed
+branch 55 never executed
+branch 56 never executed
+branch 57 never executed
+branch 58 never executed
+branch 59 never executed
+branch 60 never executed
+branch 61 never executed
+branch 62 never executed
+branch 63 never executed
+branch 64 never executed
+branch 65 never executed
+branch 66 never executed
+branch 67 never executed
+branch 68 never executed
+branch 69 never executed
+branch 70 never executed
+branch 71 never executed
+branch 72 never executed
+branch 73 never executed
+branch 74 never executed
+branch 75 never executed
+branch 76 never executed
+branch 77 never executed
+branch 78 never executed
+branch 79 never executed
+branch 80 never executed
+branch 81 never executed
+branch 82 never executed
+branch 83 never executed
+branch 84 never executed
+branch 85 never executed
+branch 86 never executed
+branch 87 never executed
+branch 88 never executed
+branch 89 never executed
+branch 90 never executed
+branch 91 never executed
+branch 92 never executed
+branch 93 never executed
+branch 94 never executed
+branch 95 never executed
+branch 96 never executed
+branch 97 never executed
+branch 98 never executed
+branch 99 never executed
+branch 100 never executed
+branch 101 never executed
+branch 102 never executed
+branch 103 never executed
+branch 104 never executed
+branch 105 never executed
+branch 106 never executed
+branch 107 never executed
+branch 108 never executed
+branch 109 never executed
+branch 110 never executed
+branch 111 never executed
+branch 112 never executed
+branch 113 never executed
+branch 114 never executed
+branch 115 never executed
+branch 116 never executed
+branch 117 never executed
+branch 118 never executed
+branch 119 never executed
+branch 120 never executed
+branch 121 never executed
+branch 122 never executed
+branch 123 never executed
+branch 124 never executed
+branch 125 never executed
+branch 126 never executed
+branch 127 never executed
+branch 128 never executed
+branch 129 never executed
+branch 130 never executed
+branch 131 never executed
+branch 132 never executed
+branch 133 never executed
+branch 134 never executed
+branch 135 never executed
+    #####:  705:        _Py_Dealloc(op);
+call    0 never executed
+call    1 never executed
+call    2 never executed
+call    3 never executed
+call    4 never executed
+call    5 never executed
+call    6 never executed
+call    7 never executed
+call    8 never executed
+call    9 never executed
+call   10 never executed
+call   11 never executed
+call   12 never executed
+call   13 never executed
+call   14 never executed
+call   15 never executed
+call   16 never executed
+call   17 never executed
+call   18 never executed
+call   19 never executed
+call   20 never executed
+call   21 never executed
+call   22 never executed
+call   23 never executed
+call   24 never executed
+call   25 never executed
+call   26 never executed
+call   27 never executed
+call   28 never executed
+call   29 never executed
+call   30 never executed
+call   31 never executed
+call   32 never executed
+call   33 never executed
+call   34 never executed
+call   35 never executed
+call   36 never executed
+call   37 never executed
+call   38 never executed
+call   39 never executed
+call   40 never executed
+call   41 never executed
+call   42 never executed
+call   43 never executed
+call   44 never executed
+call   45 never executed
+call   46 never executed
+call   47 never executed
+call   48 never executed
+call   49 never executed
+call   50 never executed
+call   51 never executed
+call   52 never executed
+call   53 never executed
+call   54 never executed
+call   55 never executed
+call   56 never executed
+call   57 never executed
+call   58 never executed
+call   59 never executed
+call   60 never executed
+call   61 never executed
+call   62 never executed
+call   63 never executed
+call   64 never executed
+call   65 never executed
+call   66 never executed
+call   67 never executed
+        -:  706:    }
+        -:  707:}
+        -:  708:#define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
+        -:  709:#endif
+        -:  710:
+        -:  711:
+        -:  712:/* Safely decref `op` and set `op` to NULL, especially useful in tp_clear
+        -:  713: * and tp_dealloc implementations.
+        -:  714: *
+        -:  715: * Note that "the obvious" code can be deadly:
+        -:  716: *
+        -:  717: *     Py_XDECREF(op);
+        -:  718: *     op = NULL;
+        -:  719: *
+        -:  720: * Typically, `op` is something like self->containee, and `self` is done
+        -:  721: * using its `containee` member.  In the code sequence above, suppose
+        -:  722: * `containee` is non-NULL with a refcount of 1.  Its refcount falls to
+        -:  723: * 0 on the first line, which can trigger an arbitrary amount of code,
+        -:  724: * possibly including finalizers (like __del__ methods or weakref callbacks)
+        -:  725: * coded in Python, which in turn can release the GIL and allow other threads
+        -:  726: * to run, etc.  Such code may even invoke methods of `self` again, or cause
+        -:  727: * cyclic gc to trigger, but-- oops! --self->containee still points to the
+        -:  728: * object being torn down, and it may be in an insane state while being torn
+        -:  729: * down.  This has in fact been a rich historic source of miserable (rare &
+        -:  730: * hard-to-diagnose) segfaulting (and other) bugs.
+        -:  731: *
+        -:  732: * The safe way is:
+        -:  733: *
+        -:  734: *      Py_CLEAR(op);
+        -:  735: *
+        -:  736: * That arranges to set `op` to NULL _before_ decref'ing, so that any code
+        -:  737: * triggered as a side-effect of `op` getting torn down no longer believes
+        -:  738: * `op` points to a valid object.
+        -:  739: *
+        -:  740: * There are cases where it's safe to use the naive code, but they're brittle.
+        -:  741: * For example, if `op` points to a Python integer, you know that destroying
+        -:  742: * one of those can't cause problems -- but in part that relies on that
+        -:  743: * Python integers aren't currently weakly referencable.  Best practice is
+        -:  744: * to use Py_CLEAR() even if you can't think of a reason for why you need to.
+        -:  745: *
+        -:  746: * gh-98724: Use a temporary variable to only evaluate the macro argument once,
+        -:  747: * to avoid the duplication of side effects if the argument has side effects.
+        -:  748: *
+        -:  749: * gh-99701: If the PyObject* type is used with casting arguments to PyObject*,
+        -:  750: * the code can be miscompiled with strict aliasing because of type punning.
+        -:  751: * With strict aliasing, a compiler considers that two pointers of different
+        -:  752: * types cannot read or write the same memory which enables optimization
+        -:  753: * opportunities.
+        -:  754: *
+        -:  755: * If available, use _Py_TYPEOF() to use the 'op' type for temporary variables,
+        -:  756: * and so avoid type punning. Otherwise, use memcpy() which causes type erasure
+        -:  757: * and so prevents the compiler to reuse an old cached 'op' value after
+        -:  758: * Py_CLEAR().
+        -:  759: */
+        -:  760:#ifdef _Py_TYPEOF
+        -:  761:#define Py_CLEAR(op) \
+        -:  762:    do { \
+        -:  763:        _Py_TYPEOF(op)* _tmp_op_ptr = &(op); \
+        -:  764:        _Py_TYPEOF(op) _tmp_old_op = (*_tmp_op_ptr); \
+        -:  765:        if (_tmp_old_op != NULL) { \
+        -:  766:            *_tmp_op_ptr = _Py_NULL; \
+        -:  767:            Py_DECREF(_tmp_old_op); \
+        -:  768:        } \
+        -:  769:    } while (0)
+        -:  770:#else
+        -:  771:#define Py_CLEAR(op) \
+        -:  772:    do { \
+        -:  773:        PyObject **_tmp_op_ptr = _Py_CAST(PyObject**, &(op)); \
+        -:  774:        PyObject *_tmp_old_op = (*_tmp_op_ptr); \
+        -:  775:        if (_tmp_old_op != NULL) { \
+        -:  776:            PyObject *_null_ptr = _Py_NULL; \
+        -:  777:            memcpy(_tmp_op_ptr, &_null_ptr, sizeof(PyObject*)); \
+        -:  778:            Py_DECREF(_tmp_old_op); \
+        -:  779:        } \
+        -:  780:    } while (0)
+        -:  781:#endif
+        -:  782:
+        -:  783:
+        -:  784:/* Function to use in case the object pointer can be NULL: */
+    #####:  785:static inline void Py_XINCREF(PyObject *op)
+        -:  786:{
+    #####:  787:    if (op != _Py_NULL) {
+branch  0 never executed
+branch  1 never executed
+    #####:  788:        Py_INCREF(op);
+branch  0 never executed
+branch  1 never executed
+        -:  789:    }
+        -:  790:}
+        -:  791:#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+        -:  792:#  define Py_XINCREF(op) Py_XINCREF(_PyObject_CAST(op))
+        -:  793:#endif
+        -:  794:
+    #####:  795:static inline void Py_XDECREF(PyObject *op)
+        -:  796:{
+    #####:  797:    if (op != _Py_NULL) {
+    #####:  798:        Py_DECREF(op);
+        -:  799:    }
+    #####:  800:}
+------------------
+Py_XDECREF:
+function Py_XDECREF called 0 returned 0% blocks executed 0%
+    #####:  795:static inline void Py_XDECREF(PyObject *op)
+        -:  796:{
+    #####:  797:    if (op != _Py_NULL) {
+branch  0 never executed
+branch  1 never executed
+    #####:  798:        Py_DECREF(op);
+branch  0 never executed
+branch  1 never executed
+        -:  799:    }
+    #####:  800:}
+------------------
+Py_XDECREF:
+function Py_XDECREF called 0 returned 0% blocks executed 0%
+    #####:  795:static inline void Py_XDECREF(PyObject *op)
+        -:  796:{
+    #####:  797:    if (op != _Py_NULL) {
+branch  0 never executed
+branch  1 never executed
+    #####:  798:        Py_DECREF(op);
+branch  0 never executed
+branch  1 never executed
+        -:  799:    }
+    #####:  800:}
+------------------
+Py_XDECREF:
+function Py_XDECREF called 0 returned 0% blocks executed 0%
+    #####:  795:static inline void Py_XDECREF(PyObject *op)
+        -:  796:{
+    #####:  797:    if (op != _Py_NULL) {
+branch  0 never executed
+branch  1 never executed
+    #####:  798:        Py_DECREF(op);
+branch  0 never executed
+branch  1 never executed
+        -:  799:    }
+    #####:  800:}
+------------------
+Py_XDECREF:
+function Py_XDECREF called 0 returned 0% blocks executed 0%
+    #####:  795:static inline void Py_XDECREF(PyObject *op)
+        -:  796:{
+    #####:  797:    if (op != _Py_NULL) {
+branch  0 never executed
+branch  1 never executed
+    #####:  798:        Py_DECREF(op);
+branch  0 never executed
+branch  1 never executed
+        -:  799:    }
+    #####:  800:}
+------------------
+Py_XDECREF:
+function Py_XDECREF called 0 returned 0% blocks executed 0%
+    #####:  795:static inline void Py_XDECREF(PyObject *op)
+        -:  796:{
+    #####:  797:    if (op != _Py_NULL) {
+branch  0 never executed
+branch  1 never executed
+    #####:  798:        Py_DECREF(op);
+branch  0 never executed
+branch  1 never executed
+        -:  799:    }
+    #####:  800:}
+------------------
+Py_XDECREF:
+function Py_XDECREF called 0 returned 0% blocks executed 0%
+    #####:  795:static inline void Py_XDECREF(PyObject *op)
+        -:  796:{
+    #####:  797:    if (op != _Py_NULL) {
+branch  0 never executed
+branch  1 never executed
+    #####:  798:        Py_DECREF(op);
+branch  0 never executed
+branch  1 never executed
+        -:  799:    }
+    #####:  800:}
+------------------
+        -:  801:#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+        -:  802:#  define Py_XDECREF(op) Py_XDECREF(_PyObject_CAST(op))
+        -:  803:#endif
+        -:  804:
+        -:  805:// Create a new strong reference to an object:
+        -:  806:// increment the reference count of the object and return the object.
+        -:  807:PyAPI_FUNC(PyObject*) Py_NewRef(PyObject *obj);
+        -:  808:
+        -:  809:// Similar to Py_NewRef(), but the object can be NULL.
+        -:  810:PyAPI_FUNC(PyObject*) Py_XNewRef(PyObject *obj);
+        -:  811:
+        -:  812:static inline PyObject* _Py_NewRef(PyObject *obj)
+        -:  813:{
+        -:  814:    Py_INCREF(obj);
+        -:  815:    return obj;
+        -:  816:}
+        -:  817:
+        -:  818:static inline PyObject* _Py_XNewRef(PyObject *obj)
+        -:  819:{
+        -:  820:    Py_XINCREF(obj);
+        -:  821:    return obj;
+        -:  822:}
+        -:  823:
+        -:  824:// Py_NewRef() and Py_XNewRef() are exported as functions for the stable ABI.
+        -:  825:// Names overridden with macros by static inline functions for best
+        -:  826:// performances.
+        -:  827:#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+        -:  828:#  define Py_NewRef(obj) _Py_NewRef(_PyObject_CAST(obj))
+        -:  829:#  define Py_XNewRef(obj) _Py_XNewRef(_PyObject_CAST(obj))
+        -:  830:#else
+        -:  831:#  define Py_NewRef(obj) _Py_NewRef(obj)
+        -:  832:#  define Py_XNewRef(obj) _Py_XNewRef(obj)
+        -:  833:#endif
+        -:  834:
+        -:  835:
+        -:  836:/*
+        -:  837:_Py_NoneStruct is an object of undefined type which can be used in contexts
+        -:  838:where NULL (nil) is not suitable (since NULL often means 'error').
+        -:  839:
+        -:  840:Don't forget to apply Py_INCREF() when returning this value!!!
+        -:  841:*/
+        -:  842:PyAPI_DATA(PyObject) _Py_NoneStruct; /* Don't use this directly */
+        -:  843:#define Py_None (&_Py_NoneStruct)
+        -:  844:
+        -:  845:// Test if an object is the None singleton, the same as "x is None" in Python.
+        -:  846:PyAPI_FUNC(int) Py_IsNone(PyObject *x);
+        -:  847:#define Py_IsNone(x) Py_Is((x), Py_None)
+        -:  848:
+        -:  849:/* Macro for returning Py_None from a function */
+        -:  850:#define Py_RETURN_NONE return Py_None
+        -:  851:
+        -:  852:/*
+        -:  853:Py_NotImplemented is a singleton used to signal that an operation is
+        -:  854:not implemented for a given type combination.
+        -:  855:*/
+        -:  856:PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
+        -:  857:#define Py_NotImplemented (&_Py_NotImplementedStruct)
+        -:  858:
+        -:  859:/* Macro for returning Py_NotImplemented from a function */
+        -:  860:#define Py_RETURN_NOTIMPLEMENTED return Py_NotImplemented
+        -:  861:
+        -:  862:/* Rich comparison opcodes */
+        -:  863:#define Py_LT 0
+        -:  864:#define Py_LE 1
+        -:  865:#define Py_EQ 2
+        -:  866:#define Py_NE 3
+        -:  867:#define Py_GT 4
+        -:  868:#define Py_GE 5
+        -:  869:
+        -:  870:#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
+        -:  871:/* Result of calling PyIter_Send */
+        -:  872:typedef enum {
+        -:  873:    PYGEN_RETURN = 0,
+        -:  874:    PYGEN_ERROR = -1,
+        -:  875:    PYGEN_NEXT = 1,
+        -:  876:} PySendResult;
+        -:  877:#endif
+        -:  878:
+        -:  879:/*
+        -:  880: * Macro for implementing rich comparisons
+        -:  881: *
+        -:  882: * Needs to be a macro because any C-comparable type can be used.
+        -:  883: */
+        -:  884:#define Py_RETURN_RICHCOMPARE(val1, val2, op)                               \
+        -:  885:    do {                                                                    \
+        -:  886:        switch (op) {                                                       \
+        -:  887:        case Py_EQ: if ((val1) == (val2)) Py_RETURN_TRUE; Py_RETURN_FALSE;  \
+        -:  888:        case Py_NE: if ((val1) != (val2)) Py_RETURN_TRUE; Py_RETURN_FALSE;  \
+        -:  889:        case Py_LT: if ((val1) < (val2)) Py_RETURN_TRUE; Py_RETURN_FALSE;   \
+        -:  890:        case Py_GT: if ((val1) > (val2)) Py_RETURN_TRUE; Py_RETURN_FALSE;   \
+        -:  891:        case Py_LE: if ((val1) <= (val2)) Py_RETURN_TRUE; Py_RETURN_FALSE;  \
+        -:  892:        case Py_GE: if ((val1) >= (val2)) Py_RETURN_TRUE; Py_RETURN_FALSE;  \
+        -:  893:        default:                                                            \
+        -:  894:            Py_UNREACHABLE();                                               \
+        -:  895:        }                                                                   \
+        -:  896:    } while (0)
+        -:  897:
+        -:  898:
+        -:  899:/*
+        -:  900:More conventions
+        -:  901:================
+        -:  902:
+        -:  903:Argument Checking
+        -:  904:-----------------
+        -:  905:
+        -:  906:Functions that take objects as arguments normally don't check for nil
+        -:  907:arguments, but they do check the type of the argument, and return an
+        -:  908:error if the function doesn't apply to the type.
+        -:  909:
+        -:  910:Failure Modes
+        -:  911:-------------
+        -:  912:
+        -:  913:Functions may fail for a variety of reasons, including running out of
+        -:  914:memory.  This is communicated to the caller in two ways: an error string
+        -:  915:is set (see errors.h), and the function result differs: functions that
+        -:  916:normally return a pointer return NULL for failure, functions returning
+        -:  917:an integer return -1 (which could be a legal return value too!), and
+        -:  918:other functions return 0 for success and -1 for failure.
+        -:  919:Callers should always check for errors before using the result.  If
+        -:  920:an error was set, the caller must either explicitly clear it, or pass
+        -:  921:the error on to its caller.
+        -:  922:
+        -:  923:Reference Counts
+        -:  924:----------------
+        -:  925:
+        -:  926:It takes a while to get used to the proper usage of reference counts.
+        -:  927:
+        -:  928:Functions that create an object set the reference count to 1; such new
+        -:  929:objects must be stored somewhere or destroyed again with Py_DECREF().
+        -:  930:Some functions that 'store' objects, such as PyTuple_SetItem() and
+        -:  931:PyList_SetItem(),
+        -:  932:don't increment the reference count of the object, since the most
+        -:  933:frequent use is to store a fresh object.  Functions that 'retrieve'
+        -:  934:objects, such as PyTuple_GetItem() and PyDict_GetItemString(), also
+        -:  935:don't increment
+        -:  936:the reference count, since most frequently the object is only looked at
+        -:  937:quickly.  Thus, to retrieve an object and store it again, the caller
+        -:  938:must call Py_INCREF() explicitly.
+        -:  939:
+        -:  940:NOTE: functions that 'consume' a reference count, like
+        -:  941:PyList_SetItem(), consume the reference even if the object wasn't
+        -:  942:successfully stored, to simplify error handling.
+        -:  943:
+        -:  944:It seems attractive to make other functions that take an object as
+        -:  945:argument consume a reference count; however, this may quickly get
+        -:  946:confusing (even the current practice is already confusing).  Consider
+        -:  947:it carefully, it may save lots of calls to Py_INCREF() and Py_DECREF() at
+        -:  948:times.
+        -:  949:*/
+        -:  950:
+        -:  951:#ifndef Py_LIMITED_API
+        -:  952:#  define Py_CPYTHON_OBJECT_H
+        -:  953:#  include "cpython/object.h"
+        -:  954:#  undef Py_CPYTHON_OBJECT_H
+        -:  955:#endif
+        -:  956:
+        -:  957:
+        -:  958:static inline int
+    #####:  959:PyType_HasFeature(PyTypeObject *type, unsigned long feature)
+        -:  960:{
+    #####:  961:    unsigned long flags;
+        -:  962:#ifdef Py_LIMITED_API
+        -:  963:    // PyTypeObject is opaque in the limited C API
+        -:  964:    flags = PyType_GetFlags(type);
+        -:  965:#else
+    #####:  966:    flags = type->tp_flags;
+        -:  967:#endif
+    #####:  968:    return ((flags & feature) != 0);
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+branch  5 never executed
+branch  6 never executed
+branch  7 never executed
+branch  8 never executed
+branch  9 never executed
+branch 10 never executed
+branch 11 never executed
+branch 12 never executed
+branch 13 never executed
+branch 14 never executed
+branch 15 never executed
+branch 16 never executed
+branch 17 never executed
+branch 18 never executed
+branch 19 never executed
+branch 20 never executed
+branch 21 never executed
+branch 22 never executed
+branch 23 never executed
+branch 24 never executed
+branch 25 never executed
+branch 26 never executed
+branch 27 never executed
+branch 28 never executed
+branch 29 never executed
+branch 30 never executed
+branch 31 never executed
+branch 32 never executed
+branch 33 never executed
+branch 34 never executed
+branch 35 never executed
+branch 36 never executed
+branch 37 never executed
+branch 38 never executed
+branch 39 never executed
+branch 40 never executed
+branch 41 never executed
+branch 42 never executed
+branch 43 never executed
+branch 44 never executed
+branch 45 never executed
+branch 46 never executed
+branch 47 never executed
+branch 48 never executed
+branch 49 never executed
+branch 50 never executed
+branch 51 never executed
+branch 52 never executed
+branch 53 never executed
+branch 54 never executed
+branch 55 never executed
+branch 56 never executed
+branch 57 never executed
+branch 58 never executed
+branch 59 never executed
+        -:  969:}
+        -:  970:
+        -:  971:#define PyType_FastSubclass(type, flag) PyType_HasFeature((type), (flag))
+        -:  972:
+        -:  973:static inline int PyType_Check(PyObject *op) {
+        -:  974:    return PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_TYPE_SUBCLASS);
+        -:  975:}
+        -:  976:#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+        -:  977:#  define PyType_Check(op) PyType_Check(_PyObject_CAST(op))
+        -:  978:#endif
+        -:  979:
+        -:  980:#define _PyType_CAST(op) \
+        -:  981:    (assert(PyType_Check(op)), _Py_CAST(PyTypeObject*, (op)))
+        -:  982:
+        -:  983:static inline int PyType_CheckExact(PyObject *op) {
+        -:  984:    return Py_IS_TYPE(op, &PyType_Type);
+        -:  985:}
+        -:  986:#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+        -:  987:#  define PyType_CheckExact(op) PyType_CheckExact(_PyObject_CAST(op))
+        -:  988:#endif
+        -:  989:
+        -:  990:#ifdef __cplusplus
+        -:  991:}
+        -:  992:#endif
+        -:  993:#endif   // !Py_OBJECT_H

@@ -1,0 +1,215 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Executing SQL Statements &mdash; k-ctds 2.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=20623aea"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Calling Stored Procedures" href="callproc.html" />
+    <link rel="prev" title="Basic Example" href="example.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            k-ctds
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example.html">Basic Example</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Executing SQL</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#passing-parameters">Passing Parameters</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#parameter-types">Parameter Types</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#limitations">Limitations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="callproc.html">Calling Stored Procedures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="results.html">Reading Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="transactions.html">Transactions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bulk_insert.html">Bulk Insert</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pooling.html">Connection Pooling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="encryption.html">TLS/SSL Encryption</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Change Log</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">k-ctds</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Executing SQL Statements</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/execute.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="executing-sql-statements">
+<h1>Executing SQL Statements<a class="headerlink" href="#executing-sql-statements" title="Link to this heading"></a></h1>
+<p><em>cTDS</em> implements both the <a class="reference internal" href="cursor.html#k_ctds.Cursor.execute" title="k_ctds.Cursor.execute"><code class="xref py py-meth docutils literal notranslate"><span class="pre">k_ctds.Cursor.execute()</span></code></a> and
+<a class="reference internal" href="cursor.html#k_ctds.Cursor.executemany" title="k_ctds.Cursor.executemany"><code class="xref py py-meth docutils literal notranslate"><span class="pre">k_ctds.Cursor.executemany()</span></code></a> methods for executing SQL statements.
+Both are implemented using the <a class="reference external" href="https://learn.microsoft.com/en-us/sql/relational-databases/system-stored-procedures/sp-executesql-transact-sql">sp_executesql</a> <a class="reference external" href="https://www.microsoft.com/sql-server">SQL Server</a> stored procedure.
+This allows optimizations when running batches using
+<a class="reference internal" href="cursor.html#k_ctds.Cursor.executemany" title="k_ctds.Cursor.executemany"><code class="xref py py-meth docutils literal notranslate"><span class="pre">k_ctds.Cursor.executemany()</span></code></a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference external" href="https://learn.microsoft.com/en-us/sql/relational-databases/system-stored-procedures/sp-executesql-transact-sql">sp_executesql</a> support requires <a class="reference external" href="https://www.freetds.org">FreeTDS</a> 1.0 or later, which is
+the minimum version supported by <cite>k-cTDS</cite>.</p>
+</div>
+<section id="passing-parameters">
+<h2>Passing Parameters<a class="headerlink" href="#passing-parameters" title="Link to this heading"></a></h2>
+<p>Parameters may be passed to the <a class="reference internal" href="cursor.html#k_ctds.Cursor.execute" title="k_ctds.Cursor.execute"><code class="xref py py-meth docutils literal notranslate"><span class="pre">k_ctds.Cursor.execute()</span></code></a> and
+<a class="reference internal" href="cursor.html#k_ctds.Cursor.executemany" title="k_ctds.Cursor.executemany"><code class="xref py py-meth docutils literal notranslate"><span class="pre">k_ctds.Cursor.executemany()</span></code></a> methods using the <strong>numeric</strong> parameter
+style as defined in <span class="target" id="index-0"></span><a class="pep reference external" href="https://peps.python.org/pep-0249/#paramstyle"><strong>PEP 0249#paramstyle</strong></a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Passing parameters using the <strong>numeric</strong> <cite>paramstyle</cite> assumes an initial
+index of 0.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+    <span class="s1">&#39;SELECT * FROM MyTable WHERE Id = :0 AND OtherId = :1&#39;</span><span class="p">,</span>
+    <span class="p">(</span><span class="mi">1234</span><span class="p">,</span> <span class="mi">5678</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">cursor</span><span class="o">.</span><span class="n">executemany</span><span class="p">(</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    INSERT (Id, OtherId, Name, Birthday) INTO MyTable</span>
+<span class="sd">    VALUES (:0, :1, :2, :3)</span>
+<span class="sd">    &#39;&#39;&#39;</span><span class="p">,</span>
+    <span class="p">(</span>
+        <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;John Doe&#39;</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2001</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
+        <span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="mi">22</span><span class="p">,</span> <span class="s1">&#39;Jane Doe&#39;</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">1974</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">11</span><span class="p">)),</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<section id="parameter-types">
+<h3>Parameter Types<a class="headerlink" href="#parameter-types" title="Link to this heading"></a></h3>
+<p>Parameter SQL types are inferred from the Python object type. If desired,
+the SQL type can be explicitly specified using a
+<a class="reference internal" href="types.html"><span class="doc">type wrapper class</span></a>. For example, this is necessary when passing
+<a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a> for a <cite>BINARY</cite> column.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    INSERT (Id, BinaryValue) INTO MyTable</span>
+<span class="sd">    VALUES (:0, :1)</span>
+<span class="sd">    &#39;&#39;&#39;</span><span class="p">,</span>
+    <span class="p">(</span>
+        <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">cursor</span><span class="o">.</span><span class="n">SqlBinary</span><span class="p">(</span><span class="kc">None</span><span class="p">)),</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Timezone-aware <a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">datetime.datetime</span></code></a> objects are automatically
+mapped to the SQL <code class="docutils literal notranslate"><span class="pre">DATETIMEOFFSET</span></code> type when using TDS 7.3+.
+Naive datetimes continue to map to <code class="docutils literal notranslate"><span class="pre">DATETIME</span></code>/<code class="docutils literal notranslate"><span class="pre">DATETIME2</span></code>.</p>
+</div>
+</section>
+</section>
+<section id="limitations">
+<h2>Limitations<a class="headerlink" href="#limitations" title="Link to this heading"></a></h2>
+<p>Due to the implementation of <a class="reference internal" href="cursor.html#k_ctds.Cursor.execute" title="k_ctds.Cursor.execute"><code class="xref py py-meth docutils literal notranslate"><span class="pre">k_ctds.Cursor.execute()</span></code></a> and
+<a class="reference internal" href="cursor.html#k_ctds.Cursor.executemany" title="k_ctds.Cursor.executemany"><code class="xref py py-meth docutils literal notranslate"><span class="pre">k_ctds.Cursor.executemany()</span></code></a>, any SQL code which defines parameters
+cannot be used with execute parameters. For example, the following is <strong>not</strong>
+supported:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Parameters passed from python are not supported with SQL &#39;@&#39;</span>
+<span class="c1"># parameters.</span>
+<span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    CREATE PROCEDURE Increment</span>
+<span class="sd">        @value INT OUTPUT</span>
+<span class="sd">    AS</span>
+<span class="sd">        SET @value = @value + :0;</span>
+<span class="sd">    &#39;&#39;&#39;</span><span class="p">,</span>
+    <span class="p">(</span><span class="mi">1</span><span class="p">,)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Currently <a class="reference external" href="https://www.freetds.org">FreeTDS</a> does not support passing empty string parameters.
+Empty strings are converted to <cite>NULL</cite> values internally before being
+transmitted to the database.</p>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="example.html" class="btn btn-neutral float-left" title="Basic Example" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="callproc.html" class="btn btn-neutral float-right" title="Calling Stored Procedures" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026-, Kodda Labs, Inc..</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

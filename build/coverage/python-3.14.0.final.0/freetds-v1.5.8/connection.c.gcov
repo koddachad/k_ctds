@@ -1,0 +1,3284 @@
+        -:    0:Source:src/k_ctds/connection.c
+        -:    0:Source is newer than graph
+        -:    1:#include "include/push_warnings.h"
+        -:    2:#include <Python.h>
+        -:    3:#include <sybdb.h>
+        -:    4:#include "include/pop_warnings.h"
+        -:    5:
+        -:    6:#include <stddef.h>
+        -:    7:
+        -:    8:#include "include/macros.h"
+        -:    9:#include "include/tds.h"
+        -:   10:#include "include/connection.h"
+        -:   11:#include "include/cursor.h"
+        -:   12:#include "include/pyutils.h"
+        -:   13:#include "include/parameter.h"
+        -:   14:
+        -:   15:#ifdef __GNUC__
+        -:   16:/*
+        -:   17:    Ignore "string length '%d' is greater than the length '509' ISO C90
+        -:   18:    compilers are required to support [-Werror=overlength-strings]".
+        -:   19:*/
+        -:   20:#  pragma GCC diagnostic ignored "-Woverlength-strings"
+        -:   21:#endif /* ifdef __GNUC__ */
+        -:   22:
+        -:   23:/* Platform-specific thread-local storage support. */
+        -:   24:#ifdef __clang__
+        -:   25:# if PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION == 8
+        -:   26:/* Ignore "'tp_print' has been explicitly marked deprecated here" */
+        -:   27:#    pragma clang diagnostic push
+        -:   28:#    pragma clang diagnostic ignored "-Wdeprecated-declarations"
+        -:   29:#  endif /* if PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION == 8 */
+        -:   30:
+        -:   31:#  include <pthread.h>
+        -:   32:
+        -:   33:#  define TLS_DECLARE(_name, _type, _destructor) \
+        -:   34:      static pthread_key_t tls_ ## _name = 0; \
+        -:   35:      static void _name ## _destructor(void* tls) \
+        -:   36:      { \
+        -:   37:          if (tls) \
+        -:   38:          { \
+        -:   39:              _destructor((_type*)tls); \
+        -:   40:          } \
+        -:   41:          tds_mem_free(tls); \
+        -:   42:      } \
+        -:   43:      static int _name ## _init(void) \
+        -:   44:      { \
+        -:   45:          return pthread_key_create(&(tls_ ## _name), _name ## _destructor); \
+        -:   46:      } \
+        -:   47:      static _type* _name ## _get(void) \
+        -:   48:      { \
+        -:   49:          _type* value = ((_type*)pthread_getspecific(tls_ ## _name)); \
+        -:   50:          if (!value) \
+        -:   51:          { \
+        -:   52:              value = tds_mem_malloc(sizeof(_type)); \
+        -:   53:              if (value) \
+        -:   54:              { \
+        -:   55:                  if (0 == pthread_setspecific(tls_ ## _name, value)) \
+        -:   56:                  { \
+        -:   57:                      memset(value, 0, sizeof(_type)); \
+        -:   58:                  } \
+        -:   59:                  else \
+        -:   60:                  { \
+        -:   61:                      tds_mem_free(value); \
+        -:   62:                      value = NULL; \
+        -:   63:                  } \
+        -:   64:              } \
+        -:   65:          } \
+        -:   66:          return value; \
+        -:   67:      }
+        -:   68:
+        -:   69:#elif defined(_WIN32)
+        -:   70:
+        -:   71:#  include "include/push_warnings.h"
+        -:   72:#  include <Windows.h>
+        -:   73:#  include "include/pop_warnings.h"
+        -:   74:
+        -:   75:#  define TLS_DECLARE(_name, _type, _destructor) \
+        -:   76:      static DWORD tls_ ## _name = TLS_OUT_OF_INDEXES; \
+        -:   77:      static void _name ## _destructor(void* tls) \
+        -:   78:      { \
+        -:   79:          if (tls) \
+        -:   80:          { \
+        -:   81:              _destructor((_type*)tls); \
+        -:   82:          } \
+        -:   83:          tds_mem_free(tls); \
+        -:   84:      } \
+        -:   85:      static int _name ## _init(void) \
+        -:   86:      { \
+        -:   87:          tls_ ## _name = TlsAlloc(); \
+        -:   88:          return (TLS_OUT_OF_INDEXES == tls_ ## _name) ? -1 : 0; \
+        -:   89:      } \
+        -:   90:      static _type* _name ## _get(void) \
+        -:   91:      { \
+        -:   92:          _type* value = ((_type*)TlsGetValue(tls_ ## _name)); \
+        -:   93:          if (!value && (ERROR_SUCCESS == GetLastError())) \
+        -:   94:          { \
+        -:   95:              value = tds_mem_malloc(sizeof(_type)); \
+        -:   96:              if (value) \
+        -:   97:              { \
+        -:   98:                  if (TlsSetValue(tls_ ## _name, (LPVOID)value)) \
+        -:   99:                  { \
+        -:  100:                      memset(value, 0, sizeof(_type)); \
+        -:  101:                  } \
+        -:  102:                  else \
+        -:  103:                  { \
+        -:  104:                      tds_mem_free(value); \
+        -:  105:                      value = NULL; \
+        -:  106:                  } \
+        -:  107:              } \
+        -:  108:          } \
+        -:  109:          return value; \
+        -:  110:      }
+        -:  111:
+        -:  112:#else /* elif defined(_WIN32) */
+        -:  113:
+        -:  114:#  define TLS_DECLARE(_name, _type, _destructor) \
+        -:  115:      __thread _type tls_ ## _name; \
+        -:  116:      static int _name ## _init(void) \
+        -:  117:      { \
+        -:  118:          memset(&(tls_ ## _name), 0, sizeof(_type)); \
+        -:  119:          return 0; \
+        -:  120:      } \
+        -:  121:      static _type* _name ## _get(void) \
+        -:  122:      { \
+        -:  123:          return &(tls_ ## _name); \
+        -:  124:      } \
+        -:  125:
+        -:  126:#endif /* else elif defined(_WIN32) */
+        -:  127:
+        -:  128:struct LastError
+        -:  129:{
+        -:  130:    int severity;
+        -:  131:    int dberr;
+        -:  132:    int oserr;
+        -:  133:    char* dberrstr;
+        -:  134:    char* oserrstr;
+        -:  135:};
+        -:  136:
+function LastError_clear called 0 returned 0% blocks executed 0%
+    #####:  137:static void LastError_clear(struct LastError* lasterror)
+        -:  138:{
+    #####:  139:    lasterror->severity = 0;
+    #####:  140:    lasterror->dberr = 0;
+    #####:  141:    lasterror->oserr = 0;
+        -:  142:
+    #####:  143:    tds_mem_free(lasterror->dberrstr);
+    #####:  144:    lasterror->dberrstr = NULL;
+        -:  145:
+    #####:  146:    tds_mem_free(lasterror->oserrstr);
+    #####:  147:    lasterror->oserrstr = NULL;
+    #####:  148:}
+        -:  149:
+    #####:  150:TLS_DECLARE(LastError, struct LastError, LastError_clear)
+        -:  151:
+        -:  152:struct DatabaseMsg
+        -:  153:{
+        -:  154:    DBINT msgno;
+        -:  155:    int msgstate;
+        -:  156:    int severity;
+        -:  157:    char* msgtext;
+        -:  158:    char* srvname;
+        -:  159:    char* proc;
+        -:  160:    int line;
+        -:  161:
+        -:  162:    bool warned;
+        -:  163:
+        -:  164:    struct DatabaseMsg* next;
+        -:  165:};
+        -:  166:
+function DatabaseMsg_clear called 0 returned 0% blocks executed 0%
+    #####:  167:static void DatabaseMsg_clear(struct DatabaseMsg* dbmsg)
+        -:  168:{
+    #####:  169:    if (dbmsg)
+branch  0 never executed
+branch  1 never executed
+        -:  170:    {
+    #####:  171:        tds_mem_free(dbmsg->msgtext);
+    #####:  172:        tds_mem_free(dbmsg->srvname);
+    #####:  173:        tds_mem_free(dbmsg->proc);
+        -:  174:
+    #####:  175:        DatabaseMsg_clear(dbmsg->next);
+call    0 never executed
+    #####:  176:        tds_mem_free(dbmsg->next);
+        -:  177:
+    #####:  178:        memset(dbmsg, 0, sizeof(struct DatabaseMsg));
+        -:  179:    }
+    #####:  180:}
+        -:  181:
+    #####:  182:TLS_DECLARE(LastMsg, struct DatabaseMsg, DatabaseMsg_clear)
+        -:  183:
+        -:  184:#if defined(__GNUC__)
+function fini called 0 returned 0% blocks executed 0%
+    #####:  185:__attribute__((destructor)) void fini(void)
+        -:  186:{
+    #####:  187:    LastError_clear(LastError_get());
+call    0 never executed
+    #####:  188:    DatabaseMsg_clear(LastMsg_get());
+call    0 never executed
+    #####:  189:}
+        -:  190:#endif
+        -:  191:
+        -:  192:
+        -:  193:struct Connection {
+        -:  194:    PyObject_VAR_HEAD
+        -:  195:
+        -:  196:    LOGINREC* login;
+        -:  197:    DBPROCESS* dbproc;
+        -:  198:
+        -:  199:    /* Should execute calls be auto-committed? */
+        -:  200:    bool autocommit;
+        -:  201:
+        -:  202:    /* Last seen error, as set by the error handler: Connection_dberrhandler. */
+        -:  203:    struct LastError lasterror;
+        -:  204:
+        -:  205:    /*
+        -:  206:        List of buffered database messages generated by the current (or previous) command.
+        -:  207:        These messages are set by the message handler: Connection_dbmsghandler.
+        -:  208:    */
+        -:  209:    struct DatabaseMsg* messages;
+        -:  210:
+        -:  211:    /*
+        -:  212:        The query timeout for this connection.
+        -:  213:        This is only stored here because there is currently no way to
+        -:  214:        retrieve it from dblib.
+        -:  215:    */
+        -:  216:    int query_timeout;
+        -:  217:
+        -:  218:    /*
+        -:  219:        The paramstyle to use on .execute*() calls on k_ctds.Cursor() objects created
+        -:  220:        by this connection.
+        -:  221:    */
+        -:  222:    enum ParamStyle paramstyle;
+        -:  223:};
+        -:  224:
+function build_lastdberr_dict called 0 returned 0% blocks executed 0%
+    #####:  225:static PyObject* build_lastdberr_dict(const struct LastError* lasterror)
+        -:  226:{
+    #####:  227:    PyObject* dict = PyDict_New();
+call    0 never executed
+    #####:  228:    if (dict)
+branch  0 never executed
+branch  1 never executed
+        -:  229:    {
+    #####:  230:        if (-1 == PyDict_SetItemStringLongValue(dict, "number", (long)lasterror->dberr) ||
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+    #####:  231:            -1 == PyDict_SetItemStringStringValue(dict, "description", lasterror->dberrstr ? lasterror->dberrstr : ""))
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+        -:  232:        {
+    #####:  233:            Py_DECREF(dict);
+branch  0 never executed
+branch  1 never executed
+        -:  234:            dict = NULL;
+        -:  235:        }
+        -:  236:    }
+    #####:  237:    return dict;
+        -:  238:}
+        -:  239:
+function build_lastoserr_dict called 0 returned 0% blocks executed 0%
+    #####:  240:static PyObject* build_lastoserr_dict(const struct LastError* lasterror)
+        -:  241:{
+    #####:  242:    PyObject* dict;
+        -:  243:
+        -:  244:    /* dblib sets oserr to DBNOERR for some errors... */
+    #####:  245:    if ((lasterror->oserr == DBNOERR) || (lasterror->oserr == 0)) Py_RETURN_NONE;
+branch  0 never executed
+branch  1 never executed
+        -:  246:
+    #####:  247:    dict = PyDict_New();
+call    0 never executed
+    #####:  248:    if (dict)
+branch  0 never executed
+branch  1 never executed
+        -:  249:    {
+    #####:  250:        if (-1 == PyDict_SetItemStringLongValue(dict, "number", (long)lasterror->oserr) ||
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+    #####:  251:            -1 == PyDict_SetItemStringStringValue(dict, "description", lasterror->oserrstr ? lasterror->oserrstr : ""))
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+        -:  252:        {
+    #####:  253:            Py_DECREF(dict);
+branch  0 never executed
+branch  1 never executed
+        -:  254:            dict = NULL;
+        -:  255:        }
+        -:  256:    }
+        -:  257:    return dict;
+        -:  258:}
+        -:  259:
+function build_message_dict called 0 returned 0% blocks executed 0%
+    #####:  260:static PyObject* build_message_dict(const struct DatabaseMsg* lastmsg)
+        -:  261:{
+    #####:  262:    PyObject* dict;
+        -:  263:
+    #####:  264:    if (!lastmsg) Py_RETURN_NONE;
+branch  0 never executed
+branch  1 never executed
+        -:  265:
+    #####:  266:    dict = PyDict_New();
+call    0 never executed
+    #####:  267:    if (dict)
+branch  0 never executed
+branch  1 never executed
+        -:  268:    {
+    #####:  269:        if (-1 == PyDict_SetItemStringLongValue(dict, "number", (long)lastmsg->msgno) ||
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+    #####:  270:            -1 == PyDict_SetItemStringLongValue(dict, "state", (long)lastmsg->msgstate) ||
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  271:            -1 == PyDict_SetItemStringLongValue(dict, "severity", (long)lastmsg->severity) ||
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  272:            -1 == PyDict_SetItemStringStringValue(dict, "description", lastmsg->msgtext ? lastmsg->msgtext : "") ||
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+    #####:  273:            -1 == PyDict_SetItemStringStringValue(dict, "server", lastmsg->srvname ? lastmsg->srvname : "") ||
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+    #####:  274:            -1 == PyDict_SetItemStringStringValue(dict, "proc", lastmsg->proc ? lastmsg->proc : "") ||
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+    #####:  275:            -1 == PyDict_SetItemStringLongValue(dict, "line", (long)lastmsg->line))
+call    0 never executed
+        -:  276:        {
+    #####:  277:            Py_DECREF(dict);
+branch  0 never executed
+branch  1 never executed
+        -:  278:            dict = NULL;
+        -:  279:        }
+        -:  280:    }
+        -:  281:    return dict;
+        -:  282:}
+        -:  283:
+        -:  284:/* Raise the given error. */
+function raise_lasterror called 0 returned 0% blocks executed 0%
+    #####:  285:static void raise_lasterror(PyObject* exception, const struct LastError* lasterror,
+        -:  286:                            const struct DatabaseMsg* lastmsg)
+        -:  287:{
+    #####:  288:    PyObject* args;
+        -:  289:
+        -:  290:    /* Was the last error a database error or lower level? */
+    #####:  291:    const char* message;
+    #####:  292:    switch (lasterror->dberr)
+branch  0 never executed
+branch  1 never executed
+        -:  293:    {
+    #####:  294:        case SYBESMSG:
+        -:  295:        case SYBEFCON:
+        -:  296:        {
+        -:  297:#if defined(__GNUC__) && (__GNUC__ > 7)
+        -:  298:#  pragma GCC diagnostic push
+        -:  299:#  pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+        -:  300:#endif /* if defined(__GNUC__) && (__GNUC__ > 7) */
+    #####:  301:            if (lastmsg && lastmsg->msgtext)
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+        -:  302:            {
+        -:  303:                message = lastmsg->msgtext;
+        -:  304:                break;
+        -:  305:            }
+        -:  306:#if defined(__GNUC__) && (__GNUC__ > 7)
+        -:  307:#  pragma GCC diagnostic pop
+        -:  308:#endif
+        -:  309:            /* Intentional fall-through. */
+        -:  310:        }
+        -:  311:        default:
+        -:  312:        {
+        -:  313:            /* Older versions of FreeTDS set the dberr to the message number. */
+    #####:  314:            if (lastmsg && lasterror->dberr == lastmsg->msgno)
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+        -:  315:            {
+    #####:  316:                message = lastmsg->msgtext;
+        -:  317:            }
+        -:  318:            else
+        -:  319:            {
+    #####:  320:                message = lasterror->dberrstr;
+        -:  321:            }
+        -:  322:            break;
+        -:  323:        }
+        -:  324:    }
+        -:  325:
+    #####:  326:    args = Py_BuildValue("(s)", message);
+call    0 never executed
+    #####:  327:    if (args)
+branch  0 never executed
+branch  1 never executed
+        -:  328:    {
+    #####:  329:        PyObject* error = PyObject_Call(exception, args, (PyObject*)NULL);
+call    0 never executed
+    #####:  330:        if (error)
+branch  0 never executed
+branch  1 never executed
+        -:  331:        {
+    #####:  332:            PyObject* db_error = NULL;
+    #####:  333:            PyObject* os_error = NULL;
+    #####:  334:            PyObject* last_message = NULL;
+    #####:  335:            if (
+branch  0 never executed
+branch  1 never executed
+        -:  336:                /* severity : int */
+    #####:  337:                -1 != PyObject_SetAttrStringLongValue(error, "severity", (long)lasterror->severity) &&
+call    0 never executed
+        -:  338:
+        -:  339:                /* db_error : {'number': int, 'description': string} */
+    #####:  340:                NULL != (db_error = build_lastdberr_dict(lasterror)) &&
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+    #####:  341:                -1 != PyObject_SetAttrString(error, "db_error", db_error) &&
+call    0 never executed
+        -:  342:
+        -:  343:                /* os_error : None | {'number': int, 'description': string} */
+    #####:  344:                NULL != (os_error = build_lastoserr_dict(lasterror)) &&
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+    #####:  345:                -1 != PyObject_SetAttrString(error, "os_error", os_error) &&
+call    0 never executed
+        -:  346:
+        -:  347:                /* last_message : None | {'number': int, 'state': int, 'severity': int, 'description': string, 'server': string, 'proc': string, 'line': int} */
+    #####:  348:                NULL != (last_message = build_message_dict(lastmsg)) &&
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+    #####:  349:                -1 != PyObject_SetAttrString(error, "last_message", last_message)
+call    0 never executed
+        -:  350:                )
+        -:  351:            {
+    #####:  352:                PyErr_SetObject(exception, error);
+call    0 never executed
+        -:  353:            }
+    #####:  354:            Py_XDECREF(db_error);
+call    0 never executed
+    #####:  355:            Py_XDECREF(os_error);
+call    0 never executed
+    #####:  356:            Py_XDECREF(last_message);
+call    0 never executed
+    #####:  357:            Py_DECREF(error);
+branch  0 never executed
+branch  1 never executed
+        -:  358:        }
+    #####:  359:        Py_DECREF(args);
+branch  0 never executed
+branch  1 never executed
+        -:  360:    }
+    #####:  361:}
+        -:  362:
+function Connection_DBPROCESS called 0 returned 0% blocks executed 0%
+    #####:  363:DBPROCESS* Connection_DBPROCESS(struct Connection* connection)
+        -:  364:{
+    #####:  365:    return connection->dbproc;
+        -:  366:}
+        -:  367:
+function Connection_closed called 0 returned 0% blocks executed 0%
+    #####:  368:int Connection_closed(struct Connection* connection)
+        -:  369:{
+    #####:  370:    return (!connection->dbproc);
+        -:  371:}
+        -:  372:
+        -:  373:/* Close a connection, cancelling any currently executing command. */
+function Connection_close_internal called 0 returned 0% blocks executed 0%
+    #####:  374:static void Connection_close_internal(struct Connection* connection)
+        -:  375:{
+    #####:  376:    Py_BEGIN_ALLOW_THREADS
+call    0 never executed
+        -:  377:
+    #####:  378:        if (!Connection_closed(connection))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  379:        {
+    #####:  380:            dbclose(connection->dbproc);
+call    0 never executed
+    #####:  381:            connection->dbproc = NULL;
+        -:  382:        }
+        -:  383:
+    #####:  384:    Py_END_ALLOW_THREADS
+call    0 never executed
+    #####:  385:}
+        -:  386:
+    #####:  387:static void Connection_clear_messages(struct Connection* connection)
+        -:  388:{
+    #####:  389:    DatabaseMsg_clear(connection->messages);
+    #####:  390:    tds_mem_free(connection->messages);
+    #####:  391:    connection->messages = NULL;
+    #####:  392:}
+        -:  393:
+        -:  394:/*
+        -:  395:    Frees all data associated with a Connection object, but does _not_ free
+        -:  396:    the memory itself.
+        -:  397:*/
+function Connection_free called 0 returned 0% blocks executed 0%
+    #####:  398:static void Connection_free(struct Connection* connection)
+        -:  399:{
+    #####:  400:    if (connection)
+branch  0 never executed
+branch  1 never executed
+        -:  401:    {
+    #####:  402:        Connection_close_internal(connection);
+call    0 never executed
+        -:  403:
+        -:  404:        /*
+        -:  405:            FreeTDS versions prior to 0.95 leak the database name string in the LOGIN struct.
+        -:  406:            Explicitly clear it to avoid this.
+        -:  407:        */
+    #####:  408:        dbsetlname(connection->login, "", DBSETDBNAME);
+call    0 never executed
+    #####:  409:        dbloginfree(connection->login);
+call    0 never executed
+    #####:  410:        connection->login = NULL;
+        -:  411:
+    #####:  412:        LastError_clear(&connection->lasterror);
+call    0 never executed
+    #####:  413:        Connection_clear_messages(connection);
+call    0 never executed
+        -:  414:    }
+    #####:  415:}
+        -:  416:
+        -:  417:
+        -:  418:/* Raise the last seen error associated with a connection. */
+function Connection_raise_lasterror called 0 returned 0% blocks executed 0%
+    #####:  419:void Connection_raise_lasterror(struct Connection* connection)
+        -:  420:{
+    #####:  421:    PyObject* exception;
+        -:  422:
+    #####:  423:    const struct DatabaseMsg* lastmsg = connection->messages;
+        -:  424:
+    #####:  425:    int msgno = (lastmsg) ? lastmsg->msgno : 0;
+branch  0 never executed
+branch  1 never executed
+    #####:  426:    if (msgno < 50000 /* start of custom range */)
+branch  0 never executed
+branch  1 never executed
+        -:  427:    {
+        -:  428:        /*
+        -:  429:            Categorize by severity for levels > 10, which are considered errors by SQL
+        -:  430:            Server.
+        -:  431:
+        -:  432:            See https://docs.microsoft.com/en-us/sql/relational-databases/errors-events/database-engine-error-severities?view=sql-server-ver15
+        -:  433:            for descriptions of each severity level.
+        -:  434:        */
+    #####:  435:        switch ((lastmsg) ? lastmsg->severity : 0)
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+branch  5 never executed
+branch  6 never executed
+branch  7 never executed
+branch  8 never executed
+branch  9 never executed
+        -:  436:        {
+        -:  437:            /*
+        -:  438:                Indicates that the given object or entity does not exist.
+        -:  439:            */
+    #####:  440:            case 11:
+        -:  441:            {
+    #####:  442:                exception = PyExc_tds_ProgrammingError;
+    #####:  443:                break;
+        -:  444:            }
+        -:  445:
+        -:  446:            /*
+        -:  447:                A special severity for queries that do not use locking because of special
+        -:  448:                query hints. In some cases, read operations performed by these statements
+        -:  449:                could result in inconsistent data, since locks are not taken to guarantee
+        -:  450:                consistency.
+        -:  451:            */
+    #####:  452:            case 12:
+        -:  453:            {
+    #####:  454:                exception = PyExc_tds_IntegrityError;
+    #####:  455:                break;
+        -:  456:            }
+        -:  457:
+        -:  458:            /*
+        -:  459:                Indicates transaction deadlock errors.
+        -:  460:            */
+    #####:  461:            case 13:
+        -:  462:            {
+    #####:  463:                exception = PyExc_tds_InternalError;
+    #####:  464:                break;
+        -:  465:            }
+        -:  466:
+        -:  467:            /*
+        -:  468:                Indicates security-related errors, such as permission denied.
+        -:  469:            */
+    #####:  470:            case 14:
+        -:  471:            {
+    #####:  472:                switch (msgno)
+branch  0 never executed
+branch  1 never executed
+        -:  473:                {
+    #####:  474:                    case 2601: /* Cannot insert duplicate key row in object '%.*ls' with unique index '%.*ls'. */
+        -:  475:                    case 2627: /* Violation of %ls constraint '%.*ls'. Cannot insert duplicate key in object '%.*ls'. */
+        -:  476:                    {
+    #####:  477:                        exception = PyExc_tds_IntegrityError;
+    #####:  478:                        break;
+        -:  479:                    }
+        -:  480:
+    #####:  481:                    default:
+        -:  482:                    {
+    #####:  483:                        exception = PyExc_tds_DatabaseError;
+    #####:  484:                        break;
+        -:  485:                    }
+        -:  486:                }
+        -:  487:                break;
+        -:  488:            }
+        -:  489:
+        -:  490:            /*
+        -:  491:                Indicates syntax errors in the Transact-SQL command.
+        -:  492:            */
+    #####:  493:            case 15:
+        -:  494:            {
+    #####:  495:                exception = PyExc_tds_ProgrammingError;
+    #####:  496:                break;
+        -:  497:            }
+        -:  498:
+        -:  499:            /*
+        -:  500:                Indicates general errors that can be corrected by the user.
+        -:  501:            */
+    #####:  502:            case 16:
+        -:  503:            {
+        -:  504:                /*
+        -:  505:                    Attempt to map SQL Server error codes to the appropriate DB API
+        -:  506:                    exception.
+        -:  507:
+        -:  508:                    https://technet.microsoft.com/en-us/library/cc645603(v=sql.105).aspx
+        -:  509:                */
+    #####:  510:                switch (msgno)
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  511:                {
+    #####:  512:                    case 220: /* Arithmetic overflow error for data type %ls, value = %ld. */
+        -:  513:                    case 517: /* Adding a value to a '%ls' column caused an overflow. */
+        -:  514:                    case 518: /* Cannot convert data type %ls to %ls. */
+        -:  515:                    case 529: /* Explicit conversion from data type %ls to %ls is not allowed. */
+        -:  516:                    case 8114: /* Error converting data type %ls to %ls. */
+        -:  517:                    case 8115: /* Arithmetic overflow error converting %ls to data type %ls. */
+        -:  518:                    case 8134: /* Divide by zero error encountered. */
+        -:  519:                    case 2628: /* String or binary data would be truncated in table '%.*ls', column '%.*ls'. Truncated value: '%.*ls'. */
+        -:  520:                    case 8152: /* String or binary data would be truncated. */
+        -:  521:                    {
+    #####:  522:                        exception = PyExc_tds_DataError;
+    #####:  523:                        break;
+        -:  524:                    }
+        -:  525:
+    #####:  526:                    case 515: /* Cannot insert the value NULL into column '%.*ls', table '%.*ls'; column does not allow nulls. %ls fails. */
+        -:  527:                    case 544: /* Cannot insert explicit value for identity column in table '%.*ls' when IDENTITY_INSERT is set to OFF. */
+        -:  528:                    case 545: /* Explicit value must be specified for identity column in table '%.*ls' either when IDENTITY_INSERT is set to ON or when a replication user is inserting into a NOT FOR REPLICATION identity column. */
+        -:  529:                    case 547: /* The %ls statement conflicted with the %ls constraint "%.*ls". The conflict occurred in database "%.*ls", table "%.*ls"%ls%.*ls%ls. */
+        -:  530:                    case 548: /*  The insert failed. It conflicted with an identity range check constraint in database '%.*ls', replicated table '%.*ls'%ls%.*ls%ls. */
+        -:  531:                    {
+    #####:  532:                        exception = PyExc_tds_IntegrityError;
+    #####:  533:                        break;
+        -:  534:                    }
+        -:  535:
+    #####:  536:                    default:
+        -:  537:                    {
+    #####:  538:                        exception = PyExc_tds_ProgrammingError;
+    #####:  539:                        break;
+        -:  540:                    }
+        -:  541:                }
+        -:  542:                break;
+        -:  543:            }
+        -:  544:
+        -:  545:            /*
+        -:  546:                [17-19] Indicate software errors that cannot be corrected by the user.
+        -:  547:            */
+    #####:  548:            case 17:
+        -:  549:            case 18:
+        -:  550:            case 19:
+        -:  551:
+        -:  552:            /*
+        -:  553:                [20-24] Indicate system problems and are fatal errors, which means that the
+        -:  554:                Database Engine task that is executing a statement or batch is no longer
+        -:  555:                running.
+        -:  556:            */
+        -:  557:            case 20:
+        -:  558:            case 21:
+        -:  559:            case 22:
+        -:  560:            case 23:
+        -:  561:            case 24:
+        -:  562:            {
+    #####:  563:                exception = PyExc_tds_OperationalError;
+    #####:  564:                break;
+        -:  565:            }
+        -:  566:
+    #####:  567:            default:
+        -:  568:            {
+    #####:  569:                exception = PyExc_tds_DatabaseError;
+    #####:  570:                break;
+        -:  571:            }
+        -:  572:        }
+        -:  573:    }
+        -:  574:    else
+        -:  575:    {
+        -:  576:        /* Default to ProgrammingError for user-defined error numbers. */
+    #####:  577:        exception = PyExc_tds_ProgrammingError;
+        -:  578:    }
+    #####:  579:    raise_lasterror(exception, &connection->lasterror, lastmsg);
+call    0 never executed
+    #####:  580:}
+        -:  581:
+function Connection_raise_closed called 0 returned 0% blocks executed 0%
+    #####:  582:void Connection_raise_closed(struct Connection* connection)
+        -:  583:{
+    #####:  584:    PyErr_Format(PyExc_tds_InterfaceError, "connection closed");
+call    0 never executed
+    #####:  585:    UNUSED(connection);
+    #####:  586:}
+        -:  587:
+function Connection_clear_lastwarning called 0 returned 0% blocks executed 0%
+    #####:  588:void Connection_clear_lastwarning(struct Connection* connection)
+        -:  589:{
+    #####:  590:    Connection_clear_messages(connection);
+call    0 never executed
+    #####:  591:}
+        -:  592:
+function Connection_raise_lastwarning called 0 returned 0% blocks executed 0%
+    #####:  593:int Connection_raise_lastwarning(struct Connection* connection)
+        -:  594:{
+    #####:  595:    int error = 0;
+        -:  596:
+        -:  597:    /*
+        -:  598:        Ignore messages == 0, which includes informational things, e.g.
+        -:  599:          * session property changes
+        -:  600:          * database change messages
+        -:  601:          * PRINT statements
+        -:  602:    */
+    #####:  603:    struct DatabaseMsg* lastmsg;
+    #####:  604:    for (lastmsg = connection->messages; lastmsg; lastmsg = lastmsg->next)
+branch  0 never executed
+branch  1 never executed
+        -:  605:    {
+    #####:  606:        if ((lastmsg->msgno > 0) && (!lastmsg->warned))
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+        -:  607:        {
+        -:  608:            /*
+        -:  609:                If the last message has a high enough severity, consider it an error instead
+        -:  610:                of an "informational" warning. Some of these errors aren't reported by
+        -:  611:                FreeTDS' DB-lib implementation, but seemingly should be. As a workaround,
+        -:  612:                assume any message of sufficient severity should be treated as an error
+        -:  613:                and not only when a DB-lib call returned non-success.
+        -:  614:            */
+    #####:  615:            if (lastmsg->severity <= 10)
+branch  0 never executed
+branch  1 never executed
+        -:  616:            {
+    #####:  617:                lastmsg->warned = true;
+        -:  618:
+        -:  619:                {
+    #####:  620:                    char warning_msg[2048];
+    #####:  621:                    snprintf(warning_msg, sizeof(warning_msg),
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+        -:  622:                             "[SQL Server message %ld, severity %d, state %d%s%s%s%s, line %d]: %s",
+        -:  623:                             (long)lastmsg->msgno,
+        -:  624:                             lastmsg->severity,
+        -:  625:                             lastmsg->msgstate,
+        -:  626:                             lastmsg->srvname ? ", server " : "",
+    #####:  627:                             lastmsg->srvname ? lastmsg->srvname : "",
+branch  0 never executed
+branch  1 never executed
+        -:  628:                             lastmsg->proc ? ", proc " : "",
+    #####:  629:                             lastmsg->proc ? lastmsg->proc : "",
+branch  0 never executed
+branch  1 never executed
+        -:  630:                             lastmsg->line,
+    #####:  631:                             lastmsg->msgtext ? lastmsg->msgtext : "");
+branch  0 never executed
+branch  1 never executed
+    #####:  632:                    error = PyErr_WarnEx(PyExc_tds_Warning, warning_msg, 1);
+call    0 never executed
+        -:  633:                }
+        -:  634:            }
+        -:  635:            else
+        -:  636:            {
+    #####:  637:                Connection_raise_lasterror(connection);
+    #####:  638:                error = 1;
+        -:  639:            }
+    #####:  640:            if (error)
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+        -:  641:            {
+        -:  642:                break;
+        -:  643:            }
+        -:  644:        }
+        -:  645:    }
+        -:  646:
+    #####:  647:    return error;
+        -:  648:}
+        -:  649:
+function Connection_use_internal called 0 returned 0% blocks executed 0%
+    #####:  650:static int Connection_use_internal(struct Connection* connection, const char* database)
+        -:  651:{
+    #####:  652:    RETCODE retcode;
+        -:  653:
+    #####:  654:    Py_BEGIN_ALLOW_THREADS
+call    0 never executed
+        -:  655:
+    #####:  656:        retcode = dbuse(connection->dbproc, database);
+call    0 never executed
+        -:  657:
+    #####:  658:    Py_END_ALLOW_THREADS
+call    0 never executed
+        -:  659:
+    #####:  660:    if (FAIL == retcode)
+branch  0 never executed
+branch  1 never executed
+        -:  661:    {
+    #####:  662:        Connection_raise_lasterror(connection);
+    #####:  663:        return -1;
+call    0 never executed
+        -:  664:    }
+        -:  665:    return 0;
+        -:  666:}
+        -:  667:
+        -:  668:/*
+        -:  669:    WARNING: No Python methods can be called from inside this function.
+        -:  670:    They are executed from within a scope which does not hold the GIL.
+        -:  671:*/
+function Connection_dberrhandler called 0 returned 0% blocks executed 0%
+    #####:  672:int Connection_dberrhandler(DBPROCESS* dbproc, int severity, int dberr,
+        -:  673:                            int oserr, char *dberrstr, char *oserrstr)
+        -:  674:{
+    #####:  675:    struct LastError* lasterror = NULL;
+    #####:  676:    if (dbproc)
+branch  0 never executed
+branch  1 never executed
+        -:  677:    {
+    #####:  678:        struct Connection* connection = (struct Connection*)dbgetuserdata(dbproc);
+call    0 never executed
+    #####:  679:        if (connection)
+branch  0 never executed
+branch  1 never executed
+        -:  680:        {
+    #####:  681:            lasterror = &connection->lasterror;
+        -:  682:        }
+        -:  683:    }
+    #####:  684:    if (!lasterror)
+branch  0 never executed
+branch  1 never executed
+        -:  685:    {
+        -:  686:        lasterror = LastError_get();
+        -:  687:    }
+        -:  688:
+    #####:  689:    LastError_clear(lasterror);
+call    0 never executed
+        -:  690:
+    #####:  691:    lasterror->severity = severity;
+    #####:  692:    lasterror->dberr = dberr;
+    #####:  693:    lasterror->oserr = oserr;
+    #####:  694:    lasterror->dberrstr = (dberrstr) ? tds_mem_strdup(dberrstr) : NULL;
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+    #####:  695:    lasterror->oserrstr = (oserrstr) ? tds_mem_strdup(oserrstr) : NULL;
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+        -:  696:
+        -:  697:    /*
+        -:  698:        Possible return values included:
+        -:  699:
+        -:  700:        * INT_CANCEL: The db-lib function that encountered the error will
+        -:  701:            return FAIL.
+        -:  702:        * INT_TIMEOUT: The db-lib function will cancel the operation and
+        -:  703:            return FAIL. dbproc remains useable.
+        -:  704:        * INT_CONTINUE: The db-lib function will retry the operation.
+        -:  705:
+        -:  706:        Always raise INT_CANCEL here. INT_TIMEOUT is desirable for timeouts
+        -:  707:        raised when waiting for SQL operations to complete. However, the error
+        -:  708:        handler is also called for timeouts trying to cancel an operation
+        -:  709:        after an error occurrs. It is simpler to always abort the connection
+        -:  710:        on error than try to determine if the timeout is recoverable or not.
+        -:  711:    */
+    #####:  712:    return INT_CANCEL;
+        -:  713:}
+        -:  714:
+        -:  715:/*
+        -:  716:    WARNING: No Python methods can be called from inside this function.
+        -:  717:    They are executed from within a scope which does not hold the GIL.
+        -:  718:*/
+function Connection_dbmsghandler called 0 returned 0% blocks executed 0%
+    #####:  719:int Connection_dbmsghandler(DBPROCESS* dbproc, DBINT msgno, int msgstate,
+        -:  720:                            int severity, char* msgtext, char* srvname,
+        -:  721:                            char* proc, int line)
+        -:  722:{
+    #####:  723:    struct Connection* connection = (struct Connection*)dbgetuserdata(dbproc);
+call    0 never executed
+    #####:  724:    if (connection)
+branch  0 never executed
+branch  1 never executed
+        -:  725:    {
+    #####:  726:        struct DatabaseMsg* msg = tds_mem_malloc(sizeof(struct DatabaseMsg));
+    #####:  727:        if (msg)
+branch  0 never executed
+branch  1 never executed
+        -:  728:        {
+    #####:  729:            struct DatabaseMsg* prev;
+    #####:  730:            struct DatabaseMsg* curr;
+        -:  731:
+    #####:  732:            memset(msg, 0, sizeof(struct DatabaseMsg));
+        -:  733:
+    #####:  734:            msg->msgno = msgno;
+    #####:  735:            msg->msgstate = msgstate;
+    #####:  736:            msg->severity = severity;
+    #####:  737:            msg->msgtext = (msgtext) ? tds_mem_strdup(msgtext) : NULL;
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+    #####:  738:            msg->srvname = (srvname) ? tds_mem_strdup(srvname) : NULL;
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+    #####:  739:            msg->proc = (proc) ? tds_mem_strdup(proc) : NULL;
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+    #####:  740:            msg->line = line;
+        -:  741:
+        -:  742:            /* Insert the message into the list in order of descending severity. */
+    #####:  743:            prev = NULL;
+    #####:  744:            curr = connection->messages;
+    #####:  745:            while (NULL != curr && curr->severity >= severity)
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+        -:  746:            {
+    #####:  747:                prev = curr;
+    #####:  748:                curr = curr->next;
+        -:  749:            }
+        -:  750:
+    #####:  751:            msg->next = curr;
+    #####:  752:            if (!prev)
+branch  0 never executed
+branch  1 never executed
+        -:  753:            {
+    #####:  754:                connection->messages = msg;
+        -:  755:            }
+        -:  756:            else
+        -:  757:            {
+    #####:  758:                prev->next = msg;
+        -:  759:            }
+        -:  760:        }
+        -:  761:    }
+        -:  762:    else
+        -:  763:    {
+        -:  764:        /* Fall back to the thread-local message buffer. */
+    #####:  765:        struct DatabaseMsg* lastmsg = LastMsg_get();
+    #####:  766:        DatabaseMsg_clear(lastmsg);
+call    0 never executed
+        -:  767:
+    #####:  768:        lastmsg->msgno = msgno;
+    #####:  769:        lastmsg->msgstate = msgstate;
+    #####:  770:        lastmsg->severity = severity;
+    #####:  771:        lastmsg->msgtext = (msgtext) ? tds_mem_strdup(msgtext) : NULL;
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+    #####:  772:        lastmsg->srvname = (srvname) ? tds_mem_strdup(srvname) : NULL;
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+    #####:  773:        lastmsg->proc = (proc) ? tds_mem_strdup(proc) : NULL;
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+    #####:  774:        lastmsg->line = line;
+        -:  775:    }
+        -:  776:
+    #####:  777:    return 0;
+        -:  778:}
+        -:  779:
+        -:  780:/*
+        -:  781:    Execute a static SQL statement and discard any results.
+        -:  782:*/
+function Connection_execute called 0 returned 0% blocks executed 0%
+    #####:  783:static int Connection_execute(struct Connection* connection, size_t ncmds, ...)
+        -:  784:{
+    #####:  785:    va_list vargs;
+    #####:  786:    RETCODE retcode;
+    #####:  787:    size_t ix;
+        -:  788:
+    #####:  789:    va_start(vargs, ncmds);
+        -:  790:
+    #####:  791:    Py_BEGIN_ALLOW_THREADS
+call    0 never executed
+        -:  792:
+    #####:  793:        do
+    #####:  794:        {
+    #####:  795:            retcode = dbcancel(connection->dbproc);
+call    0 never executed
+    #####:  796:            if (FAIL == retcode)
+branch  0 never executed
+branch  1 never executed
+        -:  797:            {
+        -:  798:                break;
+        -:  799:            }
+    #####:  800:            for (ix = 0; ix < ncmds; ++ix)
+branch  0 never executed
+branch  1 never executed
+        -:  801:            {
+    #####:  802:                const char* cmd = va_arg(vargs, char*);
+call    0 never executed
+    #####:  803:                retcode = dbcmd(connection->dbproc, cmd);
+call    0 never executed
+    #####:  804:                if (FAIL == retcode)
+branch  0 never executed
+branch  1 never executed
+        -:  805:                {
+        -:  806:                    break;
+        -:  807:                }
+        -:  808:            }
+    #####:  809:            if (FAIL == retcode)
+branch  0 never executed
+branch  1 never executed
+        -:  810:            {
+        -:  811:                break;
+        -:  812:            }
+        -:  813:
+    #####:  814:            retcode = dbsqlexec(connection->dbproc);
+call    0 never executed
+    #####:  815:            if (FAIL == retcode)
+branch  0 never executed
+branch  1 never executed
+        -:  816:            {
+        -:  817:                break;
+        -:  818:            }
+    #####:  819:            while (NO_MORE_RESULTS != (retcode = dbresults(connection->dbproc)))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  820:            {
+    #####:  821:                if (FAIL == retcode)
+branch  0 never executed
+branch  1 never executed
+        -:  822:                {
+        -:  823:                    break;
+        -:  824:                }
+    #####:  825:                while (NO_MORE_ROWS != (retcode = dbnextrow(connection->dbproc)))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  826:                {
+    #####:  827:                    if (FAIL == retcode)
+branch  0 never executed
+branch  1 never executed
+        -:  828:                    {
+        -:  829:                        break;
+        -:  830:                    }
+        -:  831:                }
+    #####:  832:                if (FAIL == retcode)
+branch  0 never executed
+branch  1 never executed
+        -:  833:                {
+        -:  834:                    break;
+        -:  835:                }
+        -:  836:            }
+        -:  837:        } while (0);
+        -:  838:
+    #####:  839:    Py_END_ALLOW_THREADS
+call    0 never executed
+        -:  840:
+    #####:  841:    va_end(vargs);
+        -:  842:
+    #####:  843:    if (FAIL == retcode)
+branch  0 never executed
+branch  1 never executed
+        -:  844:    {
+    #####:  845:        Connection_raise_lasterror(connection);
+    #####:  846:        return -1;
+call    0 never executed
+        -:  847:    }
+        -:  848:
+        -:  849:    return 0;
+        -:  850:}
+        -:  851:
+function Connection_transaction_commit called 0 returned 0% blocks executed 0%
+    #####:  852:int Connection_transaction_commit(struct Connection* connection)
+        -:  853:{
+    #####:  854:    return Connection_execute(connection, 1, "IF @@TRANCOUNT > 0 COMMIT TRANSACTION");
+call    0 never executed
+        -:  855:}
+        -:  856:
+function Connection_transaction_rollback called 0 returned 0% blocks executed 0%
+    #####:  857:int Connection_transaction_rollback(struct Connection* connection)
+        -:  858:{
+    #####:  859:    return Connection_execute(connection, 1, "IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION");
+call    0 never executed
+        -:  860:}
+        -:  861:
+        -:  862:/*
+        -:  863:   Python tds.Connection type definition.
+        -:  864:*/
+        -:  865:PyTypeObject ConnectionType;
+        -:  866:
+        -:  867:static const char s_tds_Connection_doc[] =
+        -:  868:    "A connection to the database server.\n"
+        -:  869:    "\n"
+        -:  870:    ":pep:`0249#connection-objects`\n";
+        -:  871:
+function Connection_dealloc called 0 returned 0% blocks executed 0%
+    #####:  872:static void Connection_dealloc(PyObject* self)
+        -:  873:{
+    #####:  874:    Connection_free((struct Connection*)self);
+call    0 never executed
+    #####:  875:    PyObject_Del(self);
+call    0 never executed
+    #####:  876:}
+        -:  877:
+        -:  878:/*
+        -:  879:    tds.Connection attributes
+        -:  880:*/
+        -:  881:
+        -:  882:static const char s_Connection_autocommit_doc[] =
+        -:  883:    "Auto-commit transactions after :py:meth:`k_ctds.Cursor.execute`,\n"
+        -:  884:    ":py:meth:`k_ctds.Cursor.executemany`, and :py:meth:`k_ctds.Cursor.callproc`.\n"
+        -:  885:    "If :py:data:`False`, operations must be committed explicitly using\n"
+        -:  886:    ":py:meth:`.commit`.\n"
+        -:  887:    "\n"
+        -:  888:    ":rtype: bool\n";
+        -:  889:
+function Connection_autocommit_get called 0 returned 0% blocks executed 0%
+    #####:  890:static PyObject* Connection_autocommit_get(PyObject* self, void* closure)
+        -:  891:{
+    #####:  892:    struct Connection* connection = (struct Connection*)self;
+    #####:  893:    return PyBool_FromLong(connection->autocommit);
+call    0 never executed
+    #####:  894:    UNUSED(closure);
+        -:  895:}
+        -:  896:
+function Connection_autocommit_set called 0 returned 0% blocks executed 0%
+    #####:  897:static int Connection_autocommit_set(PyObject* self, PyObject* value, void* closure)
+        -:  898:{
+    #####:  899:    int error = 0;
+    #####:  900:    bool autocommit;
+        -:  901:
+    #####:  902:    struct Connection* connection = (struct Connection*)self;
+    #####:  903:    if (Connection_closed(connection))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  904:    {
+    #####:  905:        Connection_raise_closed(connection);
+    #####:  906:        return -1;
+call    0 never executed
+        -:  907:    }
+        -:  908:
+    #####:  909:    if (!PyBool_Check(value))
+branch  0 never executed
+branch  1 never executed
+        -:  910:    {
+    #####:  911:        PyErr_SetObject(PyExc_TypeError, value);
+    #####:  912:        return -1;
+call    0 never executed
+        -:  913:    }
+        -:  914:
+    #####:  915:    autocommit = (Py_True == value);
+    #####:  916:    if (autocommit != connection->autocommit)
+branch  0 never executed
+branch  1 never executed
+        -:  917:    {
+        -:  918:        /*
+        -:  919:            If enabling auto-commit, commit the current transaction.
+        -:  920:            If disabling auto-commit, do nothing. The transaction will
+        -:  921:            be created on-demand as needed.
+        -:  922:        */
+    #####:  923:        error = Connection_execute(connection,
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+call    4 never executed
+        -:  924:                                   4,
+        -:  925:                                   (!connection->autocommit) ? "IF @@TRANCOUNT > 0 COMMIT TRANSACTION;" : "",
+        -:  926:                                   "SET IMPLICIT_TRANSACTIONS ",
+        -:  927:                                   (autocommit) ? "OFF" : "ON",
+        -:  928:                                   ";");
+    #####:  929:        if (!error)
+branch  0 never executed
+branch  1 never executed
+        -:  930:        {
+    #####:  931:            connection->autocommit = autocommit;
+        -:  932:        }
+        -:  933:    }
+        -:  934:    return error;
+        -:  935:
+    #####:  936:    UNUSED(closure);
+        -:  937:}
+        -:  938:
+        -:  939:static const char s_Connection_database_doc[] =
+        -:  940:    "The current database or :py:data:`None` if the connection is closed.\n"
+        -:  941:    "\n"
+        -:  942:    ":rtype: str\n";
+        -:  943:
+function Connection_database_get called 0 returned 0% blocks executed 0%
+    #####:  944:static PyObject* Connection_database_get(PyObject* self, void* closure)
+        -:  945:{
+    #####:  946:    struct Connection* connection = (struct Connection*)self;
+    #####:  947:    if (!Connection_closed(connection))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  948:    {
+        -:  949:        /* This API shouldn't block, so don't bother releasing the GIL. */
+    #####:  950:        const char* database = dbname(connection->dbproc);
+call    0 never executed
+        -:  951:
+    #####:  952:        return PyUnicode_DecodeUTF8(database, (Py_ssize_t)strlen(database), NULL);
+call    0 never executed
+        -:  953:    }
+        -:  954:    Py_RETURN_NONE;
+        -:  955:
+    #####:  956:    UNUSED(closure);
+        -:  957:}
+        -:  958:
+function Connection_database_set called 0 returned 0% blocks executed 0%
+    #####:  959:static int Connection_database_set(PyObject* self, PyObject* value, void* closure)
+        -:  960:{
+    #####:  961:    struct Connection* connection = (struct Connection*)self;
+    #####:  962:    const char* databasestr;
+    #####:  963:    if (
+branch  0 never executed
+branch  1 never executed
+        -:  964:#if PY_MAJOR_VERSION < 3
+        -:  965:        !PyString_Check(value) &&
+        -:  966:#endif /* if PY_MAJOR_VERSION < 3 */
+    #####:  967:        !PyUnicode_Check(value)
+branch  0 never executed
+branch  1 never executed
+        -:  968:        )
+        -:  969:    {
+    #####:  970:        PyErr_SetObject(PyExc_TypeError, value);
+    #####:  971:        return -1;
+call    0 never executed
+        -:  972:    }
+        -:  973:
+    #####:  974:    if (Connection_closed(connection))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  975:    {
+    #####:  976:        Connection_raise_closed(connection);
+    #####:  977:        return -1;
+call    0 never executed
+        -:  978:    }
+        -:  979:
+        -:  980:#if PY_MAJOR_VERSION < 3
+        -:  981:    if (PyUnicode_Check(value))
+        -:  982:    {
+        -:  983:        int error = -1;
+        -:  984:        PyObject* utf8 = PyUnicode_AsUTF8String(value);
+        -:  985:        if (utf8)
+        -:  986:        {
+        -:  987:            error = Connection_use_internal(connection, PyString_AS_STRING(utf8));
+        -:  988:            Py_DECREF(utf8);
+        -:  989:        }
+        -:  990:        return error;
+        -:  991:    }
+        -:  992:    databasestr = PyString_AS_STRING(value);
+        -:  993:#else /* if PY_MAJOR_VERSION < 3 */
+    #####:  994:    databasestr = PyUnicode_AsUTF8(value);
+call    0 never executed
+        -:  995:#endif /* else if PY_MAJOR_VERSION < 3 */
+        -:  996:
+    #####:  997:    return Connection_use_internal(connection, databasestr);
+call    0 never executed
+        -:  998:
+    #####:  999:    UNUSED(closure);
+        -: 1000:}
+        -: 1001:
+        -: 1002:static const char s_Connection_messages_doc[] =
+        -: 1003:    "A list of any informational messages received from the last\n"
+        -: 1004:    ":py:meth:`k_ctds.Cursor.execute`, :py:meth:`k_ctds.Cursor.executemany`, or\n"
+        -: 1005:    ":py:meth:`k_ctds.Cursor.callproc` call.\n"
+        -: 1006:    "For example, this will include messages produced by the T-SQL `PRINT`\n"
+        -: 1007:    "and `RAISERROR` statements. Messages are preserved until the next call\n"
+        -: 1008:    "to any of the above methods. :py:data:`None` is returned if the\n"
+        -: 1009:    "connection is closed.\n"
+        -: 1010:    "\n"
+        -: 1011:    ":pep:`0249#connection-messages`\n"
+        -: 1012:    "\n"
+        -: 1013:    ".. versionadded:: 1.4\n"
+        -: 1014:    "\n"
+        -: 1015:    ":rtype: list(dict)\n";
+        -: 1016:
+function Connection_messages_get called 0 returned 0% blocks executed 0%
+    #####: 1017:static PyObject* Connection_messages_get(PyObject* self, void* closure)
+        -: 1018:{
+    #####: 1019:    struct Connection* connection = (struct Connection*)self;
+        -: 1020:
+    #####: 1021:    if (0 != PyErr_WarnEx(PyExc_Warning, "DB-API extension connection.messages used", 1))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1022:    {
+        -: 1023:        return NULL;
+        -: 1024:    }
+        -: 1025:
+    #####: 1026:    if (!Connection_closed(connection))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1027:    {
+        -: 1028:        PyObject* messages = NULL;
+        -: 1029:
+        -: 1030:        int alloc;
+    #####: 1031:        for (alloc = 1; alloc >= 0; alloc--)
+branch  0 never executed
+branch  1 never executed
+        -: 1032:        {
+    #####: 1033:            Py_ssize_t nmsg = 0;
+        -: 1034:
+    #####: 1035:            const struct DatabaseMsg* msg;
+    #####: 1036:            for (msg = connection->messages; NULL != msg; msg = msg->next)
+branch  0 never executed
+branch  1 never executed
+        -: 1037:            {
+    #####: 1038:                if (!alloc)
+branch  0 never executed
+branch  1 never executed
+        -: 1039:                {
+    #####: 1040:                    PyObject* message = build_message_dict(msg);
+call    0 never executed
+    #####: 1041:                    if (!message)
+branch  0 never executed
+branch  1 never executed
+        -: 1042:                    {
+        -: 1043:                        break;
+        -: 1044:                    }
+    #####: 1045:                    PyList_SET_ITEM(messages, nmsg, message);
+        -: 1046:                }
+        -: 1047:
+    #####: 1048:                nmsg++;
+        -: 1049:            }
+        -: 1050:
+    #####: 1051:            if (alloc)
+branch  0 never executed
+branch  1 never executed
+        -: 1052:            {
+    #####: 1053:                messages = PyList_New(nmsg);
+call    0 never executed
+    #####: 1054:                if (!messages)
+branch  0 never executed
+branch  1 never executed
+        -: 1055:                {
+        -: 1056:                    break;
+        -: 1057:                }
+        -: 1058:            }
+        -: 1059:
+    #####: 1060:            if (PyErr_Occurred())
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1061:            {
+        -: 1062:                break;
+        -: 1063:            }
+        -: 1064:        }
+        -: 1065:
+    #####: 1066:        if (PyErr_Occurred())
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1067:        {
+    #####: 1068:            Py_XDECREF(messages);
+    #####: 1069:            messages = NULL;
+call    0 never executed
+        -: 1070:        }
+    #####: 1071:        return messages;
+        -: 1072:    }
+        -: 1073:    else
+        -: 1074:    {
+        -: 1075:        Py_RETURN_NONE;
+        -: 1076:    }
+        -: 1077:
+    #####: 1078:    UNUSED(closure);
+        -: 1079:}
+        -: 1080:
+        -: 1081:static const char s_Connection_spid_doc[] =
+        -: 1082:    "The SQL Server Session Process ID (SPID) for the connection or\n"
+        -: 1083:    ":py:data:`None` if the connection is closed.\n"
+        -: 1084:    "\n"
+        -: 1085:    ":rtype: int\n";
+        -: 1086:
+function Connection_spid_get called 0 returned 0% blocks executed 0%
+    #####: 1087:static PyObject* Connection_spid_get(PyObject* self, void* closure)
+        -: 1088:{
+    #####: 1089:    struct Connection* connection = (struct Connection*)self;
+        -: 1090:
+    #####: 1091:    if (connection->dbproc)
+branch  0 never executed
+branch  1 never executed
+        -: 1092:    {
+        -: 1093:        /* This API shouldn't block, so don't bother releasing the GIL. */
+    #####: 1094:        int spid = dbspid(connection->dbproc);
+call    0 never executed
+        -: 1095:
+    #####: 1096:        return PyLong_FromLong((long)spid);
+call    0 never executed
+        -: 1097:    }
+        -: 1098:    Py_RETURN_NONE;
+        -: 1099:
+    #####: 1100:    UNUSED(closure);
+        -: 1101:}
+        -: 1102:
+        -: 1103:static const char s_Connection_tds_version_doc[] =
+        -: 1104:    "The TDS version in use for the connection or :py:data:`None` if the\n"
+        -: 1105:    "connection is closed.\n"
+        -: 1106:    "\n"
+        -: 1107:    ":rtype: str\n";
+        -: 1108:
+function Connection_tds_version_get called 0 returned 0% blocks executed 0%
+    #####: 1109:static PyObject* Connection_tds_version_get(PyObject* self, void* closure)
+        -: 1110:{
+    #####: 1111:    struct Connection* connection = (struct Connection*)self;
+        -: 1112:
+    #####: 1113:    if (connection->dbproc)
+branch  0 never executed
+branch  1 never executed
+        -: 1114:    {
+    #####: 1115:        const char* tds_version;
+        -: 1116:
+        -: 1117:        /* This API shouldn't block, so don't bother releasing the GIL. */
+    #####: 1118:        switch (DBTDS(connection->dbproc))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+branch  5 never executed
+branch  6 never executed
+branch  7 never executed
+branch  8 never executed
+branch  9 never executed
+branch 10 never executed
+branch 11 never executed
+branch 12 never executed
+branch 13 never executed
+        -: 1119:        {
+        -: 1120:#ifdef DBTDS_2_0
+        -: 1121:            case DBTDS_2_0: { tds_version = "2.0"; break; }
+        -: 1122:#endif
+        -: 1123:#ifdef DBTDS_3_4
+    #####: 1124:            case DBTDS_3_4: { tds_version = "3.4"; break; }
+        -: 1125:#endif
+        -: 1126:#ifdef DBTDS_4_0
+    #####: 1127:            case DBTDS_4_0: { tds_version = "4.0"; break; }
+        -: 1128:#endif
+        -: 1129:#ifdef DBTDS_4_2
+    #####: 1130:            case DBTDS_4_2: { tds_version = "4.2"; break; }
+        -: 1131:#endif
+        -: 1132:#ifdef DBTDS_4_6
+    #####: 1133:            case DBTDS_4_6: { tds_version = "4.6"; break; }
+        -: 1134:#endif
+        -: 1135:#ifdef DBTDS_4_9_5
+    #####: 1136:            case DBTDS_4_9_5: { tds_version = "4.9.5"; break; }
+        -: 1137:#endif
+        -: 1138:#ifdef DBTDS_5_0
+    #####: 1139:            case DBTDS_5_0: { tds_version = "5.0"; break; }
+        -: 1140:#endif
+        -: 1141:#ifdef DBTDS_7_0
+    #####: 1142:            case DBTDS_7_0: { tds_version = "7.0"; break; }
+        -: 1143:#endif
+        -: 1144:#ifdef DBTDS_7_1
+    #####: 1145:            case DBTDS_7_1: { tds_version = "7.1"; break; }
+        -: 1146:#endif
+        -: 1147:#ifdef DBTDS_7_2
+    #####: 1148:            case DBTDS_7_2: { tds_version = "7.2"; break; }
+        -: 1149:#endif
+        -: 1150:#ifdef DBTDS_7_3
+    #####: 1151:            case DBTDS_7_3: { tds_version = "7.3"; break; }
+        -: 1152:#endif
+        -: 1153:#ifdef DBTDS_7_4
+    #####: 1154:            case DBTDS_7_4: { tds_version = "7.4"; break; }
+        -: 1155:#endif
+        -: 1156:            default: { tds_version = NULL; break; }
+        -: 1157:        }
+        -: 1158:
+    #####: 1159:        if (tds_version)
+        -: 1160:        {
+    #####: 1161:            return PyUnicode_DecodeASCII(tds_version,
+    #####: 1162:                                         (Py_ssize_t)strlen(tds_version),
+call    0 never executed
+        -: 1163:                                         NULL);
+        -: 1164:        }
+        -: 1165:    }
+        -: 1166:    Py_RETURN_NONE;
+        -: 1167:
+    #####: 1168:    UNUSED(closure);
+        -: 1169:}
+        -: 1170:
+        -: 1171:static const char s_Connection_timeout_doc[] =
+        -: 1172:    "The connection timeout, in seconds, or :py:data:`None` if the connection\n"
+        -: 1173:    "is closed.\n"
+        -: 1174:    "\n"
+        -: 1175:    ".. note:: Setting the timeout requires FreeTDS version 1.00 or later.\n"
+        -: 1176:    "\n"
+        -: 1177:    ":raises k_ctds.NotSupportedError: `cTDS` was compiled against a version of\n"
+        -: 1178:    "    FreeTDS which does not support setting the timeout on a connection.\n"
+        -: 1179:    "\n"
+        -: 1180:    ":rtype: int\n";
+        -: 1181:
+function Connection_timeout_get called 0 returned 0% blocks executed 0%
+    #####: 1182:static PyObject* Connection_timeout_get(PyObject* self, void* closure)
+        -: 1183:{
+    #####: 1184:    struct Connection* connection = (struct Connection*)self;
+        -: 1185:
+    #####: 1186:    PyObject* timeout = NULL;
+    #####: 1187:    do
+    #####: 1188:    {
+    #####: 1189:        if (!Connection_closed(connection))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1190:        {
+        -: 1191:            /* This API shouldn't block, so don't bother releasing the GIL. */
+    #####: 1192:            timeout = PyLong_FromLong(connection->query_timeout);
+call    0 never executed
+        -: 1193:        }
+        -: 1194:        else
+        -: 1195:        {
+    #####: 1196:            timeout = Py_None;
+    #####: 1197:            Py_INCREF(timeout);
+branch  0 never executed
+branch  1 never executed
+        -: 1198:        }
+        -: 1199:    }
+        -: 1200:    while (0);
+        -: 1201:
+    #####: 1202:    return timeout;
+        -: 1203:
+    #####: 1204:    UNUSED(closure);
+        -: 1205:}
+        -: 1206:
+function Connection_timeout_set called 0 returned 0% blocks executed 0%
+    #####: 1207:static int Connection_timeout_set(PyObject* self, PyObject* value, void* closure)
+        -: 1208:{
+    #####: 1209:    struct Connection* connection = (struct Connection*)self;
+        -: 1210:
+    #####: 1211:    if (
+branch  0 never executed
+branch  1 never executed
+        -: 1212:#if PY_MAJOR_VERSION < 3
+        -: 1213:        !PyInt_Check(value) &&
+        -: 1214:#endif /* if PY_MAJOR_VERSION < 3 */
+    #####: 1215:        !PyLong_Check(value)
+branch  0 never executed
+branch  1 never executed
+        -: 1216:    )
+        -: 1217:    {
+    #####: 1218:        PyErr_SetObject(PyExc_TypeError, value);
+    #####: 1219:        return -1;
+call    0 never executed
+        -: 1220:    }
+        -: 1221:
+    #####: 1222:    do
+    #####: 1223:    {
+    #####: 1224:        long timeout = PyLong_AsLong(value);
+call    0 never executed
+    #####: 1225:        if (timeout > INT_MAX || timeout < 0)
+branch  0 never executed
+branch  1 never executed
+        -: 1226:        {
+    #####: 1227:            PyErr_SetObject(PyExc_ValueError, value);
+    #####: 1228:            break;
+call    0 never executed
+        -: 1229:        }
+        -: 1230:
+    #####: 1231:        if (!Connection_closed(connection))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1232:        {
+        -: 1233:#ifdef DBVERSION_74 /* indicates FreeTDS 1.00+ */
+        -: 1234:            /* The timeout must be passed as a string. */
+    #####: 1235:            char str[ARRAYSIZE("2147483648")];
+    #####: 1236:            (void)PyOS_snprintf(str, sizeof(str), "%d", (int)timeout);
+call    0 never executed
+    #####: 1237:            if (FAIL == dbsetopt(connection->dbproc, DBSETTIME, str, (int)timeout))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1238:            {
+    #####: 1239:                Connection_raise_lasterror(connection);
+call    0 never executed
+    #####: 1240:                break;
+        -: 1241:            }
+        -: 1242:
+    #####: 1243:            connection->query_timeout = (int)timeout;
+        -: 1244:#else /* ifdef DBVERSION_74 */
+        -: 1245:            PyErr_SetString(PyExc_tds_NotSupportedError, "FreeTDS does not support the DBSETTIME option");
+        -: 1246:            break;
+        -: 1247:#endif /* else ifdef DBVERSION_74 */
+        -: 1248:        }
+        -: 1249:        else
+        -: 1250:        {
+    #####: 1251:            Connection_raise_closed(connection);
+    #####: 1252:            break;
+call    0 never executed
+        -: 1253:        }
+        -: 1254:    }
+        -: 1255:    while (0);
+        -: 1256:
+    #####: 1257:    return (PyErr_Occurred()) ? -1 : 0;
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1258:
+    #####: 1259:    UNUSED(closure);
+        -: 1260:}
+        -: 1261:
+        -: 1262:static PyGetSetDef Connection_getset[] = {
+        -: 1263:    /* name, get, set, doc, closure */
+        -: 1264:    { (char*)"autocommit",  Connection_autocommit_get,  Connection_autocommit_set, (char*)s_Connection_autocommit_doc,  NULL },
+        -: 1265:    { (char*)"database",    Connection_database_get,    Connection_database_set,   (char*)s_Connection_database_doc,    NULL },
+        -: 1266:    { (char*)"messages",    Connection_messages_get,    NULL,                      (char*)s_Connection_messages_doc,    NULL },
+        -: 1267:    { (char*)"spid",        Connection_spid_get,        NULL,                      (char*)s_Connection_spid_doc,        NULL },
+        -: 1268:    { (char*)"tds_version", Connection_tds_version_get, NULL,                      (char*)s_Connection_tds_version_doc, NULL },
+        -: 1269:    { (char*)"timeout",     Connection_timeout_get,     Connection_timeout_set,    (char*)s_Connection_timeout_doc,     NULL },
+        -: 1270:    { NULL,                 NULL,                       NULL,                      NULL,                                NULL }
+        -: 1271:};
+        -: 1272:
+        -: 1273:/*
+        -: 1274:    tds.Connection methods
+        -: 1275:*/
+        -: 1276:
+        -: 1277:
+        -: 1278:/* https://www.python.org/dev/peps/pep-0249/#Connection.close */
+        -: 1279:static const char s_Connection_close_doc[] =
+        -: 1280:    "close()\n"
+        -: 1281:    "\n"
+        -: 1282:    "Close the connection now. Pending transactions will be rolled back.\n"
+        -: 1283:    "Subsequent calls to this object or any :py:class:`k_ctds.Cursor` objects it\n"
+        -: 1284:    "created will raise :py:exc:`k_ctds.InterfaceError`.\n"
+        -: 1285:    "\n"
+        -: 1286:    ":pep:`0249#Connection.close`\n";
+        -: 1287:
+function Connection_close called 0 returned 0% blocks executed 0%
+    #####: 1288:PyObject* Connection_close(PyObject* self, PyObject* args)
+        -: 1289:{
+    #####: 1290:    struct Connection* connection = (struct Connection*)self;
+    #####: 1291:    if (Connection_closed(connection))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1292:    {
+    #####: 1293:        Connection_raise_closed(connection);
+    #####: 1294:        return NULL;
+call    0 never executed
+        -: 1295:    }
+        -: 1296:
+    #####: 1297:    Connection_close_internal(connection);
+        -: 1298:
+    #####: 1299:    Py_RETURN_NONE;
+call    0 never executed
+    #####: 1300:    UNUSED(args);
+        -: 1301:}
+        -: 1302:
+        -: 1303:/* https://www.python.org/dev/peps/pep-0249/#commit */
+        -: 1304:static const char s_Connection_commit_doc[] =
+        -: 1305:    "commit()\n"
+        -: 1306:    "\n"
+        -: 1307:    "Commit any pending transaction to the database.\n"
+        -: 1308:    "\n"
+        -: 1309:    ":pep:`0249#commit`\n";
+        -: 1310:
+function Connection_commit called 0 returned 0% blocks executed 0%
+    #####: 1311:static PyObject* Connection_commit(PyObject* self, PyObject* args)
+        -: 1312:{
+    #####: 1313:    struct Connection* connection = (struct Connection*)self;
+    #####: 1314:    if (Connection_closed(connection))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1315:    {
+    #####: 1316:        Connection_raise_closed(connection);
+    #####: 1317:        return NULL;
+call    0 never executed
+        -: 1318:    }
+        -: 1319:
+        -: 1320:    /*
+        -: 1321:        Only commit transactions if autocommit is disabled or the connection
+        -: 1322:        is dead. The later should always occur to ensure the client is notified
+        -: 1323:        of a dead connection.
+        -: 1324:    */
+    #####: 1325:    if (!connection->autocommit || DBDEAD(connection->dbproc))
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+        -: 1326:    {
+    #####: 1327:        if (0 != Connection_transaction_commit(connection))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1328:        {
+    #####: 1329:            return NULL;
+        -: 1330:        }
+        -: 1331:    }
+        -: 1332:
+        -: 1333:    Py_RETURN_NONE;
+    #####: 1334:    UNUSED(args);
+        -: 1335:}
+        -: 1336:
+        -: 1337:/* https://www.python.org/dev/peps/pep-0249/#Connection.rollback */
+        -: 1338:static const char s_Connection_rollback_doc[] =
+        -: 1339:    "rollback()\n"
+        -: 1340:    "\n"
+        -: 1341:    "Rollback any pending transaction to the database.\n"
+        -: 1342:    "\n"
+        -: 1343:    ":pep:`0249#rollback`\n";
+        -: 1344:
+function Connection_rollback called 0 returned 0% blocks executed 0%
+    #####: 1345:static PyObject* Connection_rollback(PyObject* self, PyObject* args)
+        -: 1346:{
+    #####: 1347:    struct Connection* connection = (struct Connection*)self;
+    #####: 1348:    if (Connection_closed(connection))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1349:    {
+    #####: 1350:        Connection_raise_closed(connection);
+    #####: 1351:        return NULL;
+call    0 never executed
+        -: 1352:    }
+        -: 1353:
+        -: 1354:    /*
+        -: 1355:        Only commit transactions if autocommit is disabled or the connection
+        -: 1356:        is dead. The later should always occur to ensure the client is notified
+        -: 1357:        of a dead connection.
+        -: 1358:    */
+    #####: 1359:    if (!connection->autocommit || DBDEAD(connection->dbproc))
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+        -: 1360:    {
+    #####: 1361:        if (0 != Connection_transaction_rollback(connection))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1362:        {
+    #####: 1363:            return NULL;
+        -: 1364:        }
+        -: 1365:    }
+        -: 1366:
+        -: 1367:    Py_RETURN_NONE;
+    #####: 1368:    UNUSED(args);
+        -: 1369:}
+        -: 1370:
+        -: 1371:/* https://www.python.org/dev/peps/pep-0249/#Connection.cursor */
+        -: 1372:static const char s_Connection_cursor_doc[] =
+        -: 1373:    "cursor()\n"
+        -: 1374:    "\n"
+        -: 1375:    "Return a new :py:class:`k_ctds.Cursor` object using the connection.\n"
+        -: 1376:    "\n"
+        -: 1377:    ".. note::\n"
+        -: 1378:    "\n"
+        -: 1379:    "    :py:meth:`k_ctds.Cursor.close` should be called when the returned\n"
+        -: 1380:    "    cursor is no longer required.\n"
+        -: 1381:    "\n"
+        -: 1382:    ".. warning::\n"
+        -: 1383:    "\n"
+        -: 1384:    "    Only one :py:class:`k_ctds.Cursor` object should be used per\n"
+        -: 1385:    "    connection. The last command executed on any cursor associated\n"
+        -: 1386:    "    with a connection will overwrite any previous results from all\n"
+        -: 1387:    "    other cursors.\n"
+        -: 1388:    "\n"
+        -: 1389:    ":pep:`0249#cursor`\n"
+        -: 1390:    "\n"
+        -: 1391:    ":return: A new Cursor object.\n"
+        -: 1392:    ":rtype: k_ctds.Cursor\n";
+        -: 1393:
+function Connection_cursor called 0 returned 0% blocks executed 0%
+    #####: 1394:static PyObject* Connection_cursor(PyObject* self, PyObject* args)
+        -: 1395:{
+    #####: 1396:    struct Connection* connection = (struct Connection*)self;
+    #####: 1397:    if (Connection_closed(connection))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1398:    {
+    #####: 1399:        Connection_raise_closed(connection);
+    #####: 1400:        return NULL;
+call    0 never executed
+        -: 1401:    }
+        -: 1402:
+    #####: 1403:    return Cursor_create(connection, connection->paramstyle);
+call    0 never executed
+    #####: 1404:    UNUSED(args);
+        -: 1405:}
+        -: 1406:
+        -: 1407:static const char s_Connection_bulk_insert_doc[] =
+        -: 1408:    "bulk_insert(table, rows, batch_size=None, tablock=False, auto_encode=False)\n"
+        -: 1409:    "\n"
+        -: 1410:    "Bulk insert rows into a given table.\n"
+        -: 1411:    "This method utilizes the `BULK INSERT` functionality of SQL Server\n"
+        -: 1412:    "to efficiently insert large amounts of data into a table. By default,\n"
+        -: 1413:    "rows are not validated until all rows have been processed.\n"
+        -: 1414:    "\n"
+        -: 1415:    "An optional batch size may be specified to validate the inserted rows\n"
+        -: 1416:    "after `batch_size` rows have been copied to server.\n"
+        -: 1417:    "\n"
+        -: 1418:    ":param str table: The table in which to insert the rows.\n"
+        -: 1419:
+        -: 1420:    ":param rows: An iterable of data rows. Data rows are Python `sequence`\n"
+        -: 1421:    "    objects. Each item in the data row is inserted into the table in\n"
+        -: 1422:    "    sequential order.\n"
+        -: 1423:    "    Version 1.9 supports passing rows as :py:class:`dict`. Keys must map\n"
+        -: 1424:    "    to column names and must exist for all non-NULL columns.\n"
+        -: 1425:    ":type rows: :ref:`typeiter <python:typeiter>`\n"
+        -: 1426:
+        -: 1427:    ":param int batch_size: An optional batch size.\n"
+        -: 1428:
+        -: 1429:    ":param bool tablock: Should the `TABLOCK` hint be passed?\n"
+        -: 1430:
+        -: 1431:    ":param bool auto_encode: Should Python `str` values be automatically\n"
+        -: 1432:    "    encoded based on the target column's collation? When True,\n"
+        -: 1433:    "    column metadata is queried from INFORMATION_SCHEMA.COLUMNS before\n"
+        -: 1434:    "    the insert begins. str values destined for NVARCHAR/NCHAR/NTEXT\n"
+        -: 1435:    "    columns are encoded to UTF-16LE. str values destined for\n"
+        -: 1436:    "    VARCHAR/CHAR/TEXT columns are encoded to the column's collation\n"
+        -: 1437:    "    code page. .. versionadded:: 2.0.0\n"
+        -: 1438:
+        -: 1439:    ":return: The number of rows saved to the table.\n"
+        -: 1440:    ":rtype: int\n";
+        -: 1441:
+function Connection_bulk_insert_sendrow called 0 returned 0% blocks executed 0%
+    #####: 1442:static DBINT Connection_bulk_insert_sendrow(struct Connection* connection,
+        -: 1443:                                            PyObject* sequence,
+        -: 1444:                                            bool send_batch)
+        -: 1445:{
+    #####: 1446:    DBINT saved = 0;
+        -: 1447:
+    #####: 1448:    Py_ssize_t ix;
+    #####: 1449:    Py_ssize_t size = PySequence_Fast_GET_SIZE(sequence);
+branch  0 never executed
+branch  1 never executed
+    #####: 1450:    struct Parameter** rpcparams;
+    #####: 1451:    do
+    #####: 1452:    {
+    #####: 1453:        RETCODE retcode;
+        -: 1454:
+    #####: 1455:        rpcparams = tds_mem_calloc((size_t)size, sizeof(struct Parameter*));
+    #####: 1456:        if (!rpcparams)
+branch  0 never executed
+branch  1 never executed
+        -: 1457:        {
+    #####: 1458:            PyErr_NoMemory();
+    #####: 1459:            break;
+call    0 never executed
+        -: 1460:        }
+        -: 1461:
+    #####: 1462:        for (ix = 0; ix < size; ++ix)
+branch  0 never executed
+branch  1 never executed
+        -: 1463:        {
+    #####: 1464:            PyObject* value = PySequence_Fast_GET_ITEM(sequence, ix);
+branch  0 never executed
+branch  1 never executed
+    #####: 1465:            if (!Parameter_Check(value))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1466:            {
+    #####: 1467:                rpcparams[ix] = Parameter_create(value, false /* output */);
+call    0 never executed
+    #####: 1468:                if (!rpcparams[ix])
+branch  0 never executed
+branch  1 never executed
+        -: 1469:                {
+        -: 1470:                    break;
+        -: 1471:                }
+        -: 1472:            }
+        -: 1473:            else
+        -: 1474:            {
+    #####: 1475:                Py_INCREF(value);
+branch  0 never executed
+branch  1 never executed
+    #####: 1476:                rpcparams[ix] = (struct Parameter*)value;
+        -: 1477:            }
+        -: 1478:
+    #####: 1479:            if (0 != Parameter_bind(rpcparams[ix], Connection_DBPROCESS(connection)))
+call    0 never executed
+call    1 never executed
+branch  2 never executed
+branch  3 never executed
+        -: 1480:            {
+        -: 1481:                break;
+        -: 1482:            }
+        -: 1483:
+    #####: 1484:            if (PyUnicode_Check(Parameter_value(rpcparams[ix])))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1485:            {
+    #####: 1486:                if (0 != PyErr_WarnEx(PyExc_Warning,
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1487:                                      "Direct bulk insert of a Python str object may result in unexpected character encoding. "
+        -: 1488:                                      "It is recommended to explicitly encode Python str values for bulk insert.",
+        -: 1489:                                      1))
+        -: 1490:                {
+        -: 1491:                    break;
+        -: 1492:                }
+        -: 1493:            }
+        -: 1494:
+        -: 1495:            /* bcp_bind does not make a network request, so no need to release the GIL. */
+        -: 1496:
+        -: 1497:            /* bcp_bind expects a 1-based column index. */
+    #####: 1498:            retcode = Parameter_bcp_bind(rpcparams[ix], connection->dbproc, (size_t)(ix + 1));
+call    0 never executed
+    #####: 1499:            if (FAIL == retcode)
+branch  0 never executed
+branch  1 never executed
+        -: 1500:            {
+    #####: 1501:                Connection_raise_lasterror(connection);
+    #####: 1502:                break;
+call    0 never executed
+        -: 1503:            }
+        -: 1504:        }
+        -: 1505:
+    #####: 1506:        if (PyErr_Occurred())
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1507:        {
+        -: 1508:            break;
+        -: 1509:        }
+        -: 1510:
+    #####: 1511:        Py_BEGIN_ALLOW_THREADS
+call    0 never executed
+        -: 1512:
+    #####: 1513:            do
+    #####: 1514:            {
+    #####: 1515:                retcode = bcp_sendrow(connection->dbproc);
+call    0 never executed
+    #####: 1516:                if (FAIL == retcode)
+branch  0 never executed
+branch  1 never executed
+        -: 1517:                {
+        -: 1518:                    break;
+        -: 1519:                }
+        -: 1520:
+    #####: 1521:                if (send_batch)
+branch  0 never executed
+branch  1 never executed
+        -: 1522:                {
+    #####: 1523:                    saved = bcp_batch(connection->dbproc);
+call    0 never executed
+    #####: 1524:                    if (-1 == saved)
+branch  0 never executed
+branch  1 never executed
+        -: 1525:                    {
+    #####: 1526:                        retcode = FAIL;
+    #####: 1527:                        break;
+        -: 1528:                    }
+        -: 1529:                }
+        -: 1530:            }
+        -: 1531:            while (0);
+        -: 1532:
+    #####: 1533:        Py_END_ALLOW_THREADS
+call    0 never executed
+        -: 1534:
+    #####: 1535:        if (FAIL == retcode)
+branch  0 never executed
+branch  1 never executed
+        -: 1536:        {
+    #####: 1537:            Connection_raise_lasterror(connection);
+    #####: 1538:            break;
+call    0 never executed
+        -: 1539:        }
+        -: 1540:    }
+        -: 1541:    while (0);
+        -: 1542:
+    #####: 1543:    if (rpcparams)
+branch  0 never executed
+branch  1 never executed
+        -: 1544:    {
+    #####: 1545:        for (ix = 0; ix < size; ++ix)
+branch  0 never executed
+branch  1 never executed
+        -: 1546:        {
+    #####: 1547:            Py_XDECREF(rpcparams[ix]);
+call    0 never executed
+        -: 1548:        }
+    #####: 1549:        tds_mem_free(rpcparams);
+        -: 1550:    }
+        -: 1551:
+    #####: 1552:    return (PyErr_Occurred()) ? -1 : saved;
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1553:}
+        -: 1554:
+function Connection_bulk_insert called 0 returned 0% blocks executed 0%
+    #####: 1555:static PyObject* Connection_bulk_insert(PyObject* self, PyObject* args, PyObject* kwargs)
+        -: 1556:{
+    #####: 1557:    struct Connection* connection = (struct Connection*)self;
+        -: 1558:
+    #####: 1559:    DBINT saved = 0;
+        -: 1560:
+    #####: 1561:    PyObject* irows;
+    #####: 1562:    size_t batches = 0;
+        -: 1563:
+    #####: 1564:    static char* s_kwlist[] =
+        -: 1565:    {
+        -: 1566:        "table",
+        -: 1567:        "rows",
+        -: 1568:        "batch_size",
+        -: 1569:        "tablock",
+        -: 1570:        "auto_encode",
+        -: 1571:        NULL
+        -: 1572:    };
+    #####: 1573:    char* table;
+    #####: 1574:    PyObject* rows;
+    #####: 1575:    PyObject* batch_size = Py_None;
+    #####: 1576:    PyObject* tablock = Py_False;
+    #####: 1577:    PyObject* auto_encode = Py_False;
+        -: 1578:
+    #####: 1579:    if (!PyArg_ParseTupleAndKeywords(args,
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1580:                                     kwargs,
+        -: 1581:                                     "sO|OO!O!",
+        -: 1582:                                     s_kwlist,
+        -: 1583:                                     &table,
+        -: 1584:                                     &rows,
+        -: 1585:                                     &batch_size,
+        -: 1586:                                     &PyBool_Type,
+        -: 1587:                                     &tablock,
+        -: 1588:                                     &PyBool_Type,
+        -: 1589:                                     &auto_encode))
+        -: 1590:    {
+        -: 1591:        return NULL;
+        -: 1592:    }
+        -: 1593:
+    #####: 1594:    if (Py_None != batch_size)
+branch  0 never executed
+branch  1 never executed
+        -: 1595:    {
+    #####: 1596:        do
+    #####: 1597:        {
+    #####: 1598:            if (!(
+        -: 1599:#if PY_MAJOR_VERSION < 3
+        -: 1600:                     PyInt_Check(batch_size) ||
+        -: 1601:#endif /* if PY_MAJOR_VERSION < 3 */
+    #####: 1602:                     PyLong_Check(batch_size)
+branch  0 never executed
+branch  1 never executed
+        -: 1603:               ))
+        -: 1604:            {
+    #####: 1605:                PyErr_SetObject(PyExc_TypeError, batch_size);
+    #####: 1606:                break;
+call    0 never executed
+        -: 1607:            }
+        -: 1608:#if PY_MAJOR_VERSION < 3
+        -: 1609:            if (PyInt_Check(batch_size))
+        -: 1610:            {
+        -: 1611:                batches = (size_t)PyInt_AsSsize_t(batch_size);
+        -: 1612:            }
+        -: 1613:            else
+        -: 1614:            {
+        -: 1615:                batches = (size_t)PyLong_AsSsize_t(batch_size);
+        -: 1616:            }
+        -: 1617:#else /* if PY_MAJOR_VERSION < 3 */
+    #####: 1618:            batches = PyLong_AsSize_t(batch_size);
+call    0 never executed
+        -: 1619:#endif /* else if PY_MAJOR_VERSION < 3 */
+        -: 1620:        }
+        -: 1621:        while (0);
+        -: 1622:
+    #####: 1623:        if (PyErr_Occurred())
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1624:        {
+        -: 1625:            return NULL;
+        -: 1626:        }
+        -: 1627:    }
+        -: 1628:
+    #####: 1629:    irows = PyObject_GetIter(rows);
+call    0 never executed
+    #####: 1630:    if (!irows)
+branch  0 never executed
+branch  1 never executed
+        -: 1631:    {
+    #####: 1632:        PyErr_SetObject(PyExc_TypeError, rows);
+    #####: 1633:        return NULL;
+call    0 never executed
+        -: 1634:    }
+        -: 1635:
+        -: 1636:    /*
+        -: 1637:        When auto_encode is True, call into the Python helper module to
+        -: 1638:        query column metadata and wrap the row iterator with one that
+        -: 1639:        encodes str values based on each column's collation.
+        -: 1640:    */
+    #####: 1641:    if (Py_True == auto_encode)
+branch  0 never executed
+branch  1 never executed
+        -: 1642:    {
+    #####: 1643:        PyObject* module = NULL;
+    #####: 1644:        PyObject* get_codecs = NULL;
+    #####: 1645:        PyObject* encode_rows = NULL;
+    #####: 1646:        PyObject* codec_tuple = NULL;
+    #####: 1647:        PyObject* by_position = NULL;
+    #####: 1648:        PyObject* by_name = NULL;
+    #####: 1649:        PyObject* encoded_iter = NULL;
+    #####: 1650:        PyObject* table_str = NULL;
+        -: 1651:
+    #####: 1652:        do
+    #####: 1653:        {
+    #####: 1654:            module = PyImport_ImportModule("k_ctds._bulk_insert");
+call    0 never executed
+    #####: 1655:            if (!module)
+branch  0 never executed
+branch  1 never executed
+        -: 1656:            {
+        -: 1657:                break;
+        -: 1658:            }
+        -: 1659:
+        -: 1660:            /* Get column codecs: (by_position, by_name) = _get_column_codecs(connection, table) */
+    #####: 1661:            get_codecs = PyObject_GetAttrString(module, "_get_column_codecs");
+call    0 never executed
+    #####: 1662:            if (!get_codecs)
+branch  0 never executed
+branch  1 never executed
+        -: 1663:            {
+        -: 1664:                break;
+        -: 1665:            }
+        -: 1666:
+    #####: 1667:            table_str = PyUnicode_FromString(table);
+call    0 never executed
+    #####: 1668:            if (!table_str)
+branch  0 never executed
+branch  1 never executed
+        -: 1669:            {
+        -: 1670:                break;
+        -: 1671:            }
+        -: 1672:
+    #####: 1673:            codec_tuple = PyObject_CallFunctionObjArgs(get_codecs, self, table_str, NULL);
+call    0 never executed
+    #####: 1674:            if (!codec_tuple)
+branch  0 never executed
+branch  1 never executed
+        -: 1675:            {
+        -: 1676:                break;
+        -: 1677:            }
+        -: 1678:
+    #####: 1679:            by_position = PyTuple_GetItem(codec_tuple, 0);
+call    0 never executed
+    #####: 1680:            by_name = PyTuple_GetItem(codec_tuple, 1);
+call    0 never executed
+    #####: 1681:            if (!by_position || !by_name)
+branch  0 never executed
+branch  1 never executed
+        -: 1682:            {
+        -: 1683:                break;
+        -: 1684:            }
+        -: 1685:
+        -: 1686:            /* Wrap the rows: _encode_rows(rows, by_position, by_name) */
+    #####: 1687:            encode_rows = PyObject_GetAttrString(module, "_encode_rows");
+call    0 never executed
+    #####: 1688:            if (!encode_rows)
+branch  0 never executed
+branch  1 never executed
+        -: 1689:            {
+        -: 1690:                break;
+        -: 1691:            }
+        -: 1692:
+    #####: 1693:            encoded_iter = PyObject_CallFunctionObjArgs(encode_rows, irows, by_position, by_name, NULL);
+call    0 never executed
+    #####: 1694:            if (!encoded_iter)
+branch  0 never executed
+branch  1 never executed
+        -: 1695:            {
+        -: 1696:                break;
+        -: 1697:            }
+        -: 1698:
+        -: 1699:            /* Replace the row iterator with the encoding wrapper. */
+    #####: 1700:            Py_DECREF(irows);
+branch  0 never executed
+branch  1 never executed
+        -: 1701:            irows = encoded_iter;
+    #####: 1702:            encoded_iter = NULL; /* ownership transferred to irows */
+        -: 1703:        }
+        -: 1704:        while (0);
+        -: 1705:
+    #####: 1706:        Py_XDECREF(table_str);
+call    0 never executed
+    #####: 1707:        Py_XDECREF(codec_tuple);
+call    0 never executed
+    #####: 1708:        Py_XDECREF(encode_rows);
+call    0 never executed
+    #####: 1709:        Py_XDECREF(get_codecs);
+call    0 never executed
+    #####: 1710:        Py_XDECREF(module);
+call    0 never executed
+        -: 1711:
+    #####: 1712:        if (PyErr_Occurred())
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1713:        {
+    #####: 1714:            Py_DECREF(irows);
+branch  0 never executed
+branch  1 never executed
+    #####: 1715:            return NULL;
+        -: 1716:        }
+        -: 1717:    }
+        -: 1718:
+    #####: 1719:    do
+    #####: 1720:    {
+    #####: 1721:        if (!bcp_getl(connection->login))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1722:        {
+    #####: 1723:            PyErr_Format(PyExc_tds_NotSupportedError, "bulk copy is not enabled");
+    #####: 1724:            break;
+call    0 never executed
+        -: 1725:        }
+        -: 1726:
+    #####: 1727:        if (Connection_closed(connection))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1728:        {
+    #####: 1729:            Connection_raise_closed(connection);
+    #####: 1730:            break;
+call    0 never executed
+        -: 1731:        }
+        -: 1732:
+        -: 1733:        do
+    #####: 1734:        {
+        -: 1735:            PyObject* row;
+        -: 1736:
+        -: 1737:            RETCODE retcode;
+        -: 1738:            size_t sent = 0;
+        -: 1739:
+        -: 1740:            DBINT processed = 0;
+        -: 1741:
+        -: 1742:            DBINT ncolumns = 0;
+        -: 1743:            struct {
+        -: 1744:                bool nullable;
+        -: 1745:                bool identity;
+        -: 1746:                char* name;
+        -: 1747:            }* columns = NULL;
+        -: 1748:            bool initialized = false;
+        -: 1749:
+    #####: 1750:            while (NULL != (row = PyIter_Next(irows)))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1751:            {
+        -: 1752:#define INVALID_SEQUENCE_FMT "invalid sequence for row %zd"
+    #####: 1753:                PyObject* sequence = NULL;
+        -: 1754:
+    #####: 1755:                char msg[ARRAYSIZE(INVALID_SEQUENCE_FMT) + ARRAYSIZE(STRINGIFY(UINT64_MAX))];
+        -: 1756:
+        -: 1757:                /* Initialize only if there are rows to send. */
+    #####: 1758:                if (!initialized)
+branch  0 never executed
+branch  1 never executed
+        -: 1759:                {
+    #####: 1760:                    size_t column;
+        -: 1761:
+    #####: 1762:                    Py_BEGIN_ALLOW_THREADS
+call    0 never executed
+        -: 1763:
+    #####: 1764:                        do
+    #####: 1765:                        {
+    #####: 1766:                            retcode = bcp_init(connection->dbproc, table, NULL, NULL, DB_IN);
+call    0 never executed
+    #####: 1767:                            if (FAIL == retcode)
+branch  0 never executed
+branch  1 never executed
+        -: 1768:                            {
+        -: 1769:                                break;
+        -: 1770:                            }
+        -: 1771:
+    #####: 1772:                            initialized = true;
+        -: 1773:
+    #####: 1774:                            if (Py_True == tablock)
+branch  0 never executed
+branch  1 never executed
+        -: 1775:                            {
+    #####: 1776:                                static const char s_TABLOCK[] = "TABLOCK";
+    #####: 1777:                                retcode = bcp_options(connection->dbproc,
+        -: 1778:                                                      BCPHINTS,
+        -: 1779:                                                      (BYTE*)s_TABLOCK,
+        -: 1780:                                                      ARRAYSIZE(s_TABLOCK));
+    #####: 1781:                                if (FAIL == retcode)
+call    0 never executed
+        -: 1782:                                {
+        -: 1783:                                    break;
+        -: 1784:                                }
+        -: 1785:                            }
+        -: 1786:                        }
+        -: 1787:                        while (0);
+        -: 1788:
+    #####: 1789:                    Py_END_ALLOW_THREADS
+call    0 never executed
+        -: 1790:
+    #####: 1791:                    if (FAIL == retcode)
+branch  0 never executed
+branch  1 never executed
+        -: 1792:                    {
+    #####: 1793:                        Connection_raise_lasterror(connection);
+call    0 never executed
+    #####: 1794:                        Py_DECREF(row);
+branch  0 never executed
+branch  1 never executed
+    #####: 1795:                        break;
+        -: 1796:                    }
+        -: 1797:
+        -: 1798:                    /*
+        -: 1799:                        Store an ordered list of table column names. Once
+        -: 1800:                        insertion starts this information won't be available.
+        -: 1801:                    */
+    #####: 1802:                    ncolumns = dbnumcols(connection->dbproc);
+call    0 never executed
+    #####: 1803:                    assert(ncolumns > 0);
+    #####: 1804:                    columns = tds_mem_calloc((size_t)ncolumns, sizeof(*columns));
+    #####: 1805:                    if (!columns)
+branch  0 never executed
+branch  1 never executed
+        -: 1806:                    {
+    #####: 1807:                        PyErr_NoMemory();
+call    0 never executed
+    #####: 1808:                        Py_DECREF(row);
+branch  0 never executed
+branch  1 never executed
+        -: 1809:                        break;
+        -: 1810:                    }
+        -: 1811:
+    #####: 1812:                    for (column = 0; column < (size_t)ncolumns; ++column)
+branch  0 never executed
+branch  1 never executed
+        -: 1813:                    {
+    #####: 1814:                        DBCOL dbcol;
+    #####: 1815:                        retcode = dbcolinfo(connection->dbproc, CI_REGULAR, (DBINT)column + 1, 0 /* ignored by dblib */,
+call    0 never executed
+        -: 1816:                                            &dbcol);
+    #####: 1817:                        if (FAIL == retcode)
+branch  0 never executed
+branch  1 never executed
+        -: 1818:                        {
+    #####: 1819:                            Connection_raise_lasterror(connection);
+    #####: 1820:                            break;
+call    0 never executed
+        -: 1821:                        }
+        -: 1822:
+    #####: 1823:                        columns[column].nullable = dbcol.Null;
+    #####: 1824:                        columns[column].identity = dbcol.Identity;
+    #####: 1825:                        columns[column].name = tds_mem_strdup(dbcol.ActualName);
+call    0 never executed
+    #####: 1826:                        if (!columns[column].name)
+branch  0 never executed
+branch  1 never executed
+        -: 1827:                        {
+    #####: 1828:                            PyErr_NoMemory();
+    #####: 1829:                            break;
+call    0 never executed
+        -: 1830:                        }
+        -: 1831:                    }
+        -: 1832:
+    #####: 1833:                    if (PyErr_Occurred())
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1834:                    {
+    #####: 1835:                        Py_DECREF(row);
+branch  0 never executed
+branch  1 never executed
+        -: 1836:                        break;
+        -: 1837:                    }
+        -: 1838:                }
+        -: 1839:
+    #####: 1840:                if (PyMapping_Check(row) && !PySequence_Check(row))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+        -: 1841:                {
+    #####: 1842:                    PyObject* tuple = PyTuple_New((Py_ssize_t)ncolumns);
+call    0 never executed
+    #####: 1843:                    if (tuple)
+branch  0 never executed
+branch  1 never executed
+        -: 1844:                    {
+        -: 1845:                        /* Construct the sequence based on the column info. */
+        -: 1846:                        size_t column;
+    #####: 1847:                        for (column = 0; column < (size_t)ncolumns; ++column)
+branch  0 never executed
+branch  1 never executed
+        -: 1848:                        {
+        -: 1849:                            /* Retrieve the value by name from the row. */
+    #####: 1850:                            PyObject* value = PyMapping_GetItemString(row, columns[column].name);
+call    0 never executed
+    #####: 1851:                            if (!value)
+branch  0 never executed
+branch  1 never executed
+        -: 1852:                            {
+    #####: 1853:                                if (columns[column].nullable || columns[column].identity)
+branch  0 never executed
+branch  1 never executed
+        -: 1854:                                {
+    #####: 1855:                                    PyErr_Clear();
+call    0 never executed
+    #####: 1856:                                    value = Py_None;
+    #####: 1857:                                    Py_INCREF(value);
+branch  0 never executed
+branch  1 never executed
+        -: 1858:                                }
+        -: 1859:                                else
+        -: 1860:                                {
+        -: 1861:                                    assert(PyErr_Occurred()); /* set by PyMapping_GetItemString */
+        -: 1862:                                    break;
+        -: 1863:                                }
+        -: 1864:                            }
+        -: 1865:
+    #####: 1866:                            PyTuple_SET_ITEM(tuple, (Py_ssize_t)column, value);
+        -: 1867:                            /* value reference stolen by PyTuple_SET_ITEM */
+        -: 1868:                        }
+        -: 1869:
+    #####: 1870:                        if (!PyErr_Occurred())
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1871:                        {
+    #####: 1872:                            sequence = PySequence_Fast(tuple, "internal error");
+call    0 never executed
+        -: 1873:                        }
+        -: 1874:
+    #####: 1875:                        Py_DECREF(tuple);
+branch  0 never executed
+branch  1 never executed
+        -: 1876:                    }
+        -: 1877:                }
+        -: 1878:                else
+        -: 1879:                {
+    #####: 1880:                    (void)sprintf(msg, INVALID_SEQUENCE_FMT, sent);
+    #####: 1881:                    sequence = PySequence_Fast(row, msg);
+call    0 never executed
+        -: 1882:                }
+        -: 1883:
+    #####: 1884:                if (sequence)
+branch  0 never executed
+branch  1 never executed
+        -: 1885:                {
+    #####: 1886:                    bool send_batch = ((0 != batches) && ((sent + 1) % batches == 0));
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+    #####: 1887:                    processed = Connection_bulk_insert_sendrow(connection, sequence, send_batch);
+call    0 never executed
+    #####: 1888:                    if (-1 != processed)
+branch  0 never executed
+branch  1 never executed
+        -: 1889:                    {
+    #####: 1890:                        saved += processed;
+        -: 1891:                    }
+    #####: 1892:                    Py_DECREF(sequence);
+branch  0 never executed
+branch  1 never executed
+        -: 1893:                }
+    #####: 1894:                Py_DECREF(row);
+branch  0 never executed
+branch  1 never executed
+        -: 1895:
+    #####: 1896:                if (PyErr_Occurred())
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1897:                {
+        -: 1898:                    break;
+        -: 1899:                }
+        -: 1900:
+    #####: 1901:                sent++;
+        -: 1902:            } /* while (NULL != (row = PyIter_Next(irows))) */
+        -: 1903:
+    #####: 1904:            if (columns)
+branch  0 never executed
+branch  1 never executed
+        -: 1905:            {
+        -: 1906:                size_t column;
+    #####: 1907:                for (column = 0; column < (size_t)ncolumns; ++column)
+branch  0 never executed
+branch  1 never executed
+        -: 1908:                {
+    #####: 1909:                    tds_mem_free(columns[column].name);
+        -: 1910:                }
+    #####: 1911:                tds_mem_free(columns);
+        -: 1912:            }
+        -: 1913:
+    #####: 1914:            if (initialized)
+branch  0 never executed
+branch  1 never executed
+        -: 1915:            {
+        -: 1916:                /* Always call bcp_done() regardless of previous errors. */
+    #####: 1917:                Py_BEGIN_ALLOW_THREADS
+call    0 never executed
+        -: 1918:
+    #####: 1919:                    processed = bcp_done(connection->dbproc);
+call    0 never executed
+        -: 1920:
+    #####: 1921:                Py_END_ALLOW_THREADS
+call    0 never executed
+        -: 1922:            }
+        -: 1923:
+    #####: 1924:            if (-1 != processed)
+branch  0 never executed
+branch  1 never executed
+        -: 1925:            {
+    #####: 1926:                saved += processed;
+        -: 1927:            }
+        -: 1928:            else
+        -: 1929:            {
+        -: 1930:                /* Don't overwrite a previous error if bcp_done fails. */
+    #####: 1931:                if (!PyErr_Occurred())
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1932:                {
+    #####: 1933:                    Connection_raise_lasterror(connection);
+    #####: 1934:                    break;
+call    0 never executed
+        -: 1935:                }
+        -: 1936:            }
+        -: 1937:        }
+        -: 1938:        while (0);
+        -: 1939:    }
+        -: 1940:    while (0);
+        -: 1941:
+    #####: 1942:    Py_DECREF(irows);
+branch  0 never executed
+branch  1 never executed
+        -: 1943:
+    #####: 1944:    if (PyErr_Occurred())
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1945:    {
+        -: 1946:        return NULL;
+        -: 1947:    }
+        -: 1948:
+    #####: 1949:    return PyLong_FromLong(saved);
+call    0 never executed
+        -: 1950:}
+        -: 1951:
+        -: 1952:static const char s_Connection_use_doc[] =
+        -: 1953:    "use(database)\n"
+        -: 1954:    "\n"
+        -: 1955:    "Set the current database.\n"
+        -: 1956:    "\n"
+        -: 1957:    ":param str database: The database.\n"
+        -: 1958:    ":returns: :py:data:`None`\n";
+        -: 1959:
+function Connection_use called 0 returned 0% blocks executed 0%
+    #####: 1960:static PyObject* Connection_use(PyObject* self, PyObject* args)
+        -: 1961:{
+    #####: 1962:    char* database;
+    #####: 1963:    if (!PyArg_ParseTuple(args, "s", &database))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1964:    {
+        -: 1965:        return NULL;
+        -: 1966:    }
+    #####: 1967:    if (0 == Connection_database_set(self, PyTuple_GET_ITEM(args, 0), NULL))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1968:    {
+        -: 1969:        Py_RETURN_NONE;
+        -: 1970:    }
+        -: 1971:    else
+        -: 1972:    {
+    #####: 1973:        return NULL;
+        -: 1974:    }
+        -: 1975:}
+        -: 1976:
+        -: 1977:
+        -: 1978:static const char s_Connection___enter___doc[] =
+        -: 1979:    "__enter__()\n"
+        -: 1980:    "\n"
+        -: 1981:    "Enter the connection's runtime context. On exit, the connection is\n"
+        -: 1982:    "closed automatically.\n"
+        -: 1983:    "\n"
+        -: 1984:    ":return: The connection object.\n"
+        -: 1985:    ":rtype: k_ctds.Connection\n";
+        -: 1986:
+function Connection___enter__ called 0 returned 0% blocks executed 0%
+    #####: 1987:static PyObject* Connection___enter__(PyObject* self, PyObject* args)
+        -: 1988:{
+    #####: 1989:    Py_INCREF(self);
+branch  0 never executed
+branch  1 never executed
+        -: 1990:
+    #####: 1991:    return self;
+    #####: 1992:    UNUSED(args);
+        -: 1993:}
+        -: 1994:
+        -: 1995:static const char s_Connection___exit___doc[] =
+        -: 1996:    "__exit__(exc_type, exc_val, exc_tb)\n"
+        -: 1997:    "\n"
+        -: 1998:    "Exit the connection's runtime context, closing the connection.\n"
+        -: 1999:    "If no error occurred, any pending transaction will be committed\n"
+        -: 2000:    "prior to closing the connection. If an error occurred, the transaction\n"
+        -: 2001:    "will be implicitly rolled back when the connection is closed.\n"
+        -: 2002:    "\n"
+        -: 2003:    ":param type exc_type: The exception type, if an exception\n"
+        -: 2004:    "    is raised in the context, otherwise :py:data:`None`.\n"
+        -: 2005:    ":param Exception exc_val: The exception value, if an exception\n"
+        -: 2006:    "    is raised in the context, otherwise :py:data:`None`.\n"
+        -: 2007:    ":param object exc_tb: The exception traceback, if an exception\n"
+        -: 2008:    "    is raised in the context, otherwise :py:data:`None`.\n"
+        -: 2009:    "\n"
+        -: 2010:    ":returns: :py:data:`None`\n";
+        -: 2011:
+function Connection___exit__ called 0 returned 0% blocks executed 0%
+    #####: 2012:static PyObject* Connection___exit__(PyObject* self, PyObject* args)
+        -: 2013:{
+    #####: 2014:    struct Connection* connection = (struct Connection*)self;
+        -: 2015:
+    #####: 2016:    PyObject* exc_type;
+    #####: 2017:    PyObject* exc_val;
+    #####: 2018:    PyObject* exc_tb;
+    #####: 2019:    if (!PyArg_ParseTuple(args, "OOO", &exc_type, &exc_val, &exc_tb))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 2020:    {
+        -: 2021:        return NULL;
+        -: 2022:    }
+    #####: 2023:    if (Py_None == exc_type && !PyErr_Occurred())
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+        -: 2024:    {
+    #####: 2025:        if (!connection->autocommit)
+branch  0 never executed
+branch  1 never executed
+        -: 2026:        {
+    #####: 2027:            if (0 != Connection_transaction_commit(connection))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 2028:            {
+        -: 2029:                return NULL;
+        -: 2030:            }
+        -: 2031:        }
+        -: 2032:    }
+    #####: 2033:    return Connection_close(self, NULL);
+call    0 never executed
+        -: 2034:}
+        -: 2035:
+        -: 2036:
+        -: 2037:#if defined(__GNUC__) && (__GNUC__ > 7)
+        -: 2038:#  pragma GCC diagnostic push
+        -: 2039:#  pragma GCC diagnostic ignored "-Wcast-function-type"
+        -: 2040:#endif /* if defined(__GNUC__) && (__GNUC__ > 7) */
+        -: 2041:
+        -: 2042:static PyMethodDef Connection_methods[] = {
+        -: 2043:    /* ml_name, ml_meth, ml_flags, ml_doc */
+        -: 2044:    /* DB API-2.0 required methods. */
+        -: 2045:    { "close",       Connection_close,                    METH_NOARGS,                  s_Connection_close_doc },
+        -: 2046:    { "commit",      Connection_commit,                   METH_NOARGS,                  s_Connection_commit_doc },
+        -: 2047:    { "rollback",    Connection_rollback,                 METH_NOARGS,                  s_Connection_rollback_doc },
+        -: 2048:    { "cursor",      Connection_cursor,                   METH_NOARGS,                  s_Connection_cursor_doc },
+        -: 2049:
+        -: 2050:    /* Non-DB API 2.0 methods. */
+        -: 2051:    { "bulk_insert", (PyCFunction)Connection_bulk_insert, METH_VARARGS | METH_KEYWORDS, s_Connection_bulk_insert_doc },
+        -: 2052:    { "use",         Connection_use,                      METH_VARARGS,                 s_Connection_use_doc },
+        -: 2053:    { "__enter__",   Connection___enter__,                METH_NOARGS,                  s_Connection___enter___doc },
+        -: 2054:    { "__exit__",    Connection___exit__,                 METH_VARARGS,                 s_Connection___exit___doc },
+        -: 2055:    { NULL,          NULL,                                0,                            NULL }
+        -: 2056:};
+        -: 2057:
+        -: 2058:#if defined(__GNUC__) && (__GNUC__ > 7)
+        -: 2059:#  pragma GCC diagnostic pop
+        -: 2060:#endif
+        -: 2061:
+function Connection_create called 0 returned 0% blocks executed 0%
+    #####: 2062:PyObject* Connection_create(const char* server, uint16_t port, const char* instance,
+        -: 2063:                            const char* username, const char* password,
+        -: 2064:                            const char* database, const char* appname, const char* hostname,
+        -: 2065:                            unsigned int login_timeout, unsigned int timeout,
+        -: 2066:                            const char* tds_version, bool autocommit,
+        -: 2067:                            bool ansi_defaults, bool enable_bcp,
+        -: 2068:                            enum ParamStyle paramstyle,
+        -: 2069:                            bool read_only, bool ntlmv2)
+        -: 2070:{
+    #####: 2071:    struct Connection* connection = PyObject_New(struct Connection, &ConnectionType);
+call    0 never executed
+    #####: 2072:    if (NULL != connection)
+branch  0 never executed
+branch  1 never executed
+        -: 2073:    {
+    #####: 2074:        char* servername = NULL;
+        -: 2075:
+    #####: 2076:        memset((((char*)connection) + offsetof(struct Connection, login)),
+        -: 2077:               0,
+        -: 2078:               (sizeof(struct Connection) - offsetof(struct Connection, login)));
+    #####: 2079:        do
+    #####: 2080:        {
+        -: 2081:            /* Only support SQL Server 7.0 and up. */
+    #####: 2082:            static const struct {
+        -: 2083:                const char* tds_version;
+        -: 2084:                DBINT dbversion;
+        -: 2085:            } s_supported_tds_versions[] = {
+        -: 2086:                /* Note: The versions MUST be kept in descending order. */
+        -: 2087:#ifdef DBVERSION_74
+        -: 2088:                { "7.4", DBVERSION_74 },
+        -: 2089:#endif
+        -: 2090:#ifdef DBVERSION_73
+        -: 2091:                { "7.3", DBVERSION_73 },
+        -: 2092:#endif
+        -: 2093:#ifdef DBVERSION_72
+        -: 2094:                { "7.2", DBVERSION_72 },
+        -: 2095:#endif
+        -: 2096:#ifdef DBVERSION_71
+        -: 2097:                { "7.1", DBVERSION_71 },
+        -: 2098:#endif
+        -: 2099:#ifdef DBVERSION_70
+        -: 2100:                { "7.0", DBVERSION_70 }
+        -: 2101:#endif
+        -: 2102:            };
+        -: 2103:
+        -: 2104:            /*
+        -: 2105:                These settings could easily be passed via the login packet, though that
+        -: 2106:                requires an update to freetds' dbopen method to actually pass the flag.
+        -: 2107:            */
+        -: 2108:            /* Mimic the settings used by ODBC connections. */
+    #####: 2109:            static const char s_ansi_default_stmt[] =
+        -: 2110:                /* https://msdn.microsoft.com/en-us/library/ms190306.aspx */
+        -: 2111:                "SET ARITHABORT ON;"
+        -: 2112:
+        -: 2113:                /* https://msdn.microsoft.com/en-us/library/ms188340.aspx */
+        -: 2114:                "SET ANSI_DEFAULTS ON;"
+        -: 2115:
+        -: 2116:                /* https://msdn.microsoft.com/en-us/library/ms176056.aspx */
+        -: 2117:                "SET CONCAT_NULL_YIELDS_NULL ON;"
+        -: 2118:
+        -: 2119:                /* https://msdn.microsoft.com/en-us/library/ms186238.aspx */
+        -: 2120:                "SET TEXTSIZE 2147483647;";
+        -: 2121:
+    #####: 2122:            DBINT dbversion = DBVERSION_UNKNOWN;
+        -: 2123:
+    #####: 2124:            int flag;
+        -: 2125:
+    #####: 2126:            int written;
+        -: 2127:
+        -: 2128:            /* Determine the maximum size the server connection string may require. */
+    #####: 2129:            size_t nservername = strlen(server) + 1 /* for '\\' or ':' */ +
+    #####: 2130:                ((instance) ? strlen(instance) : STRLEN(STRINGIFY(UINT16_MAX)) /* maximum port number length */) +
+branch  0 never executed
+branch  1 never executed
+        -: 2131:                1 /* for '\0' */;
+        -: 2132:
+    #####: 2133:            servername = tds_mem_malloc(nservername);
+    #####: 2134:            if (!servername)
+branch  0 never executed
+branch  1 never executed
+        -: 2135:            {
+    #####: 2136:                PyErr_NoMemory();
+    #####: 2137:                break;
+call    0 never executed
+        -: 2138:            }
+        -: 2139:
+    #####: 2140:            written = PyOS_snprintf(servername, nservername, "%s", server);
+call    0 never executed
+        -: 2141:
+    #####: 2142:            if (instance)
+branch  0 never executed
+branch  1 never executed
+        -: 2143:            {
+    #####: 2144:                (void)PyOS_snprintf(&servername[written], nservername - (size_t)written, "\\%s", instance);
+call    0 never executed
+        -: 2145:            }
+        -: 2146:            else
+        -: 2147:            {
+    #####: 2148:                (void)PyOS_snprintf(&servername[written], nservername - (size_t)written, ":%d", port);
+call    0 never executed
+        -: 2149:            }
+        -: 2150:
+    #####: 2151:            connection->login = dblogin();
+call    0 never executed
+    #####: 2152:            if (!connection->login)
+branch  0 never executed
+branch  1 never executed
+        -: 2153:            {
+    #####: 2154:                PyErr_NoMemory();
+    #####: 2155:                break;
+call    0 never executed
+        -: 2156:            }
+        -: 2157:
+        -: 2158:#if defined(CTDS_USE_UTF16)
+        -: 2159:            /*
+        -: 2160:                Force the connections to use UTF-16 over UCS-2.
+        -: 2161:            */
+    #####: 2162:            if (FAIL == DBSETLUTF16(connection->login, 1))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 2163:            {
+    #####: 2164:                PyErr_SetString(PyExc_RuntimeError, "failed to set connection encoding");
+    #####: 2165:                break;
+call    0 never executed
+        -: 2166:            }
+        -: 2167:#endif /* if defined(CTDS_USE_UTF16) */
+        -: 2168:
+        -: 2169:            /*
+        -: 2170:                Note: FreeTDS only supports single-byte encodings (e.g. latin-1, UTF-8).
+        -: 2171:                UTF-8 is really the only choice if Unicode support is desired.
+        -: 2172:            */
+    #####: 2173:            if (FAIL == DBSETLCHARSET(connection->login, "UTF-8"))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 2174:            {
+    #####: 2175:                PyErr_SetString(PyExc_RuntimeError, "failed to set client charset");
+    #####: 2176:                break;
+call    0 never executed
+        -: 2177:            }
+        -: 2178:
+    #####: 2179:            if (username)
+branch  0 never executed
+branch  1 never executed
+        -: 2180:            {
+    #####: 2181:                if (FAIL == DBSETLUSER(connection->login, username))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 2182:                {
+    #####: 2183:                    PyErr_SetString(PyExc_tds_InterfaceError, username);
+    #####: 2184:                    break;
+call    0 never executed
+        -: 2185:                }
+        -: 2186:            }
+    #####: 2187:            if (password)
+branch  0 never executed
+branch  1 never executed
+        -: 2188:            {
+    #####: 2189:                if (FAIL == DBSETLPWD(connection->login, password))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 2190:                {
+    #####: 2191:                    PyErr_SetString(PyExc_tds_InterfaceError, password);
+    #####: 2192:                    break;
+call    0 never executed
+        -: 2193:                }
+        -: 2194:            }
+    #####: 2195:            if (appname)
+branch  0 never executed
+branch  1 never executed
+        -: 2196:            {
+    #####: 2197:                if (FAIL == DBSETLAPP(connection->login, appname))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 2198:                {
+    #####: 2199:                    PyErr_SetString(PyExc_tds_InterfaceError, appname);
+    #####: 2200:                    break;
+call    0 never executed
+        -: 2201:                }
+        -: 2202:            }
+    #####: 2203:            if (hostname)
+branch  0 never executed
+branch  1 never executed
+        -: 2204:            {
+    #####: 2205:                if (FAIL == DBSETLHOST(connection->login, hostname))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 2206:                {
+    #####: 2207:                    PyErr_SetString(PyExc_tds_InterfaceError, hostname);
+    #####: 2208:                    break;
+call    0 never executed
+        -: 2209:                }
+        -: 2210:            }
+        -: 2211:
+    #####: 2212:            if (ntlmv2)
+branch  0 never executed
+branch  1 never executed
+        -: 2213:            {
+        -: 2214:#if defined(CTDS_HAVE_NTLMV2)
+    #####: 2215:                if (FAIL == DBSETLNTLMV2(connection->login, (int)ntlmv2))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 2216:                {
+    #####: 2217:                    PyErr_SetString(PyExc_RuntimeError, "failed to set NTLMv2");
+    #####: 2218:                    break;
+call    0 never executed
+        -: 2219:                }
+        -: 2220:#else /* if defined(CTDS_HAVE_NTLMV2) */
+        -: 2221:                PyErr_Format(PyExc_NotImplementedError, "NTLMv2 is not supported");
+        -: 2222:                break;
+        -: 2223:#endif /* else if defined(CTDS_HAVE_NTLMV2) */
+        -: 2224:            }
+        -: 2225:
+    #####: 2226:            if (tds_version)
+branch  0 never executed
+branch  1 never executed
+        -: 2227:            {
+        -: 2228:                size_t ix;
+    #####: 2229:                for (ix = 0; ix < ARRAYSIZE(s_supported_tds_versions); ++ix)
+branch  0 never executed
+branch  1 never executed
+        -: 2230:                {
+    #####: 2231:                    if (strcmp(tds_version, s_supported_tds_versions[ix].tds_version) == 0)
+branch  0 never executed
+branch  1 never executed
+        -: 2232:                    {
+    #####: 2233:                        dbversion = s_supported_tds_versions[ix].dbversion;
+    #####: 2234:                        break;
+        -: 2235:                    }
+        -: 2236:                }
+    #####: 2237:                if ((DBVERSION_UNKNOWN == dbversion) || (FAIL == DBSETLVERSION(connection->login, (BYTE)dbversion)))
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+        -: 2238:                {
+    #####: 2239:                    PyErr_Format(PyExc_tds_InterfaceError, "unsupported TDS version \"%s\"", tds_version);
+    #####: 2240:                    break;
+call    0 never executed
+        -: 2241:                }
+        -: 2242:            }
+        -: 2243:            else
+        -: 2244:            {
+        -: 2245:                /*
+        -: 2246:                    Default to the most recent.
+        -: 2247:                    Note: Version 0.92.x of FreeTDS defines DBVERSION_73, but doesn't
+        -: 2248:                    actually support it. Try the defined TDS versions in descending order.
+        -: 2249:                */
+        -: 2250:                RETCODE retcode = FAIL;
+        -: 2251:                size_t ix;
+    #####: 2252:                for (ix = 0; ix < ARRAYSIZE(s_supported_tds_versions); ++ix)
+branch  0 never executed
+branch  1 never executed
+        -: 2253:                {
+    #####: 2254:                    dbversion = s_supported_tds_versions[ix].dbversion;
+    #####: 2255:                    retcode = DBSETLVERSION(connection->login, (BYTE)dbversion);
+call    0 never executed
+    #####: 2256:                    if (FAIL != retcode) break;
+branch  0 never executed
+branch  1 never executed
+        -: 2257:                }
+    #####: 2258:                if (FAIL == retcode)
+branch  0 never executed
+branch  1 never executed
+        -: 2259:                {
+    #####: 2260:                    PyErr_Format(PyExc_RuntimeError, "failed to set TDS version");
+    #####: 2261:                    break;
+call    0 never executed
+        -: 2262:                }
+        -: 2263:            }
+        -: 2264:
+    #####: 2265:            if (read_only)
+branch  0 never executed
+branch  1 never executed
+        -: 2266:            {
+        -: 2267:#if defined(CTDS_HAVE_READONLY_INTENT)
+    #####: 2268:                if (FAIL == DBSETLREADONLY(connection->login, (int)read_only))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 2269:                {
+    #####: 2270:                    PyErr_SetString(PyExc_RuntimeError, "failed to set read-only intent");
+    #####: 2271:                    break;
+call    0 never executed
+        -: 2272:                }
+        -: 2273:#else /* if defined(CTDS_HAVE_READONLY_INTENT) */
+        -: 2274:                PyErr_Format(PyExc_NotImplementedError, "read-only intent is not supported");
+        -: 2275:                break;
+        -: 2276:#endif /* else if defined(CTDS_HAVE_READONLY_INTENT) */
+        -: 2277:            }
+        -: 2278:
+    #####: 2279:            if (database)
+branch  0 never executed
+branch  1 never executed
+        -: 2280:            {
+        -: 2281:                /*
+        -: 2282:                    If setting the database name in the login fails, this is likely due
+        -: 2283:                    to it exceeding the allowed DB name limit of 30 in older versions
+        -: 2284:                    of FreeTDS. In this case, attempt to set it after connection.
+        -: 2285:                */
+    #####: 2286:                if (FAIL != dbsetlname(connection->login, database, DBSETDBNAME))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 2287:                {
+    #####: 2288:                    database = NULL;
+        -: 2289:                }
+        -: 2290:            }
+        -: 2291:            /*
+        -: 2292:                Prior to 1.00.40 FreeTDS reversed the boolean for enabling BCP.
+        -: 2293:                See https://github.com/FreeTDS/freetds/issues/119.
+        -: 2294:
+        -: 2295:                Try both true and false until the desired result is achieved.
+        -: 2296:            */
+    #####: 2297:            for (flag = 1; flag >= 0; --flag)
+branch  0 never executed
+branch  1 never executed
+        -: 2298:            {
+    #####: 2299:                if (FAIL == BCP_SETL(connection->login, flag))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 2300:                {
+    #####: 2301:                    PyErr_SetString(PyExc_RuntimeError, "failed to enable bcp");
+    #####: 2302:                    break;
+call    0 never executed
+        -: 2303:                }
+    #####: 2304:                if (bcp_getl(connection->login) == enable_bcp)
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 2305:                {
+        -: 2306:                    break;
+        -: 2307:                }
+        -: 2308:            }
+    #####: 2309:            if (PyErr_Occurred())
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 2310:            {
+        -: 2311:                break;
+        -: 2312:            }
+    #####: 2313:            assert(bcp_getl(connection->login) == enable_bcp);
+        -: 2314:
+    #####: 2315:            connection->autocommit = autocommit;
+        -: 2316:
+        -: 2317:            /*
+        -: 2318:                $TODO: this is global. Setting a per-connection login timeout will
+        -: 2319:                require additions to db-lib.
+        -: 2320:            */
+    #####: 2321:            (void)dbsetlogintime((int)login_timeout);
+call    0 never executed
+    #####: 2322:            (void)dbsettime((int)timeout);
+call    0 never executed
+        -: 2323:
+    #####: 2324:            Py_BEGIN_ALLOW_THREADS
+call    0 never executed
+        -: 2325:
+        -: 2326:                /* Clear last error prior to the connection attempt. */
+    #####: 2327:                LastError_clear(LastError_get());
+call    0 never executed
+    #####: 2328:                DatabaseMsg_clear(LastMsg_get());
+call    0 never executed
+        -: 2329:
+    #####: 2330:                connection->dbproc = dbopen(connection->login, servername);
+call    0 never executed
+        -: 2331:
+    #####: 2332:            Py_END_ALLOW_THREADS
+call    0 never executed
+        -: 2333:
+    #####: 2334:            if (NULL == connection->dbproc)
+branch  0 never executed
+branch  1 never executed
+        -: 2335:            {
+    #####: 2336:                const struct DatabaseMsg* lastmsg = LastMsg_get();
+    #####: 2337:                raise_lasterror(PyExc_tds_OperationalError, LastError_get(), lastmsg->msgno ? lastmsg : NULL);
+branch  0 never executed
+branch  1 never executed
+    #####: 2338:                break;
+call    0 never executed
+        -: 2339:            }
+        -: 2340:
+    #####: 2341:            connection->query_timeout = (int)timeout;
+    #####: 2342:            connection->paramstyle = paramstyle;
+        -: 2343:
+    #####: 2344:            dbsetuserdata(connection->dbproc, (BYTE*)connection);
+call    0 never executed
+        -: 2345:
+    #####: 2346:            if (0 != Connection_execute(connection,
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+call    4 never executed
+branch  5 never executed
+branch  6 never executed
+        -: 2347:                                        4,
+        -: 2348:                                        (ansi_defaults) ? s_ansi_default_stmt : "",
+        -: 2349:                                        "SET IMPLICIT_TRANSACTIONS ",
+        -: 2350:                                        (autocommit) ? "OFF" : "ON",
+        -: 2351:                                        ";"))
+        -: 2352:            {
+        -: 2353:                break;
+        -: 2354:            }
+        -: 2355:
+    #####: 2356:            if (database)
+branch  0 never executed
+branch  1 never executed
+        -: 2357:            {
+    #####: 2358:                if (0 != Connection_use_internal(connection, database))
+call    0 never executed
+        -: 2359:                {
+        -: 2360:                    break;
+        -: 2361:                }
+        -: 2362:            }
+        -: 2363:        } while (0);
+        -: 2364:
+    #####: 2365:        tds_mem_free(servername);
+        -: 2366:
+    #####: 2367:        if (PyErr_Occurred())
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 2368:        {
+    #####: 2369:            Py_DECREF((PyObject*)connection);
+branch  0 never executed
+branch  1 never executed
+        -: 2370:            connection = NULL;
+        -: 2371:        }
+        -: 2372:    }
+        -: 2373:    else
+        -: 2374:    {
+    #####: 2375:        PyErr_NoMemory();
+call    0 never executed
+        -: 2376:    }
+        -: 2377:
+    #####: 2378:    return (PyObject*)connection;
+        -: 2379:}
+        -: 2380:
+        -: 2381:static PyObject* Connection_repr(PyObject* self)
+        -: 2382:{
+        -: 2383:    struct Connection* connection = (struct Connection*)self;
+        -: 2384:    if (Connection_closed(connection))
+        -: 2385:    {
+        -: 2386:        return PyUnicode_FromString("<k_ctds.Connection (closed)>");
+        -: 2387:    }
+        -: 2388:    else
+        -: 2389:    {
+        -: 2390:        const char* database = dbname(connection->dbproc);
+        -: 2391:        int spid = dbspid(connection->dbproc);
+        -: 2392:        return PyUnicode_FromFormat(
+        -: 2393:            "<k_ctds.Connection database='%s' spid=%d>",
+        -: 2394:            database ? database : "?",
+        -: 2395:            spid
+        -: 2396:        );
+        -: 2397:    }
+        -: 2398:}
+        -: 2399:
+        -: 2400:#pragma GCC diagnostic push
+        -: 2401:#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+        -: 2402:PyTypeObject ConnectionType = {
+        -: 2403:    PyVarObject_HEAD_INIT(NULL, 0)
+        -: 2404:    "k_ctds.Connection",             /* tp_name */
+        -: 2405:    sizeof(struct Connection),     /* tp_basicsize */
+        -: 2406:    0,                             /* tp_itemsize */
+        -: 2407:    Connection_dealloc,            /* tp_dealloc */
+        -: 2408:#if PY_VERSION_HEX >= 0x03080000
+        -: 2409:    0,                             /* tp_vectorcall_offset */
+        -: 2410:#else
+        -: 2411:    NULL,                          /* tp_print */
+        -: 2412:#endif /* if PY_VERSION_HEX >= 0x03080000 */
+        -: 2413:    NULL,                          /* tp_getattr */
+        -: 2414:    NULL,                          /* tp_setattr */
+        -: 2415:    NULL,                          /* tp_reserved */
+        -: 2416:    Connection_repr,               /* tp_repr */
+        -: 2417:    NULL,                          /* tp_as_number */
+        -: 2418:    NULL,                          /* tp_as_sequence */
+        -: 2419:    NULL,                          /* tp_as_mapping */
+        -: 2420:    NULL,                          /* tp_hash */
+        -: 2421:    NULL,                          /* tp_call */
+        -: 2422:    NULL,                          /* tp_str */
+        -: 2423:    NULL,                          /* tp_getattro */
+        -: 2424:    NULL,                          /* tp_setattro */
+        -: 2425:    NULL,                          /* tp_as_buffer */
+        -: 2426:    Py_TPFLAGS_DEFAULT,            /* tp_flags */
+        -: 2427:    s_tds_Connection_doc,          /* tp_doc */
+        -: 2428:    NULL,                          /* tp_traverse */
+        -: 2429:    NULL,                          /* tp_clear */
+        -: 2430:    NULL,                          /* tp_richcompare */
+        -: 2431:    0,                             /* tp_weaklistoffset */
+        -: 2432:    NULL,                          /* tp_iter */
+        -: 2433:    NULL,                          /* tp_iternext */
+        -: 2434:    Connection_methods,            /* tp_methods */
+        -: 2435:    NULL,                          /* tp_members */
+        -: 2436:    Connection_getset,             /* tp_getset */
+        -: 2437:    NULL,                          /* tp_base */
+        -: 2438:    NULL,                          /* tp_dict */
+        -: 2439:    NULL,                          /* tp_descr_get */
+        -: 2440:    NULL,                          /* tp_descr_set */
+        -: 2441:    0,                             /* tp_dictoffset */
+        -: 2442:    NULL,                          /* tp_init */
+        -: 2443:    NULL,                          /* tp_alloc */
+        -: 2444:    NULL,                          /* tp_new */
+        -: 2445:    NULL,                          /* tp_free */
+        -: 2446:    NULL,                          /* tp_is_gc */
+        -: 2447:    NULL,                          /* tp_bases */
+function ConnectionType_init called 0 returned 0% blocks executed 0%
+    #####: 2448:    NULL,                          /* tp_mro */
+        -: 2449:    NULL,                          /* tp_cache */
+    #####: 2450:    NULL,                          /* tp_subclasses */
+        -: 2451:    NULL,                          /* tp_weaklist */
+        -: 2452:    NULL,                          /* tp_del */
+        -: 2453:    0,                             /* tp_version_tag */
+        -: 2454:#if PY_VERSION_HEX >= 0x03040000
+    #####: 2455:    NULL,                          /* tp_finalize */
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 2456:#endif /* if PY_VERSION_HEX >= 0x03040000 */
+        -: 2457:#if PY_VERSION_HEX >= 0x03080000
+        -: 2458:    NULL,                          /* tp_vectorcall */
+        -: 2459:#  if PY_VERSION_HEX < 0x03090000
+        -: 2460:    NULL,                          /* tp_print */
+        -: 2461:#  endif /* if PY_VERSION_HEX < 0x03090000 */
+        -: 2462:#endif /* if PY_VERSION_HEX >= 0x03080000 */
+        -: 2463:};
+        -: 2464:#pragma GCC diagnostic pop
+        -: 2465:
+        -: 2466:
+        -: 2467:PyTypeObject* ConnectionType_init(void)
+        -: 2468:{
+        -: 2469:    if ((0 != LastError_init()) ||
+        -: 2470:        (0 != LastMsg_init()))
+        -: 2471:    {
+        -: 2472:        return NULL;
+        -: 2473:    }
+        -: 2474:    return (PyType_Ready(&ConnectionType) == 0) ? &ConnectionType : NULL;
+        -: 2475:}
