@@ -1,0 +1,308 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Reference &mdash; k-ctds 2.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=20623aea"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Connection" href="connection.html" />
+    <link rel="prev" title="Frequently Asked Questions" href="faq.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            k-ctds
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example.html">Basic Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="execute.html">Executing SQL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="callproc.html">Calling Stored Procedures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="results.html">Reading Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="transactions.html">Transactions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bulk_insert.html">Bulk Insert</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pooling.html">Connection Pooling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="encryption.html">TLS/SSL Encryption</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="connection.html">Connection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cursor.html">Cursor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ctds.html">ctds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="parameter.html">Parameter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rowlist.html">RowList</a></li>
+<li class="toctree-l2"><a class="reference internal" href="types.html">SQL Type Wrappers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pool.html">k_ctds.pool</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Change Log</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">k-ctds</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">API Reference</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/api.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="api-reference">
+<h1>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading"></a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="connection.html">Connection</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="connection.html#k_ctds.Connection"><code class="docutils literal notranslate"><span class="pre">Connection</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="connection.html#k_ctds.Connection.__enter__"><code class="docutils literal notranslate"><span class="pre">Connection.__enter__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="connection.html#k_ctds.Connection.__exit__"><code class="docutils literal notranslate"><span class="pre">Connection.__exit__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="connection.html#k_ctds.Connection.__repr__"><code class="docutils literal notranslate"><span class="pre">Connection.__repr__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="connection.html#k_ctds.Connection.autocommit"><code class="docutils literal notranslate"><span class="pre">Connection.autocommit</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="connection.html#k_ctds.Connection.bulk_insert"><code class="docutils literal notranslate"><span class="pre">Connection.bulk_insert()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="connection.html#k_ctds.Connection.close"><code class="docutils literal notranslate"><span class="pre">Connection.close()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="connection.html#k_ctds.Connection.commit"><code class="docutils literal notranslate"><span class="pre">Connection.commit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="connection.html#k_ctds.Connection.cursor"><code class="docutils literal notranslate"><span class="pre">Connection.cursor()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="connection.html#k_ctds.Connection.database"><code class="docutils literal notranslate"><span class="pre">Connection.database</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="connection.html#k_ctds.Connection.messages"><code class="docutils literal notranslate"><span class="pre">Connection.messages</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="connection.html#k_ctds.Connection.rollback"><code class="docutils literal notranslate"><span class="pre">Connection.rollback()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="connection.html#k_ctds.Connection.spid"><code class="docutils literal notranslate"><span class="pre">Connection.spid</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="connection.html#k_ctds.Connection.tds_version"><code class="docutils literal notranslate"><span class="pre">Connection.tds_version</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="connection.html#k_ctds.Connection.timeout"><code class="docutils literal notranslate"><span class="pre">Connection.timeout</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="connection.html#k_ctds.Connection.use"><code class="docutils literal notranslate"><span class="pre">Connection.use()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="connection.html#string-representation">String Representation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="cursor.html">Cursor</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="cursor.html#k_ctds.Cursor"><code class="docutils literal notranslate"><span class="pre">Cursor</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="cursor.html#k_ctds.Cursor.Parameter"><code class="docutils literal notranslate"><span class="pre">Cursor.Parameter</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cursor.html#k_ctds.Cursor.__enter__"><code class="docutils literal notranslate"><span class="pre">Cursor.__enter__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cursor.html#k_ctds.Cursor.__exit__"><code class="docutils literal notranslate"><span class="pre">Cursor.__exit__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cursor.html#k_ctds.Cursor.__iter__"><code class="docutils literal notranslate"><span class="pre">Cursor.__iter__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cursor.html#k_ctds.Cursor.__next__"><code class="docutils literal notranslate"><span class="pre">Cursor.__next__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cursor.html#k_ctds.Cursor.__repr__"><code class="docutils literal notranslate"><span class="pre">Cursor.__repr__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cursor.html#k_ctds.Cursor.arraysize"><code class="docutils literal notranslate"><span class="pre">Cursor.arraysize</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cursor.html#k_ctds.Cursor.callproc"><code class="docutils literal notranslate"><span class="pre">Cursor.callproc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cursor.html#k_ctds.Cursor.close"><code class="docutils literal notranslate"><span class="pre">Cursor.close()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cursor.html#k_ctds.Cursor.connection"><code class="docutils literal notranslate"><span class="pre">Cursor.connection</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cursor.html#k_ctds.Cursor.description"><code class="docutils literal notranslate"><span class="pre">Cursor.description</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cursor.html#k_ctds.Cursor.execute"><code class="docutils literal notranslate"><span class="pre">Cursor.execute()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cursor.html#k_ctds.Cursor.executemany"><code class="docutils literal notranslate"><span class="pre">Cursor.executemany()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cursor.html#k_ctds.Cursor.fetchall"><code class="docutils literal notranslate"><span class="pre">Cursor.fetchall()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cursor.html#k_ctds.Cursor.fetchmany"><code class="docutils literal notranslate"><span class="pre">Cursor.fetchmany()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cursor.html#k_ctds.Cursor.fetchone"><code class="docutils literal notranslate"><span class="pre">Cursor.fetchone()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cursor.html#k_ctds.Cursor.next"><code class="docutils literal notranslate"><span class="pre">Cursor.next()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cursor.html#k_ctds.Cursor.nextset"><code class="docutils literal notranslate"><span class="pre">Cursor.nextset()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cursor.html#k_ctds.Cursor.rowcount"><code class="docutils literal notranslate"><span class="pre">Cursor.rowcount</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cursor.html#k_ctds.Cursor.rownumber"><code class="docutils literal notranslate"><span class="pre">Cursor.rownumber</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cursor.html#k_ctds.Cursor.setinputsizes"><code class="docutils literal notranslate"><span class="pre">Cursor.setinputsizes()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cursor.html#k_ctds.Cursor.setoutputsize"><code class="docutils literal notranslate"><span class="pre">Cursor.setoutputsize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cursor.html#k_ctds.Cursor.spid"><code class="docutils literal notranslate"><span class="pre">Cursor.spid</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="cursor.html#string-representation">String Representation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ctds.html">ctds</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ctds.html#k_ctds.apilevel"><code class="docutils literal notranslate"><span class="pre">apilevel</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="ctds.html#k_ctds.paramstyle"><code class="docutils literal notranslate"><span class="pre">paramstyle</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="ctds.html#k_ctds.threadsafety"><code class="docutils literal notranslate"><span class="pre">threadsafety</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="ctds.html#k_ctds.freetds_version"><code class="docutils literal notranslate"><span class="pre">freetds_version</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="ctds.html#k_ctds.version_info"><code class="docutils literal notranslate"><span class="pre">version_info</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="ctds.html#k_ctds.Error"><code class="docutils literal notranslate"><span class="pre">Error</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="ctds.html#k_ctds.InterfaceError"><code class="docutils literal notranslate"><span class="pre">InterfaceError</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="ctds.html#k_ctds.DatabaseError"><code class="docutils literal notranslate"><span class="pre">DatabaseError</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ctds.html#k_ctds.DatabaseError.db_error"><code class="docutils literal notranslate"><span class="pre">DatabaseError.db_error</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ctds.html#k_ctds.DatabaseError.os_error"><code class="docutils literal notranslate"><span class="pre">DatabaseError.os_error</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ctds.html#k_ctds.DatabaseError.last_message"><code class="docutils literal notranslate"><span class="pre">DatabaseError.last_message</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ctds.html#k_ctds.DataError"><code class="docutils literal notranslate"><span class="pre">DataError</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="ctds.html#k_ctds.OperationalError"><code class="docutils literal notranslate"><span class="pre">OperationalError</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="ctds.html#k_ctds.IntegrityError"><code class="docutils literal notranslate"><span class="pre">IntegrityError</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="ctds.html#k_ctds.InternalError"><code class="docutils literal notranslate"><span class="pre">InternalError</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="ctds.html#k_ctds.ProgrammingError"><code class="docutils literal notranslate"><span class="pre">ProgrammingError</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="ctds.html#k_ctds.NotSupportedError"><code class="docutils literal notranslate"><span class="pre">NotSupportedError</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="ctds.html#k_ctds.Warning"><code class="docutils literal notranslate"><span class="pre">Warning</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="ctds.html#k_ctds.Binary"><code class="docutils literal notranslate"><span class="pre">Binary()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="ctds.html#k_ctds.Date"><code class="docutils literal notranslate"><span class="pre">Date()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="ctds.html#k_ctds.DateFromTicks"><code class="docutils literal notranslate"><span class="pre">DateFromTicks()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="ctds.html#k_ctds.Time"><code class="docutils literal notranslate"><span class="pre">Time()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="ctds.html#k_ctds.TimeFromTicks"><code class="docutils literal notranslate"><span class="pre">TimeFromTicks()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="ctds.html#k_ctds.Timestamp"><code class="docutils literal notranslate"><span class="pre">Timestamp()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="ctds.html#k_ctds.TimestampFromTicks"><code class="docutils literal notranslate"><span class="pre">TimestampFromTicks()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="ctds.html#k_ctds.connect"><code class="docutils literal notranslate"><span class="pre">connect()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="parameter.html">Parameter</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="parameter.html#k_ctds.Parameter"><code class="docutils literal notranslate"><span class="pre">Parameter</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="rowlist.html">RowList</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="rowlist.html#k_ctds.RowList"><code class="docutils literal notranslate"><span class="pre">RowList</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="rowlist.html#k_ctds.RowList.__getitem__"><code class="docutils literal notranslate"><span class="pre">RowList.__getitem__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="rowlist.html#k_ctds.RowList.__len__"><code class="docutils literal notranslate"><span class="pre">RowList.__len__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="rowlist.html#k_ctds.RowList.description"><code class="docutils literal notranslate"><span class="pre">RowList.description</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="types.html">SQL Type Wrappers</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="types.html#k_ctds.SqlBigInt"><code class="docutils literal notranslate"><span class="pre">SqlBigInt</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="types.html#k_ctds.SqlBigInt.size"><code class="docutils literal notranslate"><span class="pre">SqlBigInt.size</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="types.html#k_ctds.SqlBigInt.tdstype"><code class="docutils literal notranslate"><span class="pre">SqlBigInt.tdstype</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="types.html#k_ctds.SqlBigInt.value"><code class="docutils literal notranslate"><span class="pre">SqlBigInt.value</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="types.html#k_ctds.SqlBinary"><code class="docutils literal notranslate"><span class="pre">SqlBinary</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="types.html#k_ctds.SqlBinary.size"><code class="docutils literal notranslate"><span class="pre">SqlBinary.size</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="types.html#k_ctds.SqlBinary.tdstype"><code class="docutils literal notranslate"><span class="pre">SqlBinary.tdstype</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="types.html#k_ctds.SqlBinary.value"><code class="docutils literal notranslate"><span class="pre">SqlBinary.value</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="types.html#k_ctds.SqlChar"><code class="docutils literal notranslate"><span class="pre">SqlChar</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="types.html#k_ctds.SqlChar.size"><code class="docutils literal notranslate"><span class="pre">SqlChar.size</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="types.html#k_ctds.SqlChar.tdstype"><code class="docutils literal notranslate"><span class="pre">SqlChar.tdstype</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="types.html#k_ctds.SqlChar.value"><code class="docutils literal notranslate"><span class="pre">SqlChar.value</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="types.html#k_ctds.SqlDate"><code class="docutils literal notranslate"><span class="pre">SqlDate</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="types.html#k_ctds.SqlDate.size"><code class="docutils literal notranslate"><span class="pre">SqlDate.size</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="types.html#k_ctds.SqlDate.tdstype"><code class="docutils literal notranslate"><span class="pre">SqlDate.tdstype</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="types.html#k_ctds.SqlDate.value"><code class="docutils literal notranslate"><span class="pre">SqlDate.value</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="types.html#k_ctds.SqlDecimal"><code class="docutils literal notranslate"><span class="pre">SqlDecimal</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="types.html#k_ctds.SqlDecimal.size"><code class="docutils literal notranslate"><span class="pre">SqlDecimal.size</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="types.html#k_ctds.SqlDecimal.tdstype"><code class="docutils literal notranslate"><span class="pre">SqlDecimal.tdstype</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="types.html#k_ctds.SqlDecimal.value"><code class="docutils literal notranslate"><span class="pre">SqlDecimal.value</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="types.html#k_ctds.SqlInt"><code class="docutils literal notranslate"><span class="pre">SqlInt</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="types.html#k_ctds.SqlInt.size"><code class="docutils literal notranslate"><span class="pre">SqlInt.size</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="types.html#k_ctds.SqlInt.tdstype"><code class="docutils literal notranslate"><span class="pre">SqlInt.tdstype</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="types.html#k_ctds.SqlInt.value"><code class="docutils literal notranslate"><span class="pre">SqlInt.value</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="types.html#k_ctds.SqlNVarChar"><code class="docutils literal notranslate"><span class="pre">SqlNVarChar</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="types.html#k_ctds.SqlNVarChar.size"><code class="docutils literal notranslate"><span class="pre">SqlNVarChar.size</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="types.html#k_ctds.SqlNVarChar.tdstype"><code class="docutils literal notranslate"><span class="pre">SqlNVarChar.tdstype</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="types.html#k_ctds.SqlNVarChar.value"><code class="docutils literal notranslate"><span class="pre">SqlNVarChar.value</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="types.html#k_ctds.SqlSmallInt"><code class="docutils literal notranslate"><span class="pre">SqlSmallInt</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="types.html#k_ctds.SqlSmallInt.size"><code class="docutils literal notranslate"><span class="pre">SqlSmallInt.size</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="types.html#k_ctds.SqlSmallInt.tdstype"><code class="docutils literal notranslate"><span class="pre">SqlSmallInt.tdstype</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="types.html#k_ctds.SqlSmallInt.value"><code class="docutils literal notranslate"><span class="pre">SqlSmallInt.value</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="types.html#k_ctds.SqlTinyInt"><code class="docutils literal notranslate"><span class="pre">SqlTinyInt</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="types.html#k_ctds.SqlTinyInt.size"><code class="docutils literal notranslate"><span class="pre">SqlTinyInt.size</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="types.html#k_ctds.SqlTinyInt.tdstype"><code class="docutils literal notranslate"><span class="pre">SqlTinyInt.tdstype</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="types.html#k_ctds.SqlTinyInt.value"><code class="docutils literal notranslate"><span class="pre">SqlTinyInt.value</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="types.html#k_ctds.SqlVarBinary"><code class="docutils literal notranslate"><span class="pre">SqlVarBinary</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="types.html#k_ctds.SqlVarBinary.size"><code class="docutils literal notranslate"><span class="pre">SqlVarBinary.size</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="types.html#k_ctds.SqlVarBinary.tdstype"><code class="docutils literal notranslate"><span class="pre">SqlVarBinary.tdstype</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="types.html#k_ctds.SqlVarBinary.value"><code class="docutils literal notranslate"><span class="pre">SqlVarBinary.value</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="types.html#k_ctds.SqlVarChar"><code class="docutils literal notranslate"><span class="pre">SqlVarChar</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="types.html#k_ctds.SqlVarChar.size"><code class="docutils literal notranslate"><span class="pre">SqlVarChar.size</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="types.html#k_ctds.SqlVarChar.tdstype"><code class="docutils literal notranslate"><span class="pre">SqlVarChar.tdstype</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="types.html#k_ctds.SqlVarChar.value"><code class="docutils literal notranslate"><span class="pre">SqlVarChar.value</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pool.html">k_ctds.pool</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pool.html#k_ctds.pool.ConnectionPool"><code class="docutils literal notranslate"><span class="pre">ConnectionPool</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pool.html#k_ctds.pool.ConnectionPool.acquire"><code class="docutils literal notranslate"><span class="pre">ConnectionPool.acquire()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pool.html#k_ctds.pool.ConnectionPool.connection"><code class="docutils literal notranslate"><span class="pre">ConnectionPool.connection()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pool.html#k_ctds.pool.ConnectionPool.finalize"><code class="docutils literal notranslate"><span class="pre">ConnectionPool.finalize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pool.html#k_ctds.pool.ConnectionPool.release"><code class="docutils literal notranslate"><span class="pre">ConnectionPool.release()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="faq.html" class="btn btn-neutral float-left" title="Frequently Asked Questions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="connection.html" class="btn btn-neutral float-right" title="Connection" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026-, Kodda Labs, Inc..</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

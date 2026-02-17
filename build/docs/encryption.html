@@ -1,0 +1,376 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TLS/SSL Encryption &mdash; k-ctds 2.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=20623aea"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Frequently Asked Questions" href="faq.html" />
+    <link rel="prev" title="Connection Pooling" href="pooling.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            k-ctds
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example.html">Basic Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="execute.html">Executing SQL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="callproc.html">Calling Stored Procedures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="results.html">Reading Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="transactions.html">Transactions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bulk_insert.html">Bulk Insert</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pooling.html">Connection Pooling</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">TLS/SSL Encryption</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#encryption-modes">Encryption Modes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#basic-encrypted-connection">Basic Encrypted Connection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#connecting-to-azure-sql-database">Connecting to Azure SQL Database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#certificate-validation">Certificate Validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#legacy-servers-tls-1-0">Legacy Servers (TLS 1.0)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#configuration-file-locations">Configuration File Locations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#verifying-encryption">Verifying Encryption</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Change Log</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">k-ctds</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">TLS/SSL Encryption</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/encryption.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tls-ssl-encryption">
+<h1>TLS/SSL Encryption<a class="headerlink" href="#tls-ssl-encryption" title="Link to this heading"></a></h1>
+<p><cite>cTDS</cite> relies on <a class="reference external" href="https://www.freetds.org">FreeTDS</a> for all network communication, including
+TLS/SSL encryption. Encryption is configured through the FreeTDS
+configuration file (<code class="docutils literal notranslate"><span class="pre">freetds.conf</span></code>), not through the
+<a class="reference internal" href="ctds.html#k_ctds.connect" title="k_ctds.connect"><code class="xref py py-func docutils literal notranslate"><span class="pre">k_ctds.connect()</span></code></a> call. This page explains how to set up
+encrypted connections for common scenarios.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Pre-built wheels (installed via <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">k-ctds</span></code>) already
+bundle FreeTDS compiled with OpenSSL 3.0 — no additional setup
+is needed for TLS/SSL support.</p>
+<p>If you built FreeTDS from source, make sure you compiled it with
+the <code class="docutils literal notranslate"><span class="pre">--with-openssl</span></code> flag. See <a class="reference internal" href="install.html"><span class="doc">Getting Started</span></a> for details.</p>
+</div>
+<section id="encryption-modes">
+<h2>Encryption Modes<a class="headerlink" href="#encryption-modes" title="Link to this heading"></a></h2>
+<p>FreeTDS supports four encryption modes, set via the <code class="docutils literal notranslate"><span class="pre">encryption</span></code>
+directive in <code class="docutils literal notranslate"><span class="pre">freetds.conf</span></code>:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 85.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Mode</p></th>
+<th class="head"><p>Behavior</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">off</span></code></p></td>
+<td><p>Encryption is disabled. The connection will fail if the server
+requires encryption.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">request</span></code></p></td>
+<td><p>Encryption is used if the server supports it. This is the
+<strong>default</strong> for TDS versions 7.1 and above.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">require</span></code></p></td>
+<td><p>Encryption is mandatory. The connection will fail if the server
+does not support encryption.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">strict</span></code></p></td>
+<td><p>Like <code class="docutils literal notranslate"><span class="pre">require</span></code>, but uses TDS 8.0 and forces certificate
+validation regardless of other settings. Requires FreeTDS 1.4+.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="basic-encrypted-connection">
+<h2>Basic Encrypted Connection<a class="headerlink" href="#basic-encrypted-connection" title="Link to this heading"></a></h2>
+<p>For most SQL Server instances that support (but do not require)
+encryption, the default <code class="docutils literal notranslate"><span class="pre">request</span></code> mode is sufficient and no
+configuration changes are needed.</p>
+<p>To explicitly require encryption, add the <code class="docutils literal notranslate"><span class="pre">encryption</span></code> directive to
+your server entry in <code class="docutils literal notranslate"><span class="pre">freetds.conf</span></code>:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[myserver]</span>
+<span class="na">host</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">db.example.com</span>
+<span class="na">port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1433</span>
+<span class="na">tds version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">7.4</span>
+<span class="na">encryption</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">require</span>
+</pre></div>
+</div>
+<p>Then connect normally:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">k_ctds</span>
+
+<span class="k">with</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">&#39;myserver&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s1">&#39;myuser&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">&#39;mypassword&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
+    <span class="k">with</span> <span class="n">conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span> <span class="k">as</span> <span class="n">cursor</span><span class="p">:</span>
+        <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="s2">&quot;SELECT encrypt_option FROM sys.dm_exec_connections &quot;</span>
+            <span class="s2">&quot;WHERE session_id = @@SPID&quot;</span>
+        <span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>  <span class="c1"># Should print &#39;TRUE&#39;</span>
+</pre></div>
+</div>
+</section>
+<section id="connecting-to-azure-sql-database">
+<h2>Connecting to Azure SQL Database<a class="headerlink" href="#connecting-to-azure-sql-database" title="Link to this heading"></a></h2>
+<p>Azure SQL Database requires encrypted connections. Add the following
+to your <code class="docutils literal notranslate"><span class="pre">freetds.conf</span></code>:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[azure]</span>
+<span class="na">host</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">yourserver.database.windows.net</span>
+<span class="na">port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1433</span>
+<span class="na">tds version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">7.4</span>
+<span class="na">encryption</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">require</span>
+</pre></div>
+</div>
+<p>Then connect as usual:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">k_ctds</span>
+
+<span class="k">with</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+    <span class="s1">&#39;azure&#39;</span><span class="p">,</span>
+    <span class="n">user</span><span class="o">=</span><span class="s1">&#39;youruser@yourserver&#39;</span><span class="p">,</span>
+    <span class="n">password</span><span class="o">=</span><span class="s1">&#39;yourpassword&#39;</span><span class="p">,</span>
+    <span class="n">database</span><span class="o">=</span><span class="s1">&#39;yourdatabase&#39;</span>
+<span class="p">)</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
+    <span class="k">with</span> <span class="n">conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span> <span class="k">as</span> <span class="n">cursor</span><span class="p">:</span>
+        <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT 1&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+</pre></div>
+</div>
+</section>
+<section id="certificate-validation">
+<h2>Certificate Validation<a class="headerlink" href="#certificate-validation" title="Link to this heading"></a></h2>
+<p>By default, FreeTDS does <strong>not</strong> validate the server’s TLS
+certificate. This means any certificate (including self-signed) is
+accepted. For production environments, you should enable certificate
+validation.</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[myserver]</span>
+<span class="na">host</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">db.example.com</span>
+<span class="na">port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1433</span>
+<span class="na">tds version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">7.4</span>
+<span class="na">encryption</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">require</span>
+<span class="na">ca file</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">/etc/ssl/certs/ca-certificates.crt</span>
+<span class="na">check certificate hostname</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">yes</span>
+</pre></div>
+</div>
+<p>The following certificate-related options are available:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ca</span> <span class="pre">file</span></code></p></td>
+<td><p>Path to a PEM file containing root CA certificates used to
+validate the server certificate. Set to <code class="docutils literal notranslate"><span class="pre">system</span></code> to use the
+operating system’s default trust store. When omitted, any
+certificate is accepted.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">crl</span> <span class="pre">file</span></code></p></td>
+<td><p>Path to a certificate revocation list file. Only used when
+<code class="docutils literal notranslate"><span class="pre">ca</span> <span class="pre">file</span></code> is also set.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">check</span> <span class="pre">certificate</span> <span class="pre">hostname</span></code></p></td>
+<td><p>Whether to verify the server hostname matches the certificate.
+Defaults to <code class="docutils literal notranslate"><span class="pre">yes</span></code> when <code class="docutils literal notranslate"><span class="pre">ca</span> <span class="pre">file</span></code> is set.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">certificate</span> <span class="pre">hostname</span></code></p></td>
+<td><p>Override the expected hostname in the certificate. Only used
+when <code class="docutils literal notranslate"><span class="pre">ca</span> <span class="pre">file</span></code> is set. Defaults to the <code class="docutils literal notranslate"><span class="pre">host</span></code> value.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If the server uses a self-signed certificate (common in development
+environments), omit the <code class="docutils literal notranslate"><span class="pre">ca</span> <span class="pre">file</span></code> directive to skip validation.
+Never do this in production.</p>
+</div>
+</section>
+<section id="legacy-servers-tls-1-0">
+<h2>Legacy Servers (TLS 1.0)<a class="headerlink" href="#legacy-servers-tls-1-0" title="Link to this heading"></a></h2>
+<p>Some older servers (such as Windows Server 2008) only support TLS 1.0,
+which is disabled by default in modern FreeTDS builds. To connect to
+these servers:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[legacy-server]</span>
+<span class="na">host</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">oldbox.example.com</span>
+<span class="na">port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1433</span>
+<span class="na">tds version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">7.1</span>
+<span class="na">encryption</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">require</span>
+<span class="na">enable tls v1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">yes</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>TLS 1.0 has known security vulnerabilities and should not be used
+in production. Upgrade the server if at all possible.</p>
+</div>
+</section>
+<section id="configuration-file-locations">
+<h2>Configuration File Locations<a class="headerlink" href="#configuration-file-locations" title="Link to this heading"></a></h2>
+<p>FreeTDS searches for its configuration file in the following order:</p>
+<ol class="arabic simple">
+<li><p>The path set by the <code class="docutils literal notranslate"><span class="pre">FREETDSCONF</span></code> environment variable</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">~/.freetds.conf</span></code> (user-specific)</p></li>
+<li><p>The system-wide <code class="docutils literal notranslate"><span class="pre">freetds.conf</span></code> (typically <code class="docutils literal notranslate"><span class="pre">/usr/local/etc/freetds.conf</span></code>
+or <code class="docutils literal notranslate"><span class="pre">/etc/freetds/freetds.conf</span></code>, depending on how FreeTDS was installed)</p></li>
+</ol>
+<p>You can use the <code class="docutils literal notranslate"><span class="pre">FREETDSCONF</span></code> environment variable to point to a
+custom configuration file without modifying system files:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">FREETDSCONF</span><span class="o">=</span>/path/to/my/freetds.conf
+python<span class="w"> </span>myapp.py
+</pre></div>
+</div>
+</section>
+<section id="verifying-encryption">
+<h2>Verifying Encryption<a class="headerlink" href="#verifying-encryption" title="Link to this heading"></a></h2>
+<p>To confirm that your connection is encrypted, query the
+<code class="docutils literal notranslate"><span class="pre">sys.dm_exec_connections</span></code> system view:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">k_ctds</span>
+
+<span class="k">with</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">&#39;myserver&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s1">&#39;myuser&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">&#39;mypassword&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
+    <span class="k">with</span> <span class="n">conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span> <span class="k">as</span> <span class="n">cursor</span><span class="p">:</span>
+        <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="s2">&quot;SELECT encrypt_option, protocol_type, auth_scheme &quot;</span>
+            <span class="s2">&quot;FROM sys.dm_exec_connections &quot;</span>
+            <span class="s2">&quot;WHERE session_id = @@SPID&quot;</span>
+        <span class="p">)</span>
+        <span class="n">row</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Encrypted: </span><span class="si">{</span><span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>       <span class="c1"># TRUE or FALSE</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Protocol: </span><span class="si">{</span><span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>         <span class="c1"># TSQL</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Auth scheme: </span><span class="si">{</span><span class="n">row</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>      <span class="c1"># SQL or NTLM</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Access to <code class="docutils literal notranslate"><span class="pre">sys.dm_exec_connections</span></code> requires the
+<code class="docutils literal notranslate"><span class="pre">VIEW</span> <span class="pre">SERVER</span> <span class="pre">STATE</span></code> permission. If you do not have this
+permission, ask your database administrator.</p>
+</div>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt><strong>Connection fails with “Read from SQL server failed”</strong></dt><dd><p>The server requires encryption but FreeTDS was not compiled with
+OpenSSL support, or the <code class="docutils literal notranslate"><span class="pre">encryption</span></code> setting is <code class="docutils literal notranslate"><span class="pre">off</span></code>. Rebuild
+FreeTDS with <code class="docutils literal notranslate"><span class="pre">--with-openssl</span></code> and set <code class="docutils literal notranslate"><span class="pre">encryption</span> <span class="pre">=</span> <span class="pre">require</span></code>.</p>
+</dd>
+<dt><strong>Connection fails with a certificate error</strong></dt><dd><p>The <code class="docutils literal notranslate"><span class="pre">ca</span> <span class="pre">file</span></code> directive points to a CA bundle that does not
+contain the issuing CA for the server’s certificate. Verify the
+server certificate chain and update the CA file, or remove the
+<code class="docutils literal notranslate"><span class="pre">ca</span> <span class="pre">file</span></code> directive to skip validation (not recommended for
+production).</p>
+</dd>
+<dt><strong>Connection hangs or times out</strong></dt><dd><p>Some TDS protocol versions have issues with certain encryption
+configurations. Try setting <code class="docutils literal notranslate"><span class="pre">tds</span> <span class="pre">version</span> <span class="pre">=</span> <span class="pre">7.3</span></code> if you are
+currently using <code class="docutils literal notranslate"><span class="pre">7.4</span></code>.</p>
+</dd>
+<dt><strong>Verifying FreeTDS has TLS support</strong></dt><dd><p>Use <code class="docutils literal notranslate"><span class="pre">tsql</span> <span class="pre">-C</span></code> to check the build configuration. Look for
+<code class="docutils literal notranslate"><span class="pre">OpenSSL:</span> <span class="pre">yes</span></code> or <code class="docutils literal notranslate"><span class="pre">GnuTLS:</span> <span class="pre">yes</span></code> in the output.</p>
+</dd>
+</dl>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>tsql<span class="w"> </span>-C
+Compile-time<span class="w"> </span>settings<span class="w"> </span><span class="o">(</span>established<span class="w"> </span>with<span class="w"> </span>the<span class="w"> </span><span class="s2">&quot;configure&quot;</span><span class="w"> </span>script<span class="o">)</span>
+<span class="w">                            </span>Version:<span class="w"> </span>freetds<span class="w"> </span>v1.4.10
+<span class="w">             </span>freetds.conf<span class="w"> </span>directory:<span class="w"> </span>/usr/local/etc
+<span class="w">     </span>...
+<span class="w">                    </span>OpenSSL:<span class="w"> </span>yes
+<span class="w">                     </span>GnuTLS:<span class="w"> </span>no
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pooling.html" class="btn btn-neutral float-left" title="Connection Pooling" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="faq.html" class="btn btn-neutral float-right" title="Frequently Asked Questions" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026-, Kodda Labs, Inc..</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
