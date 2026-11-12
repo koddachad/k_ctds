@@ -57,15 +57,17 @@ RUN set -ex \
         \) -exec rm -rf '{}' + \
     && rm -rf /usr/src/python
 
-# Install pip, setuptools, and wheel
+# Install pip, setuptools, and wheel. ensurepip ships with Python, so this
+# works for every version; the generic get-pip.py script refuses Python 3.9.
 RUN set -ex; \
-    wget -O get-pip.py 'https://bootstrap.pypa.io/get-pip.py'; \
-    python3 get-pip.py \
+    python3 -m ensurepip --upgrade; \
+    python3 -m pip install \
         --disable-pip-version-check \
         --no-cache-dir \
+        --upgrade \
+        pip \
         setuptools \
-        wheel; \
-    rm -f get-pip.py
+        wheel
 
 # FreeTDS (required by k-ctds), with the k_ctds FEDAUTH (Microsoft Entra ID)
 # patch applied when one exists for this version.

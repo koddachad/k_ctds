@@ -16,6 +16,16 @@
 # See Misc/README.valgrind for more information.
 
 # all tool names: Addrcheck,Memcheck,cachegrind,helgrind,massif
+
+# Python's readline module leaks libreadline state at import time (seen with
+# readline 8.2 on Debian 12). Nothing to do with k_ctds or FreeTDS.
+{
+   python_readline_init_leaks
+   Memcheck:Leak
+   match-leak-kinds: definite,indirect,possible
+   ...
+   fun:setup_readline
+}
 {
    freetds_bcp_init_leak
    Memcheck:Leak
