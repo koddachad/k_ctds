@@ -67,6 +67,29 @@ def _fedauth_supported():
 
 class TestConnectionAccessToken(TestExternalDatabase):
 
+    def test_entra_service_principal_helper(self):
+        # Exercise the helper without azure-identity installed by injecting a
+        # stand-in module; the real credential class is only used live.
+        calls = []
+
+        class FakeClientSecretCredential(object): # pylint: disable=too-few-public-methods
+            def __init__(self, *args):
+                calls.append(args)
+
+        fake_identity = mock.Mock(ClientSecretCredential=FakeClientSecretCredential)
+        with mock.patch.dict('sys.modules', {'azure': mock.Mock(identity=fake_identity),
+                                             'azure.identity': fake_identity}):
+            credential = entra.service_principal('tenant', 'client', 'secret')
+
+        self.assertIsInstance(credential, FakeClientSecretCredential)
+        self.assertEqual(calls, [('tenant', 'client', 'secret')])
+
+    def test_entra_missing_azure_identity(self):
+        with mock.patch.dict('sys.modules', {'azure': None, 'azure.identity': None}):
+            with self.assertRaises(ImportError) as ctx:
+                entra.service_principal('tenant', 'client', 'secret')
+        self.assertIn('k-ctds[entra]', str(ctx.exception))
+
     def test_credential_requests_token_per_connect(self):
         credential = _FakeCredential('fake-token')
         with mock.patch('k_ctds._connect') as connect:

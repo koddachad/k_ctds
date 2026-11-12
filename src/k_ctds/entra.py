@@ -10,7 +10,7 @@ required; install it with ``pip install k-ctds[entra]``.
 def _identity():
     try:
         import azure.identity # pylint: disable=import-outside-toplevel
-    except ImportError as ex: # pragma: nocover
+    except ImportError as ex:
         raise ImportError(
             'azure-identity is required for Entra ID authentication; '
             'install it with "pip install k-ctds[entra]"'

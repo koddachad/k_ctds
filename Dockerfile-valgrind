@@ -1,4 +1,6 @@
-FROM buildpack-deps:bullseye
+# Debian 12. Debian 11 (bullseye) left LTS in August 2026 and its security
+# archive no longer serves packages, which broke the image build.
+FROM buildpack-deps:bookworm
 
 ARG PYTHON_VERSION=3.6.3
 ARG FREETDS_VERSION=1.00.40
