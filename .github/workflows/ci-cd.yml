@@ -10,10 +10,10 @@ jobs:
       matrix:
         os:
           - ubuntu-22.04
+        # Only the bundled FreeTDS version is tested: it carries the FEDAUTH
+        # (Microsoft Entra ID) patch from freetds/, which older releases lack.
         freetds-version:
-          - "1.3.21"
-          - "1.4.27"
-          - "1.5.12"
+          - "1.5.21"
         python-version:
           - "3.14"
           - "3.13"
@@ -22,10 +22,10 @@ jobs:
           - "3.10"
           - "3.9"
         include:
-          - freetds-version: 1.5.12
+          - freetds-version: 1.5.21
             os: macos-latest
             python-version: "3.13"
-          - freetds-version: 1.5.12
+          - freetds-version: 1.5.21
             os: macos-latest
             python-version: "3.11"
 

@@ -1,0 +1,379 @@
+diff --git a/include/freetds/proto.h b/include/freetds/proto.h
+index 8afa41c9d..509f1035a 100644
+--- a/include/freetds/proto.h
++++ b/include/freetds/proto.h
+@@ -475,6 +475,31 @@ enum option_flag3_values {
+ 	TDS_EXTENSION			= 0x10, /* TDS 7.4 */
+ };
+ 
++/* LOGIN7 FeatureExt feature ids (TDS 7.4) */
++enum feature_ext_ids {
++	TDS7_FEATURE_FEDAUTH		= 0x02,
++	TDS7_FEATURE_UTF8_SUPPORT	= 0x0a,
++};
++
++/* FEDAUTH libraries, stored in the high 7 bits of the options byte */
++enum fedauth_library {
++	TDS7_FEDAUTH_LIBRARY_LIVEID		= 0x00,
++	TDS7_FEDAUTH_LIBRARY_SECURITYTOKEN	= 0x01,
++	TDS7_FEDAUTH_LIBRARY_MSAL		= 0x02,
++};
++
++/* PRELOGIN option tokens */
++enum prelogin_options {
++	TDS7_PRELOGIN_VERSION		= 0,
++	TDS7_PRELOGIN_ENCRYPTION	= 1,
++	TDS7_PRELOGIN_INSTOPT		= 2,
++	TDS7_PRELOGIN_THREADID		= 3,
++	TDS7_PRELOGIN_MARS		= 4,
++	TDS7_PRELOGIN_TRACEID		= 5,
++	TDS7_PRELOGIN_FEDAUTHREQUIRED	= 6,
++	TDS7_PRELOGIN_NONCEOPT		= 7,
++};
++
+ enum type_flags {
+ 	TDS_OLEDB_ON	= 0x10,
+ 	TDS_READONLY_INTENT	= 0x20,
+diff --git a/include/freetds/tds.h b/include/freetds/tds.h
+index dc5fe9d9c..f39c3c335 100644
+--- a/include/freetds/tds.h
++++ b/include/freetds/tds.h
+@@ -516,6 +516,7 @@ typedef struct tds_login
+ 	DSTR user_name;	    	/**< account for login */
+ 	DSTR password;	    	/**< password of account login */
+ 	DSTR new_password;	    	/**< new password to set (TDS 7.2+) */
++	DSTR fedauth_token;	    	/**< federated (Entra ID) access token, TDS 7.4+ */
+ 
+ 	DSTR library;	/* Ct-Library, DB-Library,  TDS-Library or ODBC */
+ 	TDS_TINYINT encryption_level;
+@@ -551,6 +552,7 @@ typedef struct tds_login
+ 	unsigned int enable_tls_v1:1;
+ 	unsigned int enable_tls_v1_specified:1;
+ 	unsigned int server_is_valid:1;
++	unsigned int fedauth_echo:1;	/**< FEDAUTHREQUIRED value replied by server in prelogin */
+ } TDSLOGIN;
+ 
+ typedef struct tds_headers
+@@ -1382,6 +1384,7 @@ void tds_deinit_tvp(TDS_TVP *table);
+ void tds_set_packet(TDSLOGIN * tds_login, int packet_size);
+ void tds_set_port(TDSLOGIN * tds_login, int port);
+ bool tds_set_passwd(TDSLOGIN * tds_login, const char *password) TDS_WUR;
++bool tds_set_fedauth_token(TDSLOGIN * tds_login, const char *token) TDS_WUR;
+ void tds_set_bulk(TDSLOGIN * tds_login, bool enabled);
+ bool tds_set_user(TDSLOGIN * tds_login, const char *username) TDS_WUR;
+ bool tds_set_app(TDSLOGIN * tds_login, const char *application) TDS_WUR;
+diff --git a/include/sybdb.h b/include/sybdb.h
+index 7765f495f..efa85e944 100644
+--- a/include/sybdb.h
++++ b/include/sybdb.h
+@@ -1305,6 +1305,8 @@ RETCODE dbsetlversion (LOGINREC * login, BYTE version);
+ #define DBSETLENCRYPTION(x, y)  dbsetlname((x), (y), DBSETENCRYPTION)
+ #define DBSETPORT 		1006
+ #define DBSETLPORT(x,y) 	dbsetlshort((x), (y), DBSETPORT)
++#define DBSETFEDAUTHTOKEN	1007
++#define DBSETLFEDAUTHTOKEN(x,y)	dbsetlname((x), (y), DBSETFEDAUTHTOKEN)
+ 
+ RETCODE bcp_init(DBPROCESS * dbproc, const char *tblname, const char *hfile, const char *errfile, int direction);
+ DBINT bcp_done(DBPROCESS * dbproc);
+diff --git a/src/dblib/dblib.c b/src/dblib/dblib.c
+index 28554c651..43023b400 100644
+--- a/src/dblib/dblib.c
++++ b/src/dblib/dblib.c
+@@ -770,14 +770,16 @@ dbsetlname(LOGINREC * login, const char *value, int which)
+ 	bool copy_ret;
+ 	const char *value_nonull = value ? value : "";
+ 
+-	tdsdump_log(TDS_DBG_FUNC, "dbsetlname(%p, %s, %d)\n", login, value, which);
++	tdsdump_log(TDS_DBG_FUNC, "dbsetlname(%p, %s, %d)\n", login,
++		    which == DBSETFEDAUTHTOKEN ? "<fedauth token>" : value, which);
+ 
+ 	if (login == NULL) {
+ 		dbperror(NULL, SYBEASNL, 0);
+ 		return FAIL;
+ 	}
+ 
+-	if (TDS_MAX_LOGIN_STR_SZ < strlen(value_nonull)) {
++	/* access tokens are far longer than any login string */
++	if (which != DBSETFEDAUTHTOKEN && TDS_MAX_LOGIN_STR_SZ < strlen(value_nonull)) {
+ 		dbperror(NULL, SYBENTLL, 0);
+ 		return FAIL;
+ 	}
+@@ -811,6 +813,9 @@ dbsetlname(LOGINREC * login, const char *value, int which)
+ 	case DBSETENCRYPTION:
+ 		copy_ret = tds_parse_conf_section(TDS_STR_ENCRYPTION, value_nonull, login->tds_login);
+ 		break;
++	case DBSETFEDAUTHTOKEN:
++		copy_ret = tds_set_fedauth_token(login->tds_login, value_nonull);
++		break;
+ 	default:
+ 		dbperror(NULL, SYBEASUL, 0); /* Attempt to set unknown LOGINREC field */
+ 		return FAIL;
+diff --git a/src/tds/config.c b/src/tds/config.c
+index 2bd23c7e1..731ddac9e 100644
+--- a/src/tds/config.c
++++ b/src/tds/config.c
+@@ -771,6 +771,12 @@ tds_config_login(TDSLOGIN * connection, TDSLOGIN * login)
+ 		res = tds_dstr_dup(&connection->password, &login->password);
+ 	}
+ 
++	if (res && !tds_dstr_isempty(&login->fedauth_token)) {
++		/* for security reason clear memory */
++		tds_dstr_zero(&connection->fedauth_token);
++		res = tds_dstr_dup(&connection->fedauth_token, &login->fedauth_token);
++	}
++
+ 	if (res && !tds_dstr_isempty(&login->library))
+ 		res = tds_dstr_dup(&connection->library, &login->library);
+ 
+diff --git a/src/tds/login.c b/src/tds/login.c
+index d5e982481..12c96330a 100644
+--- a/src/tds/login.c
++++ b/src/tds/login.c
+@@ -90,6 +90,19 @@ tds_set_passwd(TDSLOGIN * tds_login, const char *password)
+ 	}
+ 	return true;
+ }
++
++/**
++ * Set a federated authentication (Entra ID) access token.
++ * When set, TDS 7.4+ logins use the FEDAUTH SecurityToken library
++ * instead of user name/password or integrated authentication.
++ */
++bool
++tds_set_fedauth_token(TDSLOGIN * tds_login, const char *token)
++{
++	tds_dstr_zero(&tds_login->fedauth_token);
++	return !!tds_dstr_copy(&tds_login->fedauth_token, token ? token : "");
++}
++
+ void
+ tds_set_bulk(TDSLOGIN * tds_login, bool enabled)
+ {
+@@ -1020,10 +1033,10 @@ tds7_send_login(TDSSOCKET * tds, const TDSLOGIN * login)
+ 	size_t user_name_len = strlen(user_name);
+ 	size_t auth_len = 0;
+ 
+-	static const char ext_data[] =
+-		"\x0a\x01\x00\x00\x00\x01"	/* Enable UTF-8 */
+-		"\xff";
+-	size_t ext_len = IS_TDS74_PLUS(tds->conn) ? sizeof(ext_data) - 1 : 0;
++	/* FeatureExt block (TDS 7.4+), built below */
++	unsigned char *ext_data = NULL;
++	size_t ext_len = 0;
++	const bool fedauth = !tds_dstr_isempty(&login->fedauth_token);
+ 
+ 	/* fields */
+ 	enum {
+@@ -1049,7 +1062,10 @@ tds7_send_login(TDSSOCKET * tds, const TDSLOGIN * login)
+ 
+ 	current_pos = packet_size = IS_TDS72_PLUS(tds->conn) ? 86 + 8 : 86;	/* ? */
+ 
+-	/* check ntlm */
++	/* check ntlm (skipped for federated authentication, which sends a token instead) */
++	if (fedauth) {
++		tdsdump_log(TDS_DBG_INFO2, "using federated (token) authentication\n");
++	} else {
+ #ifdef HAVE_SSPI
+ 	if (strchr(user_name, '\\') != NULL || user_name_len == 0) {
+ 		tdsdump_log(TDS_DBG_INFO2, "using SSPI authentication for '%s' account\n", user_name);
+@@ -1081,10 +1097,64 @@ tds7_send_login(TDSSOCKET * tds, const TDSLOGIN * login)
+ # endif
+ #endif
+ 	}
++	}
++
++	/* build FeatureExt block */
++	if (IS_TDS74_PLUS(tds->conn)) {
++		unsigned char *p;
++		size_t token_len = 0;
+ 
++		ext_len = 6 + 1;	/* UTF-8 feature + terminator */
++		if (fedauth) {
++			token_len = tds_dstr_len(&login->fedauth_token);
++			ext_len += 1 + 4 + 1 + 4 + token_len * 2;
++		}
++		ext_data = tds_new(unsigned char, ext_len);
++		if (!ext_data)
++			return TDS_FAIL;
++
++		p = ext_data;
++		/* UTF-8 support, feature 0x0a */
++		memcpy(p, "\x0a\x01\x00\x00\x00\x01", 6);
++		p += 6;
++		if (fedauth) {
++			/*
++			 * FEDAUTH feature 0x02, SecurityToken library (MS-TDS 2.2.6.4):
++			 * options byte = (library << 1) | fFedAuthEcho,
++			 * then token length (bytes) and token as UTF-16LE, no nonce.
++			 */
++			const unsigned char *token = (const unsigned char *) tds_dstr_cstr(&login->fedauth_token);
++			size_t i;
++
++			*p++ = TDS7_FEATURE_FEDAUTH;
++			TDS_PUT_UA4LE(p, 1 + 4 + token_len * 2);
++			p += 4;
++			*p++ = (TDS7_FEDAUTH_LIBRARY_SECURITYTOKEN << 1) | (login->fedauth_echo ? 1 : 0);
++			TDS_PUT_UA4LE(p, token_len * 2);
++			p += 4;
++			for (i = 0; i < token_len; ++i) {
++				if (token[i] >= 0x80) {
++					tdsdump_log(TDS_DBG_ERROR, "federated authentication token is not ASCII\n");
++					free(ext_data);
++					return TDS_FAIL;
++				}
++				*p++ = token[i];
++				*p++ = 0;
++			}
++		}
++		*p++ = 0xff;
++		assert(p == ext_data + ext_len);
++	} else if (fedauth) {
++		tdsdump_log(TDS_DBG_ERROR, "federated authentication requires TDS 7.4 or later\n");
++		return TDS_FAIL;
++	}
+ 
+ 	/* initialize ouput buffer for strings */
+-	TDS_PROPAGATE(tds_dynamic_stream_init(&data_stream, &data, 0));
++	rc = tds_dynamic_stream_init(&data_stream, &data, 0);
++	if (TDS_FAILED(rc)) {
++		free(ext_data);
++		return rc;
++	}
+ 
+ #define SET_FIELD_DSTR(field, dstr, len_limit) do { \
+ 	data_fields[field].ptr = tds_dstr_cstr(&(dstr)); \
+@@ -1095,7 +1165,7 @@ tds7_send_login(TDSSOCKET * tds, const TDSLOGIN * login)
+ 	/* setup data fields */
+ 	memset(data_fields, 0, sizeof(data_fields));
+ 	SET_FIELD_DSTR(HOST_NAME, login->client_host_name, 128);
+-	if (!tds->conn->authentication) {
++	if (!tds->conn->authentication && !fedauth) {
+ 		SET_FIELD_DSTR(USER_NAME, login->user_name, 128);
+ 		SET_FIELD_DSTR(PASSWORD, login->password, 128);
+ 	}
+@@ -1123,12 +1193,14 @@ tds7_send_login(TDSSOCKET * tds, const TDSLOGIN * login)
+ 			rc = tds_convert_stream(tds, tds->conn->char_convs[client2ucs2], to_server, &input.stream, &data_stream.stream);
+ 			if (TDS_FAILED(rc)) {
+ 				free(data);
++				free(ext_data);
+ 				return TDS_FAIL;
+ 			}
+ 		} else if (ext_len && field == &data_fields[EXTENSION]) {
+ 			/* reserve 4 bytes in the stream to put the extention offset */
+ 			if (data_stream.stream.write(&data_stream.stream, 4) != 4) {
+ 				free(data);
++				free(ext_data);
+ 				return TDS_FAIL;
+ 			}
+ 			field->len = 4;
+@@ -1284,6 +1356,7 @@ tds7_send_login(TDSSOCKET * tds, const TDSLOGIN * login)
+ #endif
+ 
+ 	free(data);
++	free(ext_data);
+ 	return rc;
+ }
+ 
+@@ -1334,6 +1407,8 @@ tds71_do_login(TDSSOCKET * tds, TDSLOGIN* login)
+ 	unsigned int start_pos = 21;
+ 	TDSRET ret;
+ 	bool mars_replied = false;
++	/* federated authentication is only possible with TDS 7.4+ */
++	const bool fedauth = IS_TDS74_PLUS(tds->conn) && !tds_dstr_isempty(&login->fedauth_token);
+ 
+ #define START_POS 21
+ #define UI16BE(n) ((n) >> 8), ((n) & 0xffu)
+@@ -1349,6 +1424,8 @@ tds71_do_login(TDSSOCKET * tds, TDSLOGIN* login)
+ 		3, UI16BE(0), UI16BE(4),
+ 		/* MARS enables */
+ 		4, UI16BE(0), UI16BE(1),
++		/* FEDAUTHREQUIRED (only sent for federated authentication) */
++		6, UI16BE(0), UI16BE(1),
+ 		/* end */
+ 		0xff
+ 	};
+@@ -1362,9 +1439,9 @@ tds71_do_login(TDSSOCKET * tds, TDSLOGIN* login)
+ 	SET_UI16BE(13, instance_name_len);
+ 	if (!IS_TDS72_PLUS(tds->conn)) {
+ 		SET_UI16BE(16, START_POS + 6 + 1 + instance_name_len);
+-		/* strip MARS setting */
++		/* strip MARS and FEDAUTHREQUIRED settings */
+ 		buf[20] = 0xff;
+-	} else {
++	} else if (!fedauth) {
+ 		start_pos += 5;
+ #undef  START_POS
+ #define START_POS 26
+@@ -1373,6 +1450,18 @@ tds71_do_login(TDSSOCKET * tds, TDSLOGIN* login)
+ 		SET_UI16BE(11, START_POS + 6 + 1);
+ 		SET_UI16BE(16, START_POS + 6 + 1 + instance_name_len);
+ 		SET_UI16BE(21, START_POS + 6 + 1 + instance_name_len + 4);
++		/* strip FEDAUTHREQUIRED setting */
++		buf[25] = 0xff;
++	} else {
++		start_pos += 10;
++#undef  START_POS
++#define START_POS 31
++		SET_UI16BE(1, START_POS);
++		SET_UI16BE(6, START_POS + 6);
++		SET_UI16BE(11, START_POS + 6 + 1);
++		SET_UI16BE(16, START_POS + 6 + 1 + instance_name_len);
++		SET_UI16BE(21, START_POS + 6 + 1 + instance_name_len + 4);
++		SET_UI16BE(26, START_POS + 6 + 1 + instance_name_len + 4 + 1);
+ 	}
+ 
+ 	assert(start_pos >= 21 && start_pos <= sizeof(buf));
+@@ -1417,6 +1506,9 @@ tds71_do_login(TDSSOCKET * tds, TDSLOGIN* login)
+ #else
+ 		tds_put_byte(tds, 0);
+ #endif
++	/* FEDAUTHREQUIRED (1 = client supports federated authentication) */
++	if (fedauth)
++		tds_put_byte(tds, 1);
+ 	TDS_PROPAGATE(tds_flush_packet(tds));
+ 
+ 	/* now process reply from server */
+@@ -1455,6 +1547,9 @@ tds71_do_login(TDSSOCKET * tds, TDSLOGIN* login)
+ 			login->mars = p[off];
+ #endif
+ 		}
++		/* server's FEDAUTHREQUIRED reply must be echoed in the LOGIN7 FEDAUTH options */
++		if (fedauth && type == TDS7_PRELOGIN_FEDAUTHREQUIRED && len >= 1)
++			login->fedauth_echo = p[off] != 0;
+ 	}
+ 	/* we readed all packet */
+ 	tds->in_pos += pkt_len;
+@@ -1462,6 +1557,12 @@ tds71_do_login(TDSSOCKET * tds, TDSLOGIN* login)
+ 
+ 	tdsdump_log(TDS_DBG_INFO1, "detected crypt flag %d\n", crypt_flag);
+ 
++	/* never send a bearer token over an unencrypted connection */
++	if (fedauth && crypt_flag == TDS7_ENCRYPT_NOT_SUP && encryption_level != TDS_ENCRYPTION_STRICT) {
++		tdsdump_log(TDS_DBG_ERROR, "federated authentication requires encryption but server does not support it\n");
++		return TDS_FAIL;
++	}
++
+ 	if (!mars_replied && encryption_level != TDS_ENCRYPTION_STRICT)
+ 		tds->conn->tds_version = 0x701;
+ 
+diff --git a/src/tds/mem.c b/src/tds/mem.c
+index d249084db..02d28f8ec 100644
+--- a/src/tds/mem.c
++++ b/src/tds/mem.c
+@@ -997,6 +997,7 @@ tds_alloc_login(bool use_environment)
+ 	tds_dstr_init(&login->password);
+ 	tds_dstr_init(&login->library);
+ 	tds_dstr_init(&login->new_password);
++	tds_dstr_init(&login->fedauth_token);
+ 
+ 	login->ip_addrs = NULL;
+ 
+@@ -1046,6 +1047,8 @@ tds_free_login(TDSLOGIN * login)
+ 	tds_dstr_free(&login->password);
+ 	tds_dstr_zero(&login->new_password);
+ 	tds_dstr_free(&login->new_password);
++	tds_dstr_zero(&login->fedauth_token);
++	tds_dstr_free(&login->fedauth_token);
+ 	tds_dstr_free(&login->server_name);
+ 	tds_dstr_free(&login->language);
+ 	tds_dstr_free(&login->server_charset);

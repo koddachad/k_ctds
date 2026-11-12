@@ -4,6 +4,17 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Microsoft Entra ID authentication for Azure SQL. `connect()` accepts
+  `access_token` (a token string) or `credential` (any object with a
+  `get_token(scope)` method, such as the `azure-identity` credential classes).
+  A fresh token is requested for every new connection, so pooled connections
+  never reuse an expired token.
+- `k_ctds.entra.service_principal()` helper that returns a credential object
+  for an Entra ID service principal; install with `pip install k-ctds[entra]`.
+- Bundled FreeTDS updated to 1.5.21 with a patch (`freetds/`) adding
+  federated (FEDAUTH SecurityToken) login support.
+
 ## v2.2.0
 
 ### Added

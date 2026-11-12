@@ -121,7 +121,7 @@ if (Test-Path env:FREETDS_VERSION)
 }
 else
 {
-    $freetds_version = "1.00.80"
+    $freetds_version = "1.5.21"
     Write-Verbose "FREETDS_VERSION not set; defaulting to $freetds_version"
 }
 
@@ -142,6 +142,24 @@ if (-not (Test-Path -Path $freetds_path))
 }
 
 pushd "$freetds_path"
+
+# Apply the k_ctds FreeTDS patch (Microsoft Entra ID token authentication), if
+# one exists for this version. Skipped if already applied.
+$freetds_patch = Join-Path (Split-Path -Parent $PSScriptRoot) "freetds\fedauth-$freetds_version.patch"
+if (Test-Path -Path $freetds_patch)
+{
+    Write-Verbose "Applying $freetds_patch ..."
+    git apply --check --ignore-whitespace "$freetds_patch" 2>$null
+    if ($LastExitCode -eq 0)
+    {
+        git apply --ignore-whitespace "$freetds_patch"
+        if ($LastExitCode -ne 0) { exit $LastExitCode }
+    }
+    else
+    {
+        Write-Verbose "Patch does not apply cleanly (already applied?); skipping."
+    }
+}
 
 $cmake = "``
 cmake -G ""NMake Makefiles"" ``

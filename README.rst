@@ -36,6 +36,7 @@ Features
 * Written entirely in C.
 * Pre-built wheels with bundled `FreeTDS`_ and `OpenSSL`_ for Linux, macOS, and Windows.
 * TLS/SSL support out of the box (OpenSSL 3.0).
+* Microsoft Entra ID (access token) authentication for Azure SQL.
 
 Installation
 ------------

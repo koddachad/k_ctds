@@ -30,6 +30,7 @@ Index
     Bulk Insert <bulk_insert>
     Connection Pooling <pooling>
     TLS/SSL Encryption <encryption>
+    Microsoft Entra ID Authentication <entra>
     faq
     api
     Change Log <CHANGELOG>
