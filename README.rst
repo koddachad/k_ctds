@@ -92,7 +92,8 @@ On **macOS** with Homebrew:
     brew install freetds
     pip install k-ctds --no-binary k-ctds
 
-On **Windows** (requires Visual Studio 2022 Build Tools, CMake, and 7-Zip):
+On **Windows** (requires Visual Studio 2022 Build Tools, CMake, 7-Zip, Git, and
+OpenSSL 3; set ``OPENSSL_ROOT_DIR`` if OpenSSL is not under ``C:\Program Files\OpenSSL``):
 
 .. code-block:: powershell
 

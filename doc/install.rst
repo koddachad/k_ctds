@@ -82,7 +82,11 @@ Installation On Windows
 On Windows, `FreeTDS`_ should be installed from the latest source code.
 A powershell script is included which may aid in this.
 
-You'll need `Visual Studio 2022 Build Tools`_ and `CMake`_, and `7-Zip`_ installed.
+You'll need `Visual Studio 2022 Build Tools`_, `CMake`_, `7-Zip`_, Git and
+`OpenSSL`_ 3 installed. The script builds FreeTDS with TLS support against
+OpenSSL and expects it under ``C:\Program Files\OpenSSL``; set the
+``OPENSSL_ROOT_DIR`` environment variable to point elsewhere. It also applies
+the FreeTDS patch from the ``freetds`` directory with ``git apply``.
 
 .. note::
 

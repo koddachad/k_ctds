@@ -85,11 +85,12 @@ test-command = "python -c \"import k_ctds; print(k_ctds.apilevel)\""
 # cibuildwheel) will vendor the .so files into the wheel.
 before-all = """
     set -ex
+    PROJECT_DIR="$(cd {project} && pwd)"
     yum install -y openssl-devel || apk add openssl-dev || apt-get install -y libssl-dev || true
     curl -sSf "https://www.freetds.org/files/stable/freetds-${FREETDS_VERSION}.tar.gz" -o /tmp/freetds.tar.gz
     tar -xzf /tmp/freetds.tar.gz -C /tmp
     cd /tmp/freetds-${FREETDS_VERSION}
-    patch -p1 < {project}/freetds/fedauth-${FREETDS_VERSION}.patch
+    patch -p1 < "${PROJECT_DIR}/freetds/fedauth-${FREETDS_VERSION}.patch"
     CFLAGS="-Wno-error=incompatible-pointer-types" ./configure --prefix=/usr/local --with-openssl --enable-msdblib
     make -j$(nproc)
     make install
@@ -108,11 +109,12 @@ CTDS_RUNTIME_LIBRARY_DIRS = "/usr/local/lib"
 [tool.cibuildwheel.macos]
 before-all = """
     set -ex
+    PROJECT_DIR="$(cd {project} && pwd)"
     brew install openssl@3
     curl -sSf "https://www.freetds.org/files/stable/freetds-${FREETDS_VERSION}.tar.gz" -o /tmp/freetds.tar.gz
     tar -xzf /tmp/freetds.tar.gz -C /tmp
     cd /tmp/freetds-${FREETDS_VERSION}
-    patch -p1 < {project}/freetds/fedauth-${FREETDS_VERSION}.patch
+    patch -p1 < "${PROJECT_DIR}/freetds/fedauth-${FREETDS_VERSION}.patch"
     ./configure --prefix=/usr/local --with-openssl=$(brew --prefix openssl@3) --enable-msdblib
     make -j$(sysctl -n hw.ncpu)
     sudo make install

@@ -144,35 +144,95 @@ if (-not (Test-Path -Path $freetds_path))
 pushd "$freetds_path"
 
 # Apply the k_ctds FreeTDS patch (Microsoft Entra ID token authentication), if
-# one exists for this version. Skipped if already applied.
+# one exists for this version. The build fails if the patch neither applies
+# nor is already applied, so a wheel can never silently ship without it.
 $freetds_patch = Join-Path (Split-Path -Parent $PSScriptRoot) "freetds\fedauth-$freetds_version.patch"
 if (Test-Path -Path $freetds_patch)
 {
-    Write-Verbose "Applying $freetds_patch ..."
     git apply --check --ignore-whitespace "$freetds_patch" 2>$null
     if ($LastExitCode -eq 0)
     {
+        Write-Host "Applying $freetds_patch ..."
         git apply --ignore-whitespace "$freetds_patch"
         if ($LastExitCode -ne 0) { exit $LastExitCode }
     }
     else
     {
-        Write-Verbose "Patch does not apply cleanly (already applied?); skipping."
+        git apply --check --reverse --ignore-whitespace "$freetds_patch" 2>$null
+        if ($LastExitCode -eq 0)
+        {
+            Write-Host "$freetds_patch is already applied; skipping."
+        }
+        else
+        {
+            Write-Error "$freetds_patch does not apply to FreeTDS $freetds_version"
+            exit 1
+        }
     }
+}
+
+#
+# TLS: build FreeTDS against OpenSSL so the wheel can talk to servers that
+# require encryption (Azure SQL always does). The GitHub Windows runner image
+# ships OpenSSL 3 under "C:\Program Files\OpenSSL"; override with
+# OPENSSL_ROOT_DIR for other machines. Building without TLS is an error, not a
+# fallback, so a wheel can never silently lose encryption support.
+#
+if (Test-Path env:OPENSSL_ROOT_DIR)
+{
+    $openssl_root = $env:OPENSSL_ROOT_DIR
+}
+else
+{
+    $openssl_root = "$env:ProgramFiles\OpenSSL"
+    Write-Verbose "OPENSSL_ROOT_DIR not set; defaulting to $openssl_root"
+}
+if (-not (Test-Path -Path "$openssl_root\include\openssl\ssl.h"))
+{
+    Write-Error "OpenSSL not found at $openssl_root (set OPENSSL_ROOT_DIR)"
+    exit 1
 }
 
 $cmake = "``
 cmake -G ""NMake Makefiles"" ``
     -DCMAKE_BUILD_TYPE=Release ``
     -DCMAKE_INSTALL_PREFIX=""$build_dir"" ``
-    -DWITH_OPENSSL=OFF ``
+    -DWITH_OPENSSL=ON ``
+    -DOPENSSL_ROOT_DIR=""$openssl_root"" ``
     -DWITH_GNUTLS=OFF ``
     -DCMAKE_PREFIX_PATH=""$install_prefix"" ``
     .
 "
 
 MSVC-Env-Invoke $cmake
+
+# cmake only reports OpenSSL as a status line; make sure it was really found.
+$cmake_cache = Get-Content "$freetds_path\CMakeCache.txt" -Raw
+if ($cmake_cache -notmatch "OPENSSL_INCLUDE_DIR:PATH=(?!OPENSSL_INCLUDE_DIR-NOTFOUND)")
+{
+    Write-Error "cmake did not find OpenSSL under $openssl_root"
+    exit 1
+}
+
 MSVC-Env-Invoke 'nmake all'
+
+# Stage the OpenSSL runtime DLLs next to the FreeTDS DLLs. delvewheel picks
+# them up from build\lib (see pyproject.toml) and bundles them into the wheel.
+$openssl_dlls = Get-ChildItem -Path "$openssl_root\bin" -Filter "lib*-x64.dll" -ErrorAction SilentlyContinue
+if (-not $openssl_dlls)
+{
+    $openssl_dlls = Get-ChildItem -Path "$openssl_root\bin" -Filter "lib*.dll"
+}
+if (-not $openssl_dlls)
+{
+    Write-Error "no OpenSSL DLLs found under $openssl_root\bin"
+    exit 1
+}
+foreach ($dll in $openssl_dlls)
+{
+    Write-Host "Staging $($dll.FullName)"
+    cp $dll.FullName "$install_prefix\lib"
+}
 
 # $TODO: Is there no "install" target in freetds for nmake?!?
 cp "$freetds_path\include\*.h" "$install_prefix\include"

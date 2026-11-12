@@ -1,0 +1,3 @@
+# The FreeTDS patches must keep LF line endings on every platform, or they
+# will not apply to the (LF) release tarball on Windows.
+freetds/*.patch text eol=lf
