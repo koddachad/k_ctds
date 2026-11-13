@@ -1,8 +1,17 @@
 diff --git a/include/freetds/proto.h b/include/freetds/proto.h
-index 8afa41c9d..509f1035a 100644
+index 8afa41c9d..3db2c482f 100644
 --- a/include/freetds/proto.h
 +++ b/include/freetds/proto.h
-@@ -475,6 +475,31 @@ enum option_flag3_values {
+@@ -1,6 +1,8 @@
+ /* FreeTDS - Library of routines accessing Sybase and Microsoft databases
+  * Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005  Brian Bruns
+  * Copyright (C) 2010, 2011  Frediano Ziglio
++ * Modified 2026-11 for k_ctds (https://github.com/koddachad/k_ctds): adds
++ * federated (Microsoft Entra ID) SecurityToken authentication for TDS 7.4.
+  *
+  * This library is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU Library General Public
+@@ -475,6 +477,31 @@ enum option_flag3_values {
  	TDS_EXTENSION			= 0x10, /* TDS 7.4 */
  };
  
@@ -35,10 +44,19 @@ index 8afa41c9d..509f1035a 100644
  	TDS_OLEDB_ON	= 0x10,
  	TDS_READONLY_INTENT	= 0x20,
 diff --git a/include/freetds/tds.h b/include/freetds/tds.h
-index dc5fe9d9c..f39c3c335 100644
+index dc5fe9d9c..e6abf6c59 100644
 --- a/include/freetds/tds.h
 +++ b/include/freetds/tds.h
-@@ -516,6 +516,7 @@ typedef struct tds_login
+@@ -1,6 +1,8 @@
+ /* FreeTDS - Library of routines accessing Sybase and Microsoft databases
+  * Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005  Brian Bruns
+  * Copyright (C) 2010, 2011  Frediano Ziglio
++ * Modified 2026-11 for k_ctds (https://github.com/koddachad/k_ctds): adds
++ * federated (Microsoft Entra ID) SecurityToken authentication for TDS 7.4.
+  *
+  * This library is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU Library General Public
+@@ -516,6 +518,7 @@ typedef struct tds_login
  	DSTR user_name;	    	/**< account for login */
  	DSTR password;	    	/**< password of account login */
  	DSTR new_password;	    	/**< new password to set (TDS 7.2+) */
@@ -46,7 +64,7 @@ index dc5fe9d9c..f39c3c335 100644
  
  	DSTR library;	/* Ct-Library, DB-Library,  TDS-Library or ODBC */
  	TDS_TINYINT encryption_level;
-@@ -551,6 +552,7 @@ typedef struct tds_login
+@@ -551,6 +554,7 @@ typedef struct tds_login
  	unsigned int enable_tls_v1:1;
  	unsigned int enable_tls_v1_specified:1;
  	unsigned int server_is_valid:1;
@@ -54,7 +72,7 @@ index dc5fe9d9c..f39c3c335 100644
  } TDSLOGIN;
  
  typedef struct tds_headers
-@@ -1382,6 +1384,7 @@ void tds_deinit_tvp(TDS_TVP *table);
+@@ -1382,6 +1386,7 @@ void tds_deinit_tvp(TDS_TVP *table);
  void tds_set_packet(TDSLOGIN * tds_login, int packet_size);
  void tds_set_port(TDSLOGIN * tds_login, int port);
  bool tds_set_passwd(TDSLOGIN * tds_login, const char *password) TDS_WUR;
@@ -63,10 +81,19 @@ index dc5fe9d9c..f39c3c335 100644
  bool tds_set_user(TDSLOGIN * tds_login, const char *username) TDS_WUR;
  bool tds_set_app(TDSLOGIN * tds_login, const char *application) TDS_WUR;
 diff --git a/include/sybdb.h b/include/sybdb.h
-index 7765f495f..efa85e944 100644
+index 7765f495f..52dfb474f 100644
 --- a/include/sybdb.h
 +++ b/include/sybdb.h
-@@ -1305,6 +1305,8 @@ RETCODE dbsetlversion (LOGINREC * login, BYTE version);
+@@ -1,6 +1,8 @@
+ /* FreeTDS - Library of routines accessing Sybase and Microsoft databases
+  * Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003, 2004  Brian Bruns
+  * Copyright (C) 2010, 2011  Frediano Ziglio
++ * Modified 2026-11 for k_ctds (https://github.com/koddachad/k_ctds): adds
++ * federated (Microsoft Entra ID) SecurityToken authentication for TDS 7.4.
+  *
+  * This library is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU Library General Public
+@@ -1305,6 +1307,8 @@ RETCODE dbsetlversion (LOGINREC * login, BYTE version);
  #define DBSETLENCRYPTION(x, y)  dbsetlname((x), (y), DBSETENCRYPTION)
  #define DBSETPORT 		1006
  #define DBSETLPORT(x,y) 	dbsetlshort((x), (y), DBSETPORT)
@@ -76,10 +103,19 @@ index 7765f495f..efa85e944 100644
  RETCODE bcp_init(DBPROCESS * dbproc, const char *tblname, const char *hfile, const char *errfile, int direction);
  DBINT bcp_done(DBPROCESS * dbproc);
 diff --git a/src/dblib/dblib.c b/src/dblib/dblib.c
-index 28554c651..43023b400 100644
+index 28554c651..323fb55ae 100644
 --- a/src/dblib/dblib.c
 +++ b/src/dblib/dblib.c
-@@ -770,14 +770,16 @@ dbsetlname(LOGINREC * login, const char *value, int which)
+@@ -1,6 +1,8 @@
+ /* FreeTDS - Library of routines accessing Sybase and Microsoft databases
+  * Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005  Brian Bruns
+  * Copyright (C) 2006-2015  Frediano Ziglio
++ * Modified 2026-11 for k_ctds (https://github.com/koddachad/k_ctds): adds
++ * federated (Microsoft Entra ID) SecurityToken authentication for TDS 7.4.
+  *
+  * This library is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU Library General Public
+@@ -770,14 +772,16 @@ dbsetlname(LOGINREC * login, const char *value, int which)
  	bool copy_ret;
  	const char *value_nonull = value ? value : "";
  
@@ -98,7 +134,7 @@ index 28554c651..43023b400 100644
  		dbperror(NULL, SYBENTLL, 0);
  		return FAIL;
  	}
-@@ -811,6 +813,9 @@ dbsetlname(LOGINREC * login, const char *value, int which)
+@@ -811,6 +815,9 @@ dbsetlname(LOGINREC * login, const char *value, int which)
  	case DBSETENCRYPTION:
  		copy_ret = tds_parse_conf_section(TDS_STR_ENCRYPTION, value_nonull, login->tds_login);
  		break;
@@ -109,10 +145,19 @@ index 28554c651..43023b400 100644
  		dbperror(NULL, SYBEASUL, 0); /* Attempt to set unknown LOGINREC field */
  		return FAIL;
 diff --git a/src/tds/config.c b/src/tds/config.c
-index 2bd23c7e1..731ddac9e 100644
+index 2bd23c7e1..d7916c333 100644
 --- a/src/tds/config.c
 +++ b/src/tds/config.c
-@@ -771,6 +771,12 @@ tds_config_login(TDSLOGIN * connection, TDSLOGIN * login)
+@@ -1,6 +1,8 @@
+ /* FreeTDS - Library of routines accessing Sybase and Microsoft databases
+  * Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005  Brian Bruns
+  * Copyright (C) 2006, 2007, 2008, 2009, 2010, 2011  Frediano Ziglio
++ * Modified 2026-11 for k_ctds (https://github.com/koddachad/k_ctds): adds
++ * federated (Microsoft Entra ID) SecurityToken authentication for TDS 7.4.
+  *
+  * This library is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU Library General Public
+@@ -771,6 +773,12 @@ tds_config_login(TDSLOGIN * connection, TDSLOGIN * login)
  		res = tds_dstr_dup(&connection->password, &login->password);
  	}
  
@@ -126,10 +171,19 @@ index 2bd23c7e1..731ddac9e 100644
  		res = tds_dstr_dup(&connection->library, &login->library);
  
 diff --git a/src/tds/login.c b/src/tds/login.c
-index d5e982481..12c96330a 100644
+index d5e982481..2c1a2d75b 100644
 --- a/src/tds/login.c
 +++ b/src/tds/login.c
-@@ -90,6 +90,19 @@ tds_set_passwd(TDSLOGIN * tds_login, const char *password)
+@@ -1,6 +1,8 @@
+ /* FreeTDS - Library of routines accessing Sybase and Microsoft databases
+  * Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005  Brian Bruns
+  * Copyright (C) 2005-2015  Ziglio Frediano
++ * Modified 2026-11 for k_ctds (https://github.com/koddachad/k_ctds): adds
++ * federated (Microsoft Entra ID) SecurityToken authentication for TDS 7.4.
+  *
+  * This library is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU Library General Public
+@@ -90,6 +92,19 @@ tds_set_passwd(TDSLOGIN * tds_login, const char *password)
  	}
  	return true;
  }
@@ -149,7 +203,7 @@ index d5e982481..12c96330a 100644
  void
  tds_set_bulk(TDSLOGIN * tds_login, bool enabled)
  {
-@@ -1020,10 +1033,10 @@ tds7_send_login(TDSSOCKET * tds, const TDSLOGIN * login)
+@@ -1020,10 +1035,10 @@ tds7_send_login(TDSSOCKET * tds, const TDSLOGIN * login)
  	size_t user_name_len = strlen(user_name);
  	size_t auth_len = 0;
  
@@ -164,7 +218,7 @@ index d5e982481..12c96330a 100644
  
  	/* fields */
  	enum {
-@@ -1049,7 +1062,10 @@ tds7_send_login(TDSSOCKET * tds, const TDSLOGIN * login)
+@@ -1049,7 +1064,10 @@ tds7_send_login(TDSSOCKET * tds, const TDSLOGIN * login)
  
  	current_pos = packet_size = IS_TDS72_PLUS(tds->conn) ? 86 + 8 : 86;	/* ? */
  
@@ -176,7 +230,7 @@ index d5e982481..12c96330a 100644
  #ifdef HAVE_SSPI
  	if (strchr(user_name, '\\') != NULL || user_name_len == 0) {
  		tdsdump_log(TDS_DBG_INFO2, "using SSPI authentication for '%s' account\n", user_name);
-@@ -1081,10 +1097,64 @@ tds7_send_login(TDSSOCKET * tds, const TDSLOGIN * login)
+@@ -1081,10 +1099,64 @@ tds7_send_login(TDSSOCKET * tds, const TDSLOGIN * login)
  # endif
  #endif
  	}
@@ -242,7 +296,7 @@ index d5e982481..12c96330a 100644
  
  #define SET_FIELD_DSTR(field, dstr, len_limit) do { \
  	data_fields[field].ptr = tds_dstr_cstr(&(dstr)); \
-@@ -1095,7 +1165,7 @@ tds7_send_login(TDSSOCKET * tds, const TDSLOGIN * login)
+@@ -1095,7 +1167,7 @@ tds7_send_login(TDSSOCKET * tds, const TDSLOGIN * login)
  	/* setup data fields */
  	memset(data_fields, 0, sizeof(data_fields));
  	SET_FIELD_DSTR(HOST_NAME, login->client_host_name, 128);
@@ -251,7 +305,7 @@ index d5e982481..12c96330a 100644
  		SET_FIELD_DSTR(USER_NAME, login->user_name, 128);
  		SET_FIELD_DSTR(PASSWORD, login->password, 128);
  	}
-@@ -1123,12 +1193,14 @@ tds7_send_login(TDSSOCKET * tds, const TDSLOGIN * login)
+@@ -1123,12 +1195,14 @@ tds7_send_login(TDSSOCKET * tds, const TDSLOGIN * login)
  			rc = tds_convert_stream(tds, tds->conn->char_convs[client2ucs2], to_server, &input.stream, &data_stream.stream);
  			if (TDS_FAILED(rc)) {
  				free(data);
@@ -266,7 +320,7 @@ index d5e982481..12c96330a 100644
  				return TDS_FAIL;
  			}
  			field->len = 4;
-@@ -1284,6 +1356,7 @@ tds7_send_login(TDSSOCKET * tds, const TDSLOGIN * login)
+@@ -1284,6 +1358,7 @@ tds7_send_login(TDSSOCKET * tds, const TDSLOGIN * login)
  #endif
  
  	free(data);
@@ -274,7 +328,7 @@ index d5e982481..12c96330a 100644
  	return rc;
  }
  
-@@ -1334,6 +1407,8 @@ tds71_do_login(TDSSOCKET * tds, TDSLOGIN* login)
+@@ -1334,6 +1409,8 @@ tds71_do_login(TDSSOCKET * tds, TDSLOGIN* login)
  	unsigned int start_pos = 21;
  	TDSRET ret;
  	bool mars_replied = false;
@@ -283,7 +337,7 @@ index d5e982481..12c96330a 100644
  
  #define START_POS 21
  #define UI16BE(n) ((n) >> 8), ((n) & 0xffu)
-@@ -1349,6 +1424,8 @@ tds71_do_login(TDSSOCKET * tds, TDSLOGIN* login)
+@@ -1349,6 +1426,8 @@ tds71_do_login(TDSSOCKET * tds, TDSLOGIN* login)
  		3, UI16BE(0), UI16BE(4),
  		/* MARS enables */
  		4, UI16BE(0), UI16BE(1),
@@ -292,7 +346,7 @@ index d5e982481..12c96330a 100644
  		/* end */
  		0xff
  	};
-@@ -1362,9 +1439,9 @@ tds71_do_login(TDSSOCKET * tds, TDSLOGIN* login)
+@@ -1362,9 +1441,9 @@ tds71_do_login(TDSSOCKET * tds, TDSLOGIN* login)
  	SET_UI16BE(13, instance_name_len);
  	if (!IS_TDS72_PLUS(tds->conn)) {
  		SET_UI16BE(16, START_POS + 6 + 1 + instance_name_len);
@@ -304,7 +358,7 @@ index d5e982481..12c96330a 100644
  		start_pos += 5;
  #undef  START_POS
  #define START_POS 26
-@@ -1373,6 +1450,18 @@ tds71_do_login(TDSSOCKET * tds, TDSLOGIN* login)
+@@ -1373,6 +1452,18 @@ tds71_do_login(TDSSOCKET * tds, TDSLOGIN* login)
  		SET_UI16BE(11, START_POS + 6 + 1);
  		SET_UI16BE(16, START_POS + 6 + 1 + instance_name_len);
  		SET_UI16BE(21, START_POS + 6 + 1 + instance_name_len + 4);
@@ -323,7 +377,7 @@ index d5e982481..12c96330a 100644
  	}
  
  	assert(start_pos >= 21 && start_pos <= sizeof(buf));
-@@ -1417,6 +1506,9 @@ tds71_do_login(TDSSOCKET * tds, TDSLOGIN* login)
+@@ -1417,6 +1508,9 @@ tds71_do_login(TDSSOCKET * tds, TDSLOGIN* login)
  #else
  		tds_put_byte(tds, 0);
  #endif
@@ -333,7 +387,7 @@ index d5e982481..12c96330a 100644
  	TDS_PROPAGATE(tds_flush_packet(tds));
  
  	/* now process reply from server */
-@@ -1455,6 +1547,9 @@ tds71_do_login(TDSSOCKET * tds, TDSLOGIN* login)
+@@ -1455,6 +1549,9 @@ tds71_do_login(TDSSOCKET * tds, TDSLOGIN* login)
  			login->mars = p[off];
  #endif
  		}
@@ -343,7 +397,7 @@ index d5e982481..12c96330a 100644
  	}
  	/* we readed all packet */
  	tds->in_pos += pkt_len;
-@@ -1462,6 +1557,12 @@ tds71_do_login(TDSSOCKET * tds, TDSLOGIN* login)
+@@ -1462,6 +1559,12 @@ tds71_do_login(TDSSOCKET * tds, TDSLOGIN* login)
  
  	tdsdump_log(TDS_DBG_INFO1, "detected crypt flag %d\n", crypt_flag);
  
@@ -357,10 +411,19 @@ index d5e982481..12c96330a 100644
  		tds->conn->tds_version = 0x701;
  
 diff --git a/src/tds/mem.c b/src/tds/mem.c
-index d249084db..02d28f8ec 100644
+index d249084db..16850b564 100644
 --- a/src/tds/mem.c
 +++ b/src/tds/mem.c
-@@ -997,6 +997,7 @@ tds_alloc_login(bool use_environment)
+@@ -1,6 +1,8 @@
+ /* FreeTDS - Library of routines accessing Sybase and Microsoft databases
+  * Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005  Brian Bruns
+  * Copyright (C) 2005-2015 Frediano Ziglio
++ * Modified 2026-11 for k_ctds (https://github.com/koddachad/k_ctds): adds
++ * federated (Microsoft Entra ID) SecurityToken authentication for TDS 7.4.
+  *
+  * This library is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU Library General Public
+@@ -997,6 +999,7 @@ tds_alloc_login(bool use_environment)
  	tds_dstr_init(&login->password);
  	tds_dstr_init(&login->library);
  	tds_dstr_init(&login->new_password);
@@ -368,7 +431,7 @@ index d249084db..02d28f8ec 100644
  
  	login->ip_addrs = NULL;
  
-@@ -1046,6 +1047,8 @@ tds_free_login(TDSLOGIN * login)
+@@ -1046,6 +1049,8 @@ tds_free_login(TDSLOGIN * login)
  	tds_dstr_free(&login->password);
  	tds_dstr_zero(&login->new_password);
  	tds_dstr_free(&login->new_password);

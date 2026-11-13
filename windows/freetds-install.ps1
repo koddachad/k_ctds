@@ -218,14 +218,13 @@ MSVC-Env-Invoke 'nmake all'
 
 # Stage the OpenSSL runtime DLLs next to the FreeTDS DLLs. delvewheel picks
 # them up from build\lib (see pyproject.toml) and bundles them into the wheel.
-$openssl_dlls = Get-ChildItem -Path "$openssl_root\bin" -Filter "lib*-x64.dll" -ErrorAction SilentlyContinue
+# Only OpenSSL 3 DLLs (libssl-3-x64.dll, libcrypto-3-x64.dll) are accepted:
+# THIRD_PARTY_NOTICES documents the Apache-2.0 licensed OpenSSL 3, and 1.1.1
+# is end-of-life.
+$openssl_dlls = Get-ChildItem -Path "$openssl_root\bin" -Filter "lib*-3*.dll" -ErrorAction SilentlyContinue
 if (-not $openssl_dlls)
 {
-    $openssl_dlls = Get-ChildItem -Path "$openssl_root\bin" -Filter "lib*.dll"
-}
-if (-not $openssl_dlls)
-{
-    Write-Error "no OpenSSL DLLs found under $openssl_root\bin"
+    Write-Error "no OpenSSL 3 DLLs (lib*-3*.dll) found under $openssl_root\bin"
     exit 1
 }
 foreach ($dll in $openssl_dlls)

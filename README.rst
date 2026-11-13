@@ -35,7 +35,7 @@ Features
 * Bulk insert (bcp) support.
 * Written entirely in C.
 * Pre-built wheels with bundled `FreeTDS`_ and `OpenSSL`_ for Linux, macOS, and Windows.
-* TLS/SSL support out of the box (OpenSSL 3.0).
+* TLS/SSL support out of the box (OpenSSL 3).
 * Microsoft Entra ID (access token) authentication for Azure SQL.
 
 Installation
@@ -54,9 +54,10 @@ out of the box.
 
 .. note::
 
-    Pre-built wheels bundle **OpenSSL 3.0** (Apache 2.0 license) and
-    **FreeTDS 1.5.x** (LGPL-2.0, dynamically linked). See
-    ``THIRD_PARTY_NOTICES`` for details.
+    Pre-built wheels bundle **OpenSSL 3** (Apache 2.0 license) and
+    **FreeTDS 1.5.x** (LGPL-2.0, dynamically linked) with the k-cTDS
+    Entra ID patch applied. See ``THIRD_PARTY_NOTICES`` and
+    ``LICENSE.FreeTDS`` for details.
 
 
 Using a Custom FreeTDS
