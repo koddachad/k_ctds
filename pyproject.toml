@@ -120,8 +120,8 @@ repair-wheel-command = "auditwheel repair -w {dest_dir} {wheel}"
 # Point the build at the FreeTDS we just compiled
 [tool.cibuildwheel.linux.environment]
 FREETDS_VERSION = "1.5.21"
-# OpenSSL LTS release built into Linux wheels; the checksum is the one
-# published with the release. Update both together.
+# OpenSSL LTS release built from source into the wheels; the checksum is the
+# one published with the release. Keep in sync with the macOS table.
 OPENSSL_VERSION = "3.5.9"
 OPENSSL_SHA256 = "603f5602e2eef00d77fbd429d34dcd5822bb301757a1bc9cdb24c670f1eb859a"
 CTDS_INCLUDE_DIRS = "/usr/local/include"
@@ -132,12 +132,23 @@ CTDS_RUNTIME_LIBRARY_DIRS = "/usr/local/lib"
 before-all = """
     set -ex
     PROJECT_DIR="$(cd {project} && pwd)"
-    brew install openssl@3
+    # OpenSSL: built from the pinned release with the wheel's deployment
+    # target (MACOSX_DEPLOYMENT_TARGET, honoured by clang), so the bundled
+    # dylibs load on macOS 15 whichever runner builds them. Homebrew bottles
+    # only run on the OS version they were built for, which tied the wheel's
+    # minimum macOS to the runner's. /etc/ssl holds the system cert.pem.
+    curl -sSfL "https://github.com/openssl/openssl/releases/download/openssl-${OPENSSL_VERSION}/openssl-${OPENSSL_VERSION}.tar.gz" -o /tmp/openssl.tar.gz
+    echo "${OPENSSL_SHA256}  /tmp/openssl.tar.gz" | shasum -a 256 -c -
+    tar -xzf /tmp/openssl.tar.gz -C /tmp
+    cd /tmp/openssl-${OPENSSL_VERSION}
+    ./config --prefix=/usr/local/openssl --openssldir=/etc/ssl --libdir=lib shared no-tests
+    make -j$(sysctl -n hw.ncpu)
+    sudo make install_sw
     curl -sSf "https://www.freetds.org/files/stable/freetds-${FREETDS_VERSION}.tar.gz" -o /tmp/freetds.tar.gz
     tar -xzf /tmp/freetds.tar.gz -C /tmp
     cd /tmp/freetds-${FREETDS_VERSION}
     patch -p1 < "${PROJECT_DIR}/freetds/fedauth-${FREETDS_VERSION}.patch"
-    ./configure --prefix=/usr/local --with-openssl=$(brew --prefix openssl@3) --enable-msdblib
+    ./configure --prefix=/usr/local --with-openssl=/usr/local/openssl --enable-msdblib
     make -j$(sysctl -n hw.ncpu)
     sudo make install
 """
@@ -145,6 +156,9 @@ repair-wheel-command = "delocate-wheel --require-archs {delocate_archs} -w {dest
 
 [tool.cibuildwheel.macos.environment]
 FREETDS_VERSION = "1.5.21"
+# Keep in sync with the Linux table.
+OPENSSL_VERSION = "3.5.9"
+OPENSSL_SHA256 = "603f5602e2eef00d77fbd429d34dcd5822bb301757a1bc9cdb24c670f1eb859a"
 CTDS_INCLUDE_DIRS = "/usr/local/include"
 CTDS_LIBRARY_DIRS = "/usr/local/lib"
 CTDS_RUNTIME_LIBRARY_DIRS = "/usr/local/lib"

@@ -134,7 +134,7 @@ jobs:
           - os: ubuntu-22.04-arm
             arch: aarch64
             cibw_archs: aarch64
-          - os: macos-15
+          - os: macos-26
             arch: arm64
             cibw_archs: arm64
             macos_target: "15.0"

@@ -70,11 +70,11 @@ dependencies of FreeTDS — they are bundled automatically by auditwheel
 (Linux), delocate (macOS) or delvewheel (Windows).
 
 All pre-built wheels bundle OpenSSL 3.x, which is licensed under the
-Apache License 2.0. On Linux, the release named by OPENSSL_VERSION in
-pyproject.toml is built from source during the wheel build (the
-manylinux build image only provides OpenSSL 1.1.1, which is not used).
-On macOS it comes from Homebrew's openssl@3 formula, and on Windows
-from the OpenSSL 3 installation on the build machine. Older OpenSSL
+Apache License 2.0. On Linux and macOS, the release named by
+OPENSSL_VERSION in pyproject.toml is built from source during the wheel
+build (the manylinux build image only provides OpenSSL 1.1.1, which is
+not used). On Windows it comes from the OpenSSL 3 installation on the
+build machine. Older OpenSSL
 versions (1.1.1 and earlier) used a different dual-license (the
 OpenSSL License + SSLeay License) and are NOT bundled in wheels.
 

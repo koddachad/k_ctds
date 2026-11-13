@@ -18,9 +18,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   Azure SQL) works on Windows.
 
 ### Changed
-- Linux wheels now bundle OpenSSL 3.5 (LTS), built from source during the
-  wheel build. Previous Linux wheels shipped the build image's OpenSSL 1.1.1,
-  which is end-of-life.
+- Linux and macOS wheels now bundle OpenSSL 3.5 (LTS), built from source
+  during the wheel build. Previous Linux wheels shipped the build image's
+  OpenSSL 1.1.1, which is end-of-life; macOS wheels previously took
+  Homebrew's openssl@3.
 - Wheels now include the full LGPL 2.0 text and `THIRD_PARTY_NOTICES`, and
   the notices describe the bundled FreeTDS version and patch.
 - Package metadata declares the license as an SPDX expression (PEP 639);
