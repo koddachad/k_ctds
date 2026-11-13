@@ -8,6 +8,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # Linux only: the suite needs the SQL Server container. macOS builds
+        # are covered by the wheel jobs, which compile FreeTDS and OpenSSL from
+        # source and import the result; a macOS entry here would only run
+        # `pip install .` while tying up a scarce arm64 runner.
         os:
           - ubuntu-22.04
         # Only the bundled FreeTDS version is tested: it carries the FEDAUTH
@@ -21,13 +25,6 @@ jobs:
           - "3.11"
           - "3.10"
           - "3.9"
-        include:
-          - freetds-version: 1.5.21
-            os: macos-latest
-            python-version: "3.13"
-          - freetds-version: 1.5.21
-            os: macos-latest
-            python-version: "3.11"
 
     steps:
       - uses: actions/checkout@v4
@@ -61,12 +58,7 @@ jobs:
           echo "CTDS_RUNTIME_LIBRARY_DIRS=$GITHUB_WORKSPACE/build/freetds-${{ matrix.freetds-version }}/lib" >> $GITHUB_ENV
 
       - name: 'Run tests (Python: ${{ matrix.python-version }}, FreeTDS: ${{ matrix.freetds-version }})'
-        run: |
-          if [ "$RUNNER_OS" == "Linux" ]; then
-            tox
-          else
-            python -m pip install .
-          fi
+        run: tox
 
       - name: 'Docker diagnostics'
         if: always() && runner.os == 'Linux'
