@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## v2.3.0
 
 ### Added
 - Microsoft Entra ID authentication for Azure SQL. `connect()` accepts
@@ -373,7 +373,8 @@ _NVARCHAR_ arguments to remote procedure calls.
 ## [1.0.0] - 2016-03-14
 Initial Release
 
-[Unreleased]: https://github.com/koddachad/k_ctds/compare/v2.2.0...HEAD
+[Unreleased]: https://github.com/koddachad/k_ctds/compare/v2.3.0...HEAD
+[2.3.0]: https://github.com/koddachad/k_ctds/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/koddachad/k_ctds/compare/v2.1.1...v2.2.0
 [2.1.0]: https://github.com/koddachad/k_ctds/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/koddachad/k_ctds/compare/v1.15.0...v2.0.0
