@@ -11,7 +11,12 @@ environment:
 
   BUILD_INSTALL_PREFIX: "C:\\usr\\local"
 
-  FREETDS_VERSION: "1.5.10"
+  # Must match the bundled version in pyproject.toml; the FEDAUTH patch in
+  # freetds/ is applied by windows/freetds-install.ps1.
+  FREETDS_VERSION: "1.5.21"
+
+  # Appveyor images keep OpenSSL at the root of C:, not under Program Files.
+  OPENSSL_ROOT_DIR: "C:\\OpenSSL-v30-Win64"
 
   matrix:
   - PYTHON: "C:\\Python39-x64"
