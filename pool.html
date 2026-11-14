@@ -14,8 +14,8 @@
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="_static/documentation_options.js?v=b21de401"></script>
-      <script src="_static/doctools.js?v=9a2dae69"></script>
-      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -53,6 +53,7 @@
 <li class="toctree-l1"><a class="reference internal" href="bulk_insert.html">Bulk Insert</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pooling.html">Connection Pooling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="encryption.html">TLS/SSL Encryption</a></li>
+<li class="toctree-l1"><a class="reference internal" href="entra.html">Microsoft Entra ID Authentication</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="api.html">API Reference</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="connection.html">Connection</a></li>
@@ -105,16 +106,16 @@
 <span id="k-ctds-pool"></span><h1>k_ctds.pool<a class="headerlink" href="#module-k_ctds.pool" title="Link to this heading"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="k_ctds.pool.ConnectionPool">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">k_ctds.pool.</span></span><span class="sig-name descname"><span class="pre">ConnectionPool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dbapi2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idlettl</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">block</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#k_ctds.pool.ConnectionPool" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">k_ctds.pool.</span></span><span class="sig-name descname"><span class="pre">ConnectionPool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dbapi2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idlettl</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">block</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#k_ctds.pool.ConnectionPool" title="Link to this definition"></a></dt>
 <dd><p>A basic connection pool for DB-API 2.0-compliant database drivers.</p>
 <p>Example usage:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;server&#39;</span><span class="p">:</span> <span class="s1">&#39;my-host&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;database&#39;</span><span class="p">:</span> <span class="s1">&#39;MyDefaultDatabase&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;user&#39;</span><span class="p">:</span> <span class="s1">&#39;my-username&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;password&#39;</span><span class="p">:</span> <span class="s1">&#39;my-password&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;appname&#39;</span><span class="p">:</span> <span class="s1">&#39;my-app-name&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;timeout&#39;</span><span class="p">:</span> <span class="mi">5</span>
+    <span class="s1">'server'</span><span class="p">:</span> <span class="s1">'my-host'</span><span class="p">,</span>
+    <span class="s1">'database'</span><span class="p">:</span> <span class="s1">'MyDefaultDatabase'</span><span class="p">,</span>
+    <span class="s1">'user'</span><span class="p">:</span> <span class="s1">'my-username'</span><span class="p">,</span>
+    <span class="s1">'password'</span><span class="p">:</span> <span class="s1">'my-password'</span><span class="p">,</span>
+    <span class="s1">'appname'</span><span class="p">:</span> <span class="s1">'my-app-name'</span><span class="p">,</span>
+    <span class="s1">'timeout'</span><span class="p">:</span> <span class="mi">5</span>
 <span class="p">}</span>
 <span class="n">pool</span> <span class="o">=</span> <span class="n">ConnectionPool</span><span class="p">(</span><span class="n">pydbmod</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
 
@@ -122,7 +123,7 @@
 <span class="k">try</span><span class="p">:</span>
     <span class="n">cursor</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;SELECT @@VERSION&#39;</span><span class="p">)</span>
+        <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">'SELECT @@VERSION'</span><span class="p">)</span>
     <span class="k">finally</span><span class="p">:</span>
         <span class="n">cursor</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 <span class="k">finally</span><span class="p">:</span>
@@ -143,14 +144,14 @@ background.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>dbapi2</strong> – The DB-API 2 module used to create connections.
 This module must implement the <span class="target" id="index-0"></span><a class="pep reference external" href="https://peps.python.org/pep-0249/"><strong>PEP 0249</strong></a> specification.</p></li>
-<li><p><strong>params</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Connection parameters to pass directly to the
+<li><p><strong>params</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><em>dict</em></a>) – Connection parameters to pass directly to the
 <span class="target" id="index-1"></span><a class="pep reference external" href="https://peps.python.org/pep-0249/#connect"><strong>PEP 0249#connect</strong></a> method when creating a new connection.</p></li>
-<li><p><strong>idlettl</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The maximum time, in seconds, a connection can sit
+<li><p><strong>idlettl</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><em>float</em></a>) – The maximum time, in seconds, a connection can sit
 idle before it is discarded. If not specified, connections are retained
 indefinitely.</p></li>
-<li><p><strong>maxsize</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The maximum number of connections to keep in
+<li><p><strong>maxsize</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – The maximum number of connections to keep in
 the pool.</p></li>
-<li><p><strong>block</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Block until a connection is released back to the
+<li><p><strong>block</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) – Block until a connection is released back to the
 pool? This is only applicable when a <cite>maxsize</cite> value is specified. If
 <cite>False</cite>, a new connection will be created as needed, but the number of
 connections retained in the pool will never exceed <cite>maxsize</cite>.</p></li>

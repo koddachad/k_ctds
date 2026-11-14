@@ -14,12 +14,12 @@
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="_static/documentation_options.js?v=b21de401"></script>
-      <script src="_static/doctools.js?v=9a2dae69"></script>
-      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Frequently Asked Questions" href="faq.html" />
+    <link rel="next" title="Microsoft Entra ID Authentication" href="entra.html" />
     <link rel="prev" title="Connection Pooling" href="pooling.html" /> 
 </head>
 
@@ -63,6 +63,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="entra.html">Microsoft Entra ID Authentication</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Change Log</a></li>
@@ -158,13 +159,13 @@ your server entry in <code class="docutils literal notranslate"><span class="pre
 <p>Then connect normally:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">k_ctds</span>
 
-<span class="k">with</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">&#39;myserver&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s1">&#39;myuser&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">&#39;mypassword&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
+<span class="k">with</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">'myserver'</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s1">'myuser'</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">'mypassword'</span><span class="p">)</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
     <span class="k">with</span> <span class="n">conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span> <span class="k">as</span> <span class="n">cursor</span><span class="p">:</span>
         <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-            <span class="s2">&quot;SELECT encrypt_option FROM sys.dm_exec_connections &quot;</span>
-            <span class="s2">&quot;WHERE session_id = @@SPID&quot;</span>
+            <span class="s2">"SELECT encrypt_option FROM sys.dm_exec_connections "</span>
+            <span class="s2">"WHERE session_id = @@SPID"</span>
         <span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>  <span class="c1"># Should print &#39;TRUE&#39;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>  <span class="c1"># Should print 'TRUE'</span>
 </pre></div>
 </div>
 </section>
@@ -183,13 +184,13 @@ to your <code class="docutils literal notranslate"><span class="pre">freetds.con
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">k_ctds</span>
 
 <span class="k">with</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
-    <span class="s1">&#39;azure&#39;</span><span class="p">,</span>
-    <span class="n">user</span><span class="o">=</span><span class="s1">&#39;youruser@yourserver&#39;</span><span class="p">,</span>
-    <span class="n">password</span><span class="o">=</span><span class="s1">&#39;yourpassword&#39;</span><span class="p">,</span>
-    <span class="n">database</span><span class="o">=</span><span class="s1">&#39;yourdatabase&#39;</span>
+    <span class="s1">'azure'</span><span class="p">,</span>
+    <span class="n">user</span><span class="o">=</span><span class="s1">'youruser@yourserver'</span><span class="p">,</span>
+    <span class="n">password</span><span class="o">=</span><span class="s1">'yourpassword'</span><span class="p">,</span>
+    <span class="n">database</span><span class="o">=</span><span class="s1">'yourdatabase'</span>
 <span class="p">)</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
     <span class="k">with</span> <span class="n">conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span> <span class="k">as</span> <span class="n">cursor</span><span class="p">:</span>
-        <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT 1&quot;</span><span class="p">)</span>
+        <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">"SELECT 1"</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
 </pre></div>
 </div>
@@ -289,17 +290,17 @@ python<span class="w"> </span>myapp.py
 <code class="docutils literal notranslate"><span class="pre">sys.dm_exec_connections</span></code> system view:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">k_ctds</span>
 
-<span class="k">with</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">&#39;myserver&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s1">&#39;myuser&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">&#39;mypassword&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
+<span class="k">with</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">'myserver'</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s1">'myuser'</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">'mypassword'</span><span class="p">)</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
     <span class="k">with</span> <span class="n">conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span> <span class="k">as</span> <span class="n">cursor</span><span class="p">:</span>
         <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-            <span class="s2">&quot;SELECT encrypt_option, protocol_type, auth_scheme &quot;</span>
-            <span class="s2">&quot;FROM sys.dm_exec_connections &quot;</span>
-            <span class="s2">&quot;WHERE session_id = @@SPID&quot;</span>
+            <span class="s2">"SELECT encrypt_option, protocol_type, auth_scheme "</span>
+            <span class="s2">"FROM sys.dm_exec_connections "</span>
+            <span class="s2">"WHERE session_id = @@SPID"</span>
         <span class="p">)</span>
         <span class="n">row</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Encrypted: </span><span class="si">{</span><span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>       <span class="c1"># TRUE or FALSE</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Protocol: </span><span class="si">{</span><span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>         <span class="c1"># TSQL</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Auth scheme: </span><span class="si">{</span><span class="n">row</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>      <span class="c1"># SQL or NTLM</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Encrypted: </span><span class="si">{</span><span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>       <span class="c1"># TRUE or FALSE</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Protocol: </span><span class="si">{</span><span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>         <span class="c1"># TSQL</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Auth scheme: </span><span class="si">{</span><span class="n">row</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>      <span class="c1"># SQL or NTLM</span>
 </pre></div>
 </div>
 <div class="admonition note">
@@ -331,7 +332,7 @@ currently using <code class="docutils literal notranslate"><span class="pre">7.4
 </dd>
 </dl>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>tsql<span class="w"> </span>-C
-Compile-time<span class="w"> </span>settings<span class="w"> </span><span class="o">(</span>established<span class="w"> </span>with<span class="w"> </span>the<span class="w"> </span><span class="s2">&quot;configure&quot;</span><span class="w"> </span>script<span class="o">)</span>
+Compile-time<span class="w"> </span>settings<span class="w"> </span><span class="o">(</span>established<span class="w"> </span>with<span class="w"> </span>the<span class="w"> </span><span class="s2">"configure"</span><span class="w"> </span>script<span class="o">)</span>
 <span class="w">                            </span>Version:<span class="w"> </span>freetds<span class="w"> </span>v1.4.10
 <span class="w">             </span>freetds.conf<span class="w"> </span>directory:<span class="w"> </span>/usr/local/etc
 <span class="w">     </span>...
@@ -347,7 +348,7 @@ Compile-time<span class="w"> </span>settings<span class="w"> </span><span class=
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="pooling.html" class="btn btn-neutral float-left" title="Connection Pooling" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="faq.html" class="btn btn-neutral float-right" title="Frequently Asked Questions" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="entra.html" class="btn btn-neutral float-right" title="Microsoft Entra ID Authentication" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

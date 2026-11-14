@@ -14,8 +14,8 @@
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="_static/documentation_options.js?v=b21de401"></script>
-      <script src="_static/doctools.js?v=9a2dae69"></script>
-      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -63,6 +63,7 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="pooling.html">Connection Pooling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="encryption.html">TLS/SSL Encryption</a></li>
+<li class="toctree-l1"><a class="reference internal" href="entra.html">Microsoft Entra ID Authentication</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Change Log</a></li>
@@ -103,7 +104,7 @@ into a table using <a class="reference internal" href="connection.html#k_ctds.Co
 Supports multi-part names (e.g. <code class="docutils literal notranslate"><span class="pre">dbo.MyTable</span></code>).</p>
 </dd>
 <dt><code class="docutils literal notranslate"><span class="pre">rows</span></code></dt><dd><p>An iterable of data rows. Each row can be a sequence
-(tuple/list) or a <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a> mapping column names
+(tuple/list) or a <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a> mapping column names
 to values (v1.9+).</p>
 </dd>
 <dt><code class="docutils literal notranslate"><span class="pre">batch_size</span></code> <em>(default:</em> <code class="docutils literal notranslate"><span class="pre">None</span></code> <em>)</em></dt><dd><p>Number of rows per batch. When <code class="docutils literal notranslate"><span class="pre">None</span></code>, all rows are sent
@@ -126,29 +127,29 @@ based on each column’s type and collation. See
 <section id="example">
 <h2>Example<a class="headerlink" href="#example" title="Link to this heading"></a></h2>
 <p>A bulk insert is done by providing the name of the target table and an
-<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#typeiter" title="(in Python v3.14)"><span class="xref std std-ref">iterator</span></a> of rows to insert. Each row should be
+<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#typeiter" title="(in Python v3.15)"><span class="xref std std-ref">iterator</span></a> of rows to insert. Each row should be
 a sequence containing a value for each column in the table, or a
-<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a> mapping column names to values.</p>
+<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a> mapping column names to values.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">k_ctds</span>
-<span class="k">with</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">&#39;host&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">connection</span><span class="p">:</span>
+<span class="k">with</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">'host'</span><span class="p">)</span> <span class="k">as</span> <span class="n">connection</span><span class="p">:</span>
     <span class="n">connection</span><span class="o">.</span><span class="n">bulk_insert</span><span class="p">(</span>
-        <span class="s1">&#39;MyExampleTable&#39;</span><span class="p">,</span>
+        <span class="s1">'MyExampleTable'</span><span class="p">,</span>
         <span class="c1"># A generator of the rows.</span>
         <span class="p">(</span>
             <span class="c1"># The row values can be any python sequence type</span>
-            <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="s1">&#39;hello world </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+            <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="s1">'hello world </span><span class="si">{0}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
         <span class="p">)</span>
     <span class="p">)</span>
 
     <span class="c1"># Version 1.9 supports passing dict rows.</span>
     <span class="n">connection</span><span class="o">.</span><span class="n">bulk_insert</span><span class="p">(</span>
-        <span class="s1">&#39;MyExampleTable&#39;</span><span class="p">,</span>
+        <span class="s1">'MyExampleTable'</span><span class="p">,</span>
         <span class="c1"># A generator of the rows.</span>
         <span class="p">(</span>
             <span class="p">{</span>
-                <span class="s1">&#39;IntColumn&#39;</span><span class="p">:</span> <span class="n">i</span><span class="p">,</span>
-                <span class="s1">&#39;TextColumn&#39;</span><span class="p">:</span> <span class="s1">&#39;hello world </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="s1">'IntColumn'</span><span class="p">:</span> <span class="n">i</span><span class="p">,</span>
+                <span class="s1">'TextColumn'</span><span class="p">:</span> <span class="s1">'hello world </span><span class="si">{0}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
             <span class="p">}</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
         <span class="p">)</span>
@@ -162,22 +163,22 @@ a sequence containing a value for each column in the table, or a
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">k_ctds</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">csv</span>
 
-<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;BulkInsertExample.csv&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">csvfile</span><span class="p">:</span>
-    <span class="n">csvreader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">csvfile</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
-    <span class="k">with</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">&#39;host&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">connection</span><span class="p">:</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">'BulkInsertExample.csv'</span><span class="p">,</span> <span class="s1">'r'</span><span class="p">)</span> <span class="k">as</span> <span class="n">csvfile</span><span class="p">:</span>
+    <span class="n">csvreader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">csvfile</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">','</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">'host'</span><span class="p">)</span> <span class="k">as</span> <span class="n">connection</span><span class="p">:</span>
         <span class="n">connection</span><span class="o">.</span><span class="n">bulk_insert</span><span class="p">(</span>
-            <span class="s1">&#39;BulkInsertExample&#39;</span><span class="p">,</span>
+            <span class="s1">'BulkInsertExample'</span><span class="p">,</span>
             <span class="nb">iter</span><span class="p">(</span><span class="n">csvreader</span><span class="p">)</span>
         <span class="p">)</span>
 
 <span class="c1"># ctds 1.9 supports passing rows as dict objects, mapping column name</span>
 <span class="c1"># to value. This is useful if the table contains NULLable columns</span>
 <span class="c1"># not present in the CSV file.</span>
-<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;BulkInsertExample.csv&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">csvfile</span><span class="p">:</span>
-    <span class="n">csvreader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictReader</span><span class="p">(</span><span class="n">csvfile</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
-    <span class="k">with</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">&#39;host&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">connection</span><span class="p">:</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">'BulkInsertExample.csv'</span><span class="p">,</span> <span class="s1">'r'</span><span class="p">)</span> <span class="k">as</span> <span class="n">csvfile</span><span class="p">:</span>
+    <span class="n">csvreader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictReader</span><span class="p">(</span><span class="n">csvfile</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">','</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">'host'</span><span class="p">)</span> <span class="k">as</span> <span class="n">connection</span><span class="p">:</span>
         <span class="n">connection</span><span class="o">.</span><span class="n">bulk_insert</span><span class="p">(</span>
-            <span class="s1">&#39;BulkInsertExample&#39;</span><span class="p">,</span>
+            <span class="s1">'BulkInsertExample'</span><span class="p">,</span>
             <span class="nb">iter</span><span class="p">(</span><span class="n">csvreader</span><span class="p">)</span>
         <span class="p">)</span>
 </pre></div>
@@ -202,7 +203,7 @@ with either <a class="reference internal" href="types.html#k_ctds.SqlVarChar" ti
 columns) or <a class="reference internal" href="types.html#k_ctds.SqlNVarChar" title="k_ctds.SqlNVarChar"><code class="xref py py-class docutils literal notranslate"><span class="pre">k_ctds.SqlNVarChar</span></code></a> (for <strong>NCHAR</strong>, <strong>NVARCHAR</strong> or
 <strong>NTEXT</strong> columns). For non-Unicode columns, the value should be first encoded
 to column’s encoding (e.g. <cite>latin-1</cite>). By default <a class="reference internal" href="types.html#k_ctds.SqlVarChar" title="k_ctds.SqlVarChar"><code class="xref py py-class docutils literal notranslate"><span class="pre">k_ctds.SqlVarChar</span></code></a>
-will encode <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> objects to <cite>utf-8</cite>, which is likely incorrect for
+will encode <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> objects to <cite>utf-8</cite>, which is likely incorrect for
 most SQL Server configurations.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
@@ -210,7 +211,7 @@ most SQL Server configurations.</p>
 this encoding automatically. See <a class="reference internal" href="#automatic-encoding">Automatic Encoding</a> below.</p>
 </div>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">k_ctds</span>
-<span class="k">with</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">&#39;host&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">connection</span><span class="p">:</span>
+<span class="k">with</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">'host'</span><span class="p">)</span> <span class="k">as</span> <span class="n">connection</span><span class="p">:</span>
     <span class="n">connection</span><span class="o">.</span><span class="n">bulk_insert</span><span class="p">(</span>
         <span class="c1">#</span>
         <span class="c1"># Assumes a table with the following schema:</span>
@@ -222,21 +223,21 @@ this encoding automatically. See <a class="reference internal" href="#automatic-
         <span class="c1"># )</span>
         <span class="c1">#</span>
 
-        <span class="s1">&#39;MyExampleTableWithVarChar&#39;</span><span class="p">,</span>
+        <span class="s1">'MyExampleTableWithVarChar'</span><span class="p">,</span>
         <span class="p">[</span>
             <span class="p">(</span>
                 <span class="c1"># Note the value passed to SqlVarChar is first encoded to</span>
-                <span class="c1"># match the server&#39;s encoding.</span>
+                <span class="c1"># match the server's encoding.</span>
                 <span class="n">k_ctds</span><span class="o">.</span><span class="n">SqlVarChar</span><span class="p">(</span>
-                    <span class="sa">b</span><span class="s1">&#39;a string with latin-1 -&gt; </span><span class="se">\xc2\xbd</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span>
-                        <span class="s1">&#39;utf-8&#39;</span>
-                    <span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;latin-1&#39;</span><span class="p">)</span>
+                    <span class="sa">b</span><span class="s1">'a string with latin-1 -&gt; </span><span class="se">\xc2\xbd</span><span class="s1">'</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span>
+                        <span class="s1">'utf-8'</span>
+                    <span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">'latin-1'</span><span class="p">)</span>
                 <span class="p">),</span>
                 <span class="c1"># SqlNVarChar handles the UTF-16LE encoding automatically</span>
                 <span class="c1"># for bulk insert.</span>
                 <span class="n">k_ctds</span><span class="o">.</span><span class="n">SqlNVarChar</span><span class="p">(</span>
-                    <span class="sa">b</span><span class="s1">&#39;a string with Unicode -&gt; </span><span class="se">\xe3\x83\x9b</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span>
-                        <span class="s1">&#39;utf-8&#39;</span>
+                    <span class="sa">b</span><span class="s1">'a string with Unicode -&gt; </span><span class="se">\xe3\x83\x9b</span><span class="s1">'</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span>
+                        <span class="s1">'utf-8'</span>
                     <span class="p">)</span>
                 <span class="p">),</span>
           <span class="p">)</span>
@@ -267,13 +268,13 @@ described in the <a class="reference internal" href="#text-columns">Text Columns
 <span class="c1">#</span>
 
 <span class="n">rows</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="p">(</span><span class="s1">&#39;café résumé&#39;</span><span class="p">,</span> <span class="s1">&#39;こんにちは世界&#39;</span><span class="p">),</span>
-    <span class="p">(</span><span class="s1">&#39;naïve&#39;</span><span class="p">,</span> <span class="s1">&#39;🎉 Unicode works&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">'café résumé'</span><span class="p">,</span> <span class="s1">'こんにちは世界'</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">'naïve'</span><span class="p">,</span> <span class="s1">'🎉 Unicode works'</span><span class="p">),</span>
 <span class="p">]</span>
 
-<span class="k">with</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">&#39;host&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">connection</span><span class="p">:</span>
+<span class="k">with</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">'host'</span><span class="p">)</span> <span class="k">as</span> <span class="n">connection</span><span class="p">:</span>
     <span class="n">connection</span><span class="o">.</span><span class="n">bulk_insert</span><span class="p">(</span>
-        <span class="s1">&#39;MyExampleTableWithVarChar&#39;</span><span class="p">,</span>
+        <span class="s1">'MyExampleTableWithVarChar'</span><span class="p">,</span>
         <span class="n">rows</span><span class="p">,</span>
         <span class="n">auto_encode</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">)</span>
@@ -283,17 +284,17 @@ described in the <a class="reference internal" href="#text-columns">Text Columns
 bytes for the <code class="docutils literal notranslate"><span class="pre">VARCHAR</span></code> column, and <code class="docutils literal notranslate"><span class="pre">'こんにちは世界'</span></code> is encoded to
 UTF-16LE bytes for the <code class="docutils literal notranslate"><span class="pre">NVARCHAR</span></code> column — no manual wrapping needed.</p>
 <p><strong>Using dict rows with auto_encode:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">&#39;host&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">connection</span><span class="p">:</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">'host'</span><span class="p">)</span> <span class="k">as</span> <span class="n">connection</span><span class="p">:</span>
     <span class="n">connection</span><span class="o">.</span><span class="n">bulk_insert</span><span class="p">(</span>
-        <span class="s1">&#39;MyExampleTableWithVarChar&#39;</span><span class="p">,</span>
+        <span class="s1">'MyExampleTableWithVarChar'</span><span class="p">,</span>
         <span class="p">[</span>
             <span class="p">{</span>
-                <span class="s1">&#39;Latin1Column&#39;</span><span class="p">:</span> <span class="s1">&#39;café&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;UnicodeColumn&#39;</span><span class="p">:</span> <span class="s1">&#39;hello&#39;</span>
+                <span class="s1">'Latin1Column'</span><span class="p">:</span> <span class="s1">'café'</span><span class="p">,</span>
+                <span class="s1">'UnicodeColumn'</span><span class="p">:</span> <span class="s1">'hello'</span>
             <span class="p">},</span>
             <span class="p">{</span>
-                <span class="s1">&#39;Latin1Column&#39;</span><span class="p">:</span> <span class="s1">&#39;naïve&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;UnicodeColumn&#39;</span><span class="p">:</span> <span class="s1">&#39;日本語&#39;</span>
+                <span class="s1">'Latin1Column'</span><span class="p">:</span> <span class="s1">'naïve'</span><span class="p">,</span>
+                <span class="s1">'UnicodeColumn'</span><span class="p">:</span> <span class="s1">'日本語'</span>
             <span class="p">},</span>
         <span class="p">],</span>
         <span class="n">auto_encode</span><span class="o">=</span><span class="kc">True</span>
@@ -301,9 +302,9 @@ UTF-16LE bytes for the <code class="docutils literal notranslate"><span class="p
 </pre></div>
 </div>
 <p><strong>Combining all parameters:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">&#39;host&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">connection</span><span class="p">:</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">'host'</span><span class="p">)</span> <span class="k">as</span> <span class="n">connection</span><span class="p">:</span>
     <span class="n">connection</span><span class="o">.</span><span class="n">bulk_insert</span><span class="p">(</span>
-        <span class="s1">&#39;dbo.LargeImportTable&#39;</span><span class="p">,</span>
+        <span class="s1">'dbo.LargeImportTable'</span><span class="p">,</span>
         <span class="n">row_generator</span><span class="p">(),</span>
         <span class="n">batch_size</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span>
         <span class="n">tablock</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -319,11 +320,11 @@ UTF-16LE bytes for the <code class="docutils literal notranslate"><span class="p
 batches), <code class="docutils literal notranslate"><span class="pre">auto_encode=True</span></code> queries <code class="docutils literal notranslate"><span class="pre">INFORMATION_SCHEMA.COLUMNS</span></code>
 on every call. Use <a class="reference internal" href="connection.html#k_ctds.Connection.column_codecs" title="k_ctds.Connection.column_codecs"><code class="xref py py-meth docutils literal notranslate"><span class="pre">column_codecs()</span></code></a> to
 query the metadata once and reuse it:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">&#39;host&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">connection</span><span class="p">:</span>
-    <span class="n">codecs</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">column_codecs</span><span class="p">(</span><span class="s1">&#39;dbo.LargeImportTable&#39;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">'host'</span><span class="p">)</span> <span class="k">as</span> <span class="n">connection</span><span class="p">:</span>
+    <span class="n">codecs</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">column_codecs</span><span class="p">(</span><span class="s1">'dbo.LargeImportTable'</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">chunks</span><span class="p">:</span>
         <span class="n">connection</span><span class="o">.</span><span class="n">bulk_insert</span><span class="p">(</span>
-            <span class="s1">&#39;dbo.LargeImportTable&#39;</span><span class="p">,</span>
+            <span class="s1">'dbo.LargeImportTable'</span><span class="p">,</span>
             <span class="n">chunk</span><span class="p">,</span>
             <span class="n">auto_encode</span><span class="o">=</span><span class="n">codecs</span>
         <span class="p">)</span>
@@ -343,9 +344,9 @@ manual wrapping approach described in <a class="reference internal" href="#text-
 table-level lock for the duration of the insert. This can significantly
 improve throughput when inserting large volumes of data, especially
 when no other concurrent writers need the table.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">&#39;host&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">connection</span><span class="p">:</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">'host'</span><span class="p">)</span> <span class="k">as</span> <span class="n">connection</span><span class="p">:</span>
     <span class="n">connection</span><span class="o">.</span><span class="n">bulk_insert</span><span class="p">(</span>
-        <span class="s1">&#39;MyLargeTable&#39;</span><span class="p">,</span>
+        <span class="s1">'MyLargeTable'</span><span class="p">,</span>
         <span class="n">large_row_generator</span><span class="p">(),</span>
         <span class="n">batch_size</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span>
         <span class="n">tablock</span><span class="o">=</span><span class="kc">True</span>
@@ -361,13 +362,13 @@ message text contains the SQL Server message description.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">k_ctds</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 
-<span class="k">with</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">&#39;host&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">connection</span><span class="p">:</span>
+<span class="k">with</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">'host'</span><span class="p">)</span> <span class="k">as</span> <span class="n">connection</span><span class="p">:</span>
     <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">(</span><span class="n">record</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">caught</span><span class="p">:</span>
-        <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s1">&#39;always&#39;</span><span class="p">)</span>
-        <span class="n">connection</span><span class="o">.</span><span class="n">bulk_insert</span><span class="p">(</span><span class="s1">&#39;MyTable&#39;</span><span class="p">,</span> <span class="n">rows</span><span class="p">)</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s1">'always'</span><span class="p">)</span>
+        <span class="n">connection</span><span class="o">.</span><span class="n">bulk_insert</span><span class="p">(</span><span class="s1">'MyTable'</span><span class="p">,</span> <span class="n">rows</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">caught</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Warning: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">message</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">'Warning: </span><span class="si">{0}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">message</span><span class="p">))</span>
 </pre></div>
 </div>
 <div class="admonition note">

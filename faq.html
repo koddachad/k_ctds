@@ -14,13 +14,13 @@
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="_static/documentation_options.js?v=b21de401"></script>
-      <script src="_static/doctools.js?v=9a2dae69"></script>
-      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="API Reference" href="api.html" />
-    <link rel="prev" title="TLS/SSL Encryption" href="encryption.html" /> 
+    <link rel="prev" title="Microsoft Entra ID Authentication" href="entra.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -53,6 +53,7 @@
 <li class="toctree-l1"><a class="reference internal" href="bulk_insert.html">Bulk Insert</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pooling.html">Connection Pooling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="encryption.html">TLS/SSL Encryption</a></li>
+<li class="toctree-l1"><a class="reference internal" href="entra.html">Microsoft Entra ID Authentication</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Frequently Asked Questions</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#why-can-t-i-pass-an-empty-string-to-k-ctds-cursor-callproc">Why can’t I pass an empty string to <code class="xref py py-meth docutils literal notranslate"><span class="pre">k_ctds.Cursor.callproc()</span></code>?</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#why-doesn-t-raiserror-raise-a-python-exception">Why doesn’t <cite>RAISERROR</cite> raise a Python exception?</a></li>
@@ -103,7 +104,7 @@ length <em>0</em> are interpreted as <cite>NULL</cite> by the <cite>dblib</cite>
 error. For example, the following will not raise a
 <a class="reference internal" href="ctds.html#k_ctds.ProgrammingError" title="k_ctds.ProgrammingError"><code class="xref py py-class docutils literal notranslate"><span class="pre">k_ctds.ProgrammingError</span></code></a> exception because the last statement does not
 result in an error.</p>
-<div class="highlight-SQL notranslate"><div class="highlight"><pre><span></span><span class="n">RAISERROR</span><span class="w"> </span><span class="p">(</span><span class="n">N</span><span class="s1">&#39;some custom error&#39;</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="p">);</span>
+<div class="highlight-SQL notranslate"><div class="highlight"><pre><span></span><span class="n">RAISERROR</span><span class="w"> </span><span class="p">(</span><span class="n">N</span><span class="s1">'some custom error'</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="p">);</span>
 
 <span class="cm">/* This statement does not fail, hence a Python exception is not raised. */</span>
 <span class="k">SELECT</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">Column1</span><span class="p">;</span>
@@ -111,17 +112,17 @@ result in an error.</p>
 </div>
 <p>The error <cite>some custom error</cite> is reported as a <a class="reference internal" href="ctds.html#k_ctds.Warning" title="k_ctds.Warning"><code class="xref py py-obj docutils literal notranslate"><span class="pre">k_ctds.Warning</span></code></a>.</p>
 <p>In <cite>cTDS</cite> v1.3.0 and later, this warning can be turned into an exception using
-the <a class="reference external" href="https://docs.python.org/3/library/warnings.html#module-warnings" title="(in Python v3.14)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">warnings</span></code></a> module.</p>
+the <a class="reference external" href="https://docs.python.org/3/library/warnings.html#module-warnings" title="(in Python v3.15)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">warnings</span></code></a> module.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">k_ctds</span>
 
-<span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">Warning</span><span class="p">)</span>
+<span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s1">'error'</span><span class="p">,</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">Warning</span><span class="p">)</span>
 
 <span class="k">with</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span> <span class="k">as</span> <span class="n">connection</span><span class="p">:</span>
     <span class="k">with</span> <span class="n">connection</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span> <span class="k">as</span> <span class="n">cursor</span><span class="p">:</span>
         <span class="c1"># The following will raise a `k_ctds.Warning` exception.</span>
         <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-            <span class="s2">&quot;RAISERROR (N&#39;this will become a python exception&#39;, 16, -1);&quot;</span>
+            <span class="s2">"RAISERROR (N'this will become a python exception', 16, -1);"</span>
         <span class="p">)</span>
 </pre></div>
 </div>
@@ -150,12 +151,12 @@ are no longer supported by <cite>k-cTDS</cite>.</p>
 <section id="how-do-i-work-with-datetimeoffset-columns">
 <h2>How do I work with <code class="docutils literal notranslate"><span class="pre">DATETIMEOFFSET</span></code> columns?<a class="headerlink" href="#how-do-i-work-with-datetimeoffset-columns" title="Link to this heading"></a></h2>
 <p><cite>cTDS</cite> automatically maps between Python timezone-aware
-<a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">datetime.datetime</span></code></a> objects and SQL Server <code class="docutils literal notranslate"><span class="pre">DATETIMEOFFSET</span></code>
+<a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">datetime.datetime</span></code></a> objects and SQL Server <code class="docutils literal notranslate"><span class="pre">DATETIMEOFFSET</span></code>
 columns. This requires <a class="reference external" href="https://www.freetds.org">FreeTDS</a> <strong>0.95+</strong> and TDS protocol version <strong>7.3+</strong>.</p>
 <p><strong>Reading:</strong> <code class="docutils literal notranslate"><span class="pre">DATETIMEOFFSET</span></code> values are returned as timezone-aware
-<a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">datetime.datetime</span></code></a> objects with the offset preserved from
+<a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">datetime.datetime</span></code></a> objects with the offset preserved from
 SQL Server.</p>
-<p><strong>Writing:</strong> Pass a timezone-aware <a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">datetime.datetime</span></code></a> to
+<p><strong>Writing:</strong> Pass a timezone-aware <a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">datetime.datetime</span></code></a> to
 <a class="reference internal" href="cursor.html#k_ctds.Cursor.execute" title="k_ctds.Cursor.execute"><code class="xref py py-meth docutils literal notranslate"><span class="pre">k_ctds.Cursor.execute()</span></code></a> or <a class="reference internal" href="cursor.html#k_ctds.Cursor.executemany" title="k_ctds.Cursor.executemany"><code class="xref py py-meth docutils literal notranslate"><span class="pre">k_ctds.Cursor.executemany()</span></code></a>.
 <cite>cTDS</cite> will automatically use <code class="docutils literal notranslate"><span class="pre">DATETIMEOFFSET</span></code> as the SQL type.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">k_ctds</span>
@@ -164,16 +165,16 @@ SQL Server.</p>
 <span class="n">eastern</span> <span class="o">=</span> <span class="n">timezone</span><span class="p">(</span><span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=-</span><span class="mi">5</span><span class="p">))</span>
 <span class="n">dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="p">(</span><span class="mi">2024</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=</span><span class="n">eastern</span><span class="p">)</span>
 
-<span class="k">with</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">&#39;myserver&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">&#39;pass&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
+<span class="k">with</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">'myserver'</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s1">'user'</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">'pass'</span><span class="p">)</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
     <span class="k">with</span> <span class="n">conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span> <span class="k">as</span> <span class="n">cursor</span><span class="p">:</span>
         <span class="c1"># Writing</span>
         <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-            <span class="s1">&#39;INSERT INTO Events (event_time) VALUES (:0)&#39;</span><span class="p">,</span>
+            <span class="s1">'INSERT INTO Events (event_time) VALUES (:0)'</span><span class="p">,</span>
             <span class="p">(</span><span class="n">dt</span><span class="p">,)</span>
         <span class="p">)</span>
 
         <span class="c1"># Reading</span>
-        <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;SELECT event_time FROM Events&#39;</span><span class="p">)</span>
+        <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">'SELECT event_time FROM Events'</span><span class="p">)</span>
         <span class="n">row</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
         <span class="c1"># row[0] is a timezone-aware datetime</span>
 </pre></div>
@@ -182,13 +183,13 @@ SQL Server.</p>
 <a class="reference internal" href="connection.html#k_ctds.Connection.bulk_insert" title="k_ctds.Connection.bulk_insert"><code class="xref py py-meth docutils literal notranslate"><span class="pre">k_ctds.Connection.bulk_insert()</span></code></a>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Naive (timezone-unaware) <a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">datetime.datetime</span></code></a> objects continue
+<p>Naive (timezone-unaware) <a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">datetime.datetime</span></code></a> objects continue
 to map to <code class="docutils literal notranslate"><span class="pre">DATETIME</span></code> or <code class="docutils literal notranslate"><span class="pre">DATETIME2</span></code> as before. Only timezone-aware
 datetimes use <code class="docutils literal notranslate"><span class="pre">DATETIMEOFFSET</span></code>.</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Python’s <a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">datetime.datetime</span></code></a> has microsecond precision (6
+<p>Python’s <a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">datetime.datetime</span></code></a> has microsecond precision (6
 digits). SQL Server <code class="docutils literal notranslate"><span class="pre">DATETIMEOFFSET</span></code> supports up to 7 digits
 (100-nanosecond precision). The 7th digit is truncated when reading
 from SQL Server and is not available when writing.</p>
@@ -200,7 +201,7 @@ from SQL Server and is not available when writing.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="encryption.html" class="btn btn-neutral float-left" title="TLS/SSL Encryption" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="entra.html" class="btn btn-neutral float-left" title="Microsoft Entra ID Authentication" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="api.html" class="btn btn-neutral float-right" title="API Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

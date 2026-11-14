@@ -14,8 +14,8 @@
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="_static/documentation_options.js?v=b21de401"></script>
-      <script src="_static/doctools.js?v=9a2dae69"></script>
-      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -53,6 +53,7 @@
 <li class="toctree-l1"><a class="reference internal" href="bulk_insert.html">Bulk Insert</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pooling.html">Connection Pooling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="encryption.html">TLS/SSL Encryption</a></li>
+<li class="toctree-l1"><a class="reference internal" href="entra.html">Microsoft Entra ID Authentication</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="api.html">API Reference</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="connection.html">Connection</a></li>
@@ -158,7 +159,7 @@ specification for Microsoft SQL Server.</p>
 
 <dl class="py exception">
 <dt class="sig sig-object py" id="k_ctds.Error">
-<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">k_ctds.</span></span><span class="sig-name descname"><span class="pre">Error</span></span><a class="headerlink" href="#k_ctds.Error" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">k_ctds.</span></span><span class="sig-name descname"><span class="pre">Error</span></span><a class="headerlink" href="#k_ctds.Error" title="Link to this definition"></a></dt>
 <dd><p><span class="target" id="index-3"></span><a class="pep reference external" href="https://peps.python.org/pep-0249/#error"><strong>PEP 0249#error</strong></a></p>
 <p>Exception that is the base class of all other error exceptions. You
 can use this to catch all errors with one single except statement.</p>
@@ -166,7 +167,7 @@ can use this to catch all errors with one single except statement.</p>
 
 <dl class="py exception">
 <dt class="sig sig-object py" id="k_ctds.InterfaceError">
-<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">k_ctds.</span></span><span class="sig-name descname"><span class="pre">InterfaceError</span></span><a class="headerlink" href="#k_ctds.InterfaceError" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">k_ctds.</span></span><span class="sig-name descname"><span class="pre">InterfaceError</span></span><a class="headerlink" href="#k_ctds.InterfaceError" title="Link to this definition"></a></dt>
 <dd><p><span class="target" id="index-4"></span><a class="pep reference external" href="https://peps.python.org/pep-0249/#interfaceerror"><strong>PEP 0249#interfaceerror</strong></a></p>
 <p>Exception raised for errors that are related to the database interface
 rather than the database itself.</p>
@@ -174,18 +175,18 @@ rather than the database itself.</p>
 
 <dl class="py exception">
 <dt class="sig sig-object py" id="k_ctds.DatabaseError">
-<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">k_ctds.</span></span><span class="sig-name descname"><span class="pre">DatabaseError</span></span><a class="headerlink" href="#k_ctds.DatabaseError" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">k_ctds.</span></span><span class="sig-name descname"><span class="pre">DatabaseError</span></span><a class="headerlink" href="#k_ctds.DatabaseError" title="Link to this definition"></a></dt>
 <dd><p><span class="target" id="index-5"></span><a class="pep reference external" href="https://peps.python.org/pep-0249/#databaseerror"><strong>PEP 0249#databaseerror</strong></a></p>
 <p>Exception raised for errors that are related to the database.</p>
 <p>The exception contains the following properties:</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="k_ctds.DatabaseError.db_error">
 <span class="sig-name descname"><span class="pre">db_error</span></span><a class="headerlink" href="#k_ctds.DatabaseError.db_error" title="Link to this definition"></a></dt>
-<dd><p>A <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a> containing information relating to an
+<dd><p>A <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a> containing information relating to an
 error returned by the database.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-    <span class="s1">&#39;number&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">,</span>
-    <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="s1">&#39;An error description&#39;</span>
+    <span class="s1">'number'</span><span class="p">:</span> <span class="mi">123</span><span class="p">,</span>
+    <span class="s1">'description'</span><span class="p">:</span> <span class="s1">'An error description'</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -194,13 +195,13 @@ error returned by the database.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="k_ctds.DatabaseError.os_error">
 <span class="sig-name descname"><span class="pre">os_error</span></span><a class="headerlink" href="#k_ctds.DatabaseError.os_error" title="Link to this definition"></a></dt>
-<dd><p>A <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a> containing information relating to an
+<dd><p>A <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a> containing information relating to an
 error caused by a database connection issue.
-This will be <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">None</span></code></a> if the error was not caused by a
+This will be <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">None</span></code></a> if the error was not caused by a
 connection issue.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-    <span class="s1">&#39;number&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">,</span>
-    <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="s1">&#39;An error description&#39;</span>
+    <span class="s1">'number'</span><span class="p">:</span> <span class="mi">123</span><span class="p">,</span>
+    <span class="s1">'description'</span><span class="p">:</span> <span class="s1">'An error description'</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -209,18 +210,18 @@ connection issue.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="k_ctds.DatabaseError.last_message">
 <span class="sig-name descname"><span class="pre">last_message</span></span><a class="headerlink" href="#k_ctds.DatabaseError.last_message" title="Link to this definition"></a></dt>
-<dd><p>A <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a> containing more detailed information about.
+<dd><p>A <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a> containing more detailed information about.
 the error returned from the database.
-This may be <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">None</span></code></a> if the error does not include more
+This may be <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">None</span></code></a> if the error does not include more
 information from the database, e.g. a connection error.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-    <span class="s1">&#39;number&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">,</span>
-    <span class="s1">&#39;state&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-    <span class="s1">&#39;severity&#39;</span><span class="p">:</span> <span class="mi">16</span><span class="p">,</span>
-    <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="s1">&#39;An error description&#39;</span>
-    <span class="s1">&#39;server&#39;</span><span class="p">:</span> <span class="s1">&#39;database-hostname&#39;</span>
-    <span class="s1">&#39;proc&#39;</span><span class="p">:</span> <span class="s1">&#39;procedure_name&#39;</span>
-    <span class="s1">&#39;line&#39;</span><span class="p">:</span> <span class="mi">34</span>
+    <span class="s1">'number'</span><span class="p">:</span> <span class="mi">123</span><span class="p">,</span>
+    <span class="s1">'state'</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="s1">'severity'</span><span class="p">:</span> <span class="mi">16</span><span class="p">,</span>
+    <span class="s1">'description'</span><span class="p">:</span> <span class="s1">'An error description'</span>
+    <span class="s1">'server'</span><span class="p">:</span> <span class="s1">'database-hostname'</span>
+    <span class="s1">'proc'</span><span class="p">:</span> <span class="s1">'procedure_name'</span>
+    <span class="s1">'line'</span><span class="p">:</span> <span class="mi">34</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -230,7 +231,7 @@ information from the database, e.g. a connection error.</p>
 
 <dl class="py exception">
 <dt class="sig sig-object py" id="k_ctds.DataError">
-<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">k_ctds.</span></span><span class="sig-name descname"><span class="pre">DataError</span></span><a class="headerlink" href="#k_ctds.DataError" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">k_ctds.</span></span><span class="sig-name descname"><span class="pre">DataError</span></span><a class="headerlink" href="#k_ctds.DataError" title="Link to this definition"></a></dt>
 <dd><p><span class="target" id="index-6"></span><a class="pep reference external" href="https://peps.python.org/pep-0249/#dataerror"><strong>PEP 0249#dataerror</strong></a></p>
 <p>Exception raised for errors that are due to problems with the
 processed data like division by zero, numeric value out of range,
@@ -239,7 +240,7 @@ etc.</p>
 
 <dl class="py exception">
 <dt class="sig sig-object py" id="k_ctds.OperationalError">
-<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">k_ctds.</span></span><span class="sig-name descname"><span class="pre">OperationalError</span></span><a class="headerlink" href="#k_ctds.OperationalError" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">k_ctds.</span></span><span class="sig-name descname"><span class="pre">OperationalError</span></span><a class="headerlink" href="#k_ctds.OperationalError" title="Link to this definition"></a></dt>
 <dd><p><span class="target" id="index-7"></span><a class="pep reference external" href="https://peps.python.org/pep-0249/#operationalerror"><strong>PEP 0249#operationalerror</strong></a></p>
 <p>Exception raised for errors that are related to the database’s
 operation and not necessarily under the control of the programmer,
@@ -250,7 +251,7 @@ error occurred during processing, etc.</p>
 
 <dl class="py exception">
 <dt class="sig sig-object py" id="k_ctds.IntegrityError">
-<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">k_ctds.</span></span><span class="sig-name descname"><span class="pre">IntegrityError</span></span><a class="headerlink" href="#k_ctds.IntegrityError" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">k_ctds.</span></span><span class="sig-name descname"><span class="pre">IntegrityError</span></span><a class="headerlink" href="#k_ctds.IntegrityError" title="Link to this definition"></a></dt>
 <dd><p><span class="target" id="index-8"></span><a class="pep reference external" href="https://peps.python.org/pep-0249/#integrityerror"><strong>PEP 0249#integrityerror</strong></a></p>
 <p>Exception raised when the relational integrity of the database is
 affected, e.g. a foreign key check fails.</p>
@@ -258,7 +259,7 @@ affected, e.g. a foreign key check fails.</p>
 
 <dl class="py exception">
 <dt class="sig sig-object py" id="k_ctds.InternalError">
-<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">k_ctds.</span></span><span class="sig-name descname"><span class="pre">InternalError</span></span><a class="headerlink" href="#k_ctds.InternalError" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">k_ctds.</span></span><span class="sig-name descname"><span class="pre">InternalError</span></span><a class="headerlink" href="#k_ctds.InternalError" title="Link to this definition"></a></dt>
 <dd><p><span class="target" id="index-9"></span><a class="pep reference external" href="https://peps.python.org/pep-0249/#internalerror"><strong>PEP 0249#internalerror</strong></a></p>
 <p>Exception raised when the database encounters an internal error,
 e.g. the cursor is not valid anymore, the transaction is out of
@@ -267,7 +268,7 @@ sync, etc.</p>
 
 <dl class="py exception">
 <dt class="sig sig-object py" id="k_ctds.ProgrammingError">
-<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">k_ctds.</span></span><span class="sig-name descname"><span class="pre">ProgrammingError</span></span><a class="headerlink" href="#k_ctds.ProgrammingError" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">k_ctds.</span></span><span class="sig-name descname"><span class="pre">ProgrammingError</span></span><a class="headerlink" href="#k_ctds.ProgrammingError" title="Link to this definition"></a></dt>
 <dd><p><span class="target" id="index-10"></span><a class="pep reference external" href="https://peps.python.org/pep-0249/#programmingerror"><strong>PEP 0249#programmingerror</strong></a></p>
 <p>Exception raised for programming errors, e.g. table not found or
 already exists, syntax error in the SQL statement, wrong number of
@@ -276,7 +277,7 @@ parameters specified, etc.</p>
 
 <dl class="py exception">
 <dt class="sig sig-object py" id="k_ctds.NotSupportedError">
-<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">k_ctds.</span></span><span class="sig-name descname"><span class="pre">NotSupportedError</span></span><a class="headerlink" href="#k_ctds.NotSupportedError" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">k_ctds.</span></span><span class="sig-name descname"><span class="pre">NotSupportedError</span></span><a class="headerlink" href="#k_ctds.NotSupportedError" title="Link to this definition"></a></dt>
 <dd><p><span class="target" id="index-11"></span><a class="pep reference external" href="https://peps.python.org/pep-0249/#notsupportederror"><strong>PEP 0249#notsupportederror</strong></a></p>
 <p>Exception raised in case a method or database API was used which is
 not supported by the database, e.g. calling
@@ -286,7 +287,7 @@ support transactions or has transactions turned off.</p>
 
 <dl class="py exception">
 <dt class="sig sig-object py" id="k_ctds.Warning">
-<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">k_ctds.</span></span><span class="sig-name descname"><span class="pre">Warning</span></span><a class="headerlink" href="#k_ctds.Warning" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">k_ctds.</span></span><span class="sig-name descname"><span class="pre">Warning</span></span><a class="headerlink" href="#k_ctds.Warning" title="Link to this definition"></a></dt>
 <dd><p><span class="target" id="index-12"></span><a class="pep reference external" href="https://peps.python.org/pep-0249/#warning"><strong>PEP 0249#warning</strong></a></p>
 <p>Exception raised for important warnings like data truncations while
 inserting, etc.</p>
@@ -300,7 +301,7 @@ string value.</p>
 <p><span class="target" id="index-13"></span><a class="pep reference external" href="https://peps.python.org/pep-0249/#binary"><strong>PEP 0249#binary</strong></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>string</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The string value to convert to binary.</p>
+<dd class="field-odd"><p><strong>string</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The string value to convert to binary.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A new binary object.</p>
@@ -319,16 +320,16 @@ string value.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>year</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The year.</p></li>
-<li><p><strong>month</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The month.</p></li>
-<li><p><strong>day</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The day.</p></li>
+<li><p><strong>year</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – The year.</p></li>
+<li><p><strong>month</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – The month.</p></li>
+<li><p><strong>day</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – The day.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A new <cite>date</cite> object.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.date" title="(in Python v3.14)">datetime.date</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.date" title="(in Python v3.15)">datetime.date</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -342,13 +343,13 @@ the standard Python time module for details).</p>
 <p><span class="target" id="index-15"></span><a class="pep reference external" href="https://peps.python.org/pep-0249/#datefromticks"><strong>PEP 0249#datefromticks</strong></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>ticks</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The number of seconds since the epoch.</p>
+<dd class="field-odd"><p><strong>ticks</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – The number of seconds since the epoch.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A new date object.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.date" title="(in Python v3.14)">datetime.date</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.date" title="(in Python v3.15)">datetime.date</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -361,16 +362,16 @@ the standard Python time module for details).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>hour</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The hour.</p></li>
-<li><p><strong>minute</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The minute.</p></li>
-<li><p><strong>second</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The second.</p></li>
+<li><p><strong>hour</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – The hour.</p></li>
+<li><p><strong>minute</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – The minute.</p></li>
+<li><p><strong>second</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – The second.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A new <cite>time</cite> object.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.time" title="(in Python v3.14)">datetime.time</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.time" title="(in Python v3.15)">datetime.time</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -384,13 +385,13 @@ the standard Python time module for details).</p>
 <p><span class="target" id="index-17"></span><a class="pep reference external" href="https://peps.python.org/pep-0249/#timefromticks"><strong>PEP 0249#timefromticks</strong></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>ticks</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The number of seconds since the epoch.</p>
+<dd class="field-odd"><p><strong>ticks</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – The number of seconds since the epoch.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A new <cite>time</cite> object.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.time" title="(in Python v3.14)">datetime.time</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.time" title="(in Python v3.15)">datetime.time</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -403,19 +404,19 @@ the standard Python time module for details).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>year</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The year.</p></li>
-<li><p><strong>month</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The month.</p></li>
-<li><p><strong>day</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The day.</p></li>
-<li><p><strong>hour</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The hour.</p></li>
-<li><p><strong>minute</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The minute.</p></li>
-<li><p><strong>second</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The second.</p></li>
+<li><p><strong>year</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – The year.</p></li>
+<li><p><strong>month</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – The month.</p></li>
+<li><p><strong>day</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – The day.</p></li>
+<li><p><strong>hour</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – The hour.</p></li>
+<li><p><strong>minute</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – The minute.</p></li>
+<li><p><strong>second</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – The second.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A new <cite>datetime</cite> object.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime" title="(in Python v3.14)">datetime.datetime</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime" title="(in Python v3.15)">datetime.datetime</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -429,20 +430,20 @@ documentation of the standard Python time module for details).</p>
 <p><span class="target" id="index-19"></span><a class="pep reference external" href="https://peps.python.org/pep-0249/#timestampfromticks"><strong>PEP 0249#timestampfromticks</strong></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>ticks</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The number of seconds since the epoch.</p>
+<dd class="field-odd"><p><strong>ticks</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – The number of seconds since the epoch.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A new <cite>datetime</cite> object.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime" title="(in Python v3.14)">datetime.datetime</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime" title="(in Python v3.15)">datetime.datetime</a></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="k_ctds.connect">
-<span class="sig-prename descclassname"><span class="pre">k_ctds.</span></span><span class="sig-name descname"><span class="pre">connect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">server</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1433</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">database</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">appname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'k_ctds'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hostname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">login_timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tds_version</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">autocommit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ansi_defaults</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enable_bcp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">paramstyle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_only</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ntlmv2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#k_ctds.connect" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">k_ctds.</span></span><span class="sig-name descname"><span class="pre">connect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">server</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1433</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">database</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">appname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'k_ctds'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hostname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">login_timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tds_version</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">autocommit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ansi_defaults</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enable_bcp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">paramstyle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_only</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ntlmv2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">access_token</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">credential</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#k_ctds.connect" title="Link to this definition"></a></dt>
 <dd><p>Connect to a database.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -462,35 +463,49 @@ connection object is no longer required.</p>
 <div class="versionadded">
 <p><span class="versionmodified added">Added in version 1.8: </span><cite>ntlmv2</cite></p>
 </div>
+<div class="versionadded">
+<p><span class="versionmodified added">Added in version 2.3: </span><cite>access_token</cite></p>
+</div>
+<div class="versionadded">
+<p><span class="versionmodified added">Added in version 2.3: </span><cite>credential</cite></p>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>server</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The database server host.</p></li>
-<li><p><strong>port</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The database server port. This value is ignored if
+<li><p><strong>server</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The database server host.</p></li>
+<li><p><strong>port</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – The database server port. This value is ignored if
 <cite>instance</cite> is provided.</p></li>
-<li><p><strong>instance</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – An optional database instance to connect to.</p></li>
-<li><p><strong>user</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The database server username.</p></li>
-<li><p><strong>password</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The database server password.</p></li>
-<li><p><strong>database</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – An optional database to initially connect to.</p></li>
-<li><p><strong>appname</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – An optional application name to associate with
+<li><p><strong>instance</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – An optional database instance to connect to.</p></li>
+<li><p><strong>user</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The database server username.</p></li>
+<li><p><strong>password</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The database server password.</p></li>
+<li><p><strong>database</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – An optional database to initially connect to.</p></li>
+<li><p><strong>appname</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – An optional application name to associate with
 the connection.</p></li>
-<li><p><strong>hostname</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – An optional client host name to associate with
+<li><p><strong>hostname</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – An optional client host name to associate with
 the connection instead of the local device hostname.</p></li>
-<li><p><strong>login_timeout</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – An optional login timeout, in seconds.</p></li>
-<li><p><strong>timeout</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – An optional timeout for database requests, in
+<li><p><strong>login_timeout</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – An optional login timeout, in seconds.</p></li>
+<li><p><strong>timeout</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – An optional timeout for database requests, in
 seconds.</p></li>
-<li><p><strong>tds_version</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The TDS protocol version to use. If
-<a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">None</span></code></a> is specified, the highest version supported by
+<li><p><strong>tds_version</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The TDS protocol version to use. If
+<a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">None</span></code></a> is specified, the highest version supported by
 FreeTDS will be used.</p></li>
-<li><p><strong>autocommit</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Autocommit transactions on the connection.</p></li>
-<li><p><strong>ansi_defaults</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Set <cite>ANSI_DEFAULTS</cite> and related settings to
+<li><p><strong>autocommit</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) – Autocommit transactions on the connection.</p></li>
+<li><p><strong>ansi_defaults</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) – Set <cite>ANSI_DEFAULTS</cite> and related settings to
 mimic ODBC drivers.</p></li>
-<li><p><strong>enable_bcp</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Enable bulk copy support on the connection. This
+<li><p><strong>enable_bcp</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) – Enable bulk copy support on the connection. This
 is required for <a class="reference internal" href="connection.html#k_ctds.Connection.bulk_insert" title="k_ctds.Connection.bulk_insert"><code class="xref py py-meth docutils literal notranslate"><span class="pre">bulk_insert()</span></code></a> to function.</p></li>
-<li><p><strong>paramstyle</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Override the default <a class="reference internal" href="#k_ctds.paramstyle" title="k_ctds.paramstyle"><code class="xref py py-data docutils literal notranslate"><span class="pre">k_ctds.paramstyle</span></code></a> value for
+<li><p><strong>paramstyle</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – Override the default <a class="reference internal" href="#k_ctds.paramstyle" title="k_ctds.paramstyle"><code class="xref py py-data docutils literal notranslate"><span class="pre">k_ctds.paramstyle</span></code></a> value for
 this connection. Supported values: <cite>numeric</cite>, <cite>named</cite>.</p></li>
-<li><p><strong>read_only</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Indicate ‘read-only’ application intent.</p></li>
-<li><p><strong>ntlmv2</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Enable NTLMv2 authentication.</p></li>
+<li><p><strong>read_only</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) – Indicate ‘read-only’ application intent.</p></li>
+<li><p><strong>ntlmv2</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) – Enable NTLMv2 authentication.</p></li>
+<li><p><strong>access_token</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – A Microsoft Entra ID access token for the
+Azure SQL resource (<cite>https://database.windows.net/</cite>). When provided,
+<cite>user</cite> and <cite>password</cite> are ignored and federated authentication is
+used. Requires TDS version 7.4.</p></li>
+<li><p><strong>credential</strong> – An object with a <cite>get_token(scope)</cite> method, such as
+the credential classes from <cite>azure-identity</cite>. A fresh token is
+requested for every new connection, so pooled connections never
+reuse an expired token. Mutually exclusive with <cite>access_token</cite>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>

@@ -2,7 +2,30 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## v2.3.0
+
+### Added
+- Microsoft Entra ID authentication for Azure SQL. `connect()` accepts
+  `access_token` (a token string) or `credential` (any object with a
+  `get_token(scope)` method, such as the `azure-identity` credential classes).
+  A fresh token is requested for every new connection, so pooled connections
+  never reuse an expired token.
+- `k_ctds.entra.service_principal()` helper that returns a credential object
+  for an Entra ID service principal; install with `pip install k-ctds[entra]`.
+- Bundled FreeTDS updated to 1.5.21 with a patch (`freetds/`) adding
+  federated (FEDAUTH SecurityToken) login support.
+- Windows wheels now build FreeTDS with OpenSSL, so TLS (and therefore
+  Azure SQL) works on Windows.
+
+### Changed
+- Linux and macOS wheels now bundle OpenSSL 3.5 (LTS), built from source
+  during the wheel build. Previous Linux wheels shipped the build image's
+  OpenSSL 1.1.1, which is end-of-life; macOS wheels previously took
+  Homebrew's openssl@3.
+- Wheels now include the full LGPL 2.0 text and `THIRD_PARTY_NOTICES`, and
+  the notices describe the bundled FreeTDS version and patch.
+- Package metadata declares the license as an SPDX expression (PEP 639);
+  building from source now requires setuptools 77 or later.
 
 ## v2.2.0
 
@@ -351,7 +374,8 @@ _NVARCHAR_ arguments to remote procedure calls.
 ## [1.0.0] - 2016-03-14
 Initial Release
 
-[Unreleased]: https://github.com/koddachad/k_ctds/compare/v2.2.0...HEAD
+[Unreleased]: https://github.com/koddachad/k_ctds/compare/v2.3.0...HEAD
+[2.3.0]: https://github.com/koddachad/k_ctds/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/koddachad/k_ctds/compare/v2.1.1...v2.2.0
 [2.1.0]: https://github.com/koddachad/k_ctds/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/koddachad/k_ctds/compare/v1.15.0...v2.0.0

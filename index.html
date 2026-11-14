@@ -16,8 +16,8 @@
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="_static/documentation_options.js?v=b21de401"></script>
-      <script src="_static/doctools.js?v=9a2dae69"></script>
-      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -54,6 +54,7 @@
 <li class="toctree-l1"><a class="reference internal" href="bulk_insert.html">Bulk Insert</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pooling.html">Connection Pooling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="encryption.html">TLS/SSL Encryption</a></li>
+<li class="toctree-l1"><a class="reference internal" href="entra.html">Microsoft Entra ID Authentication</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Change Log</a></li>
@@ -109,7 +110,8 @@ originally developed by Zillow.</p>
 <li><p>Bulk insert (bcp) support.</p></li>
 <li><p>Written entirely in C.</p></li>
 <li><p>Pre-built wheels with bundled <a class="reference external" href="https://www.freetds.org/">FreeTDS</a> and <a class="reference external" href="https://www.openssl.org/">OpenSSL</a> for Linux, macOS, and Windows.</p></li>
-<li><p>TLS/SSL support out of the box (OpenSSL 3.0).</p></li>
+<li><p>TLS/SSL support out of the box (OpenSSL 3).</p></li>
+<li><p>Microsoft Entra ID (access token) authentication for Azure SQL.</p></li>
 </ul>
 </section>
 <section id="installation">
@@ -124,9 +126,10 @@ to install. TLS/SSL connections to SQL Server (including Azure SQL) work
 out of the box.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Pre-built wheels bundle <strong>OpenSSL 3.0</strong> (Apache 2.0 license) and
-<strong>FreeTDS 1.5.x</strong> (LGPL-2.0, dynamically linked). See
-<code class="docutils literal notranslate"><span class="pre">THIRD_PARTY_NOTICES</span></code> for details.</p>
+<p>Pre-built wheels bundle <strong>OpenSSL 3</strong> (Apache 2.0 license) and
+<strong>FreeTDS 1.5.x</strong> (LGPL-2.0, dynamically linked) with the k-cTDS
+Entra ID patch applied. See <code class="docutils literal notranslate"><span class="pre">THIRD_PARTY_NOTICES</span></code> and
+<code class="docutils literal notranslate"><span class="pre">LICENSE.FreeTDS</span></code> for details.</p>
 </div>
 <section id="using-a-custom-freetds">
 <h3>Using a Custom FreeTDS<a class="headerlink" href="#using-a-custom-freetds" title="Link to this heading"></a></h3>
@@ -152,12 +155,13 @@ pip<span class="w"> </span>install<span class="w"> </span>k-ctds<span class="w">
 pip<span class="w"> </span>install<span class="w"> </span>k-ctds<span class="w"> </span>--no-binary<span class="w"> </span>k-ctds
 </pre></div>
 </div>
-<p>On <strong>Windows</strong> (requires Visual Studio 2022 Build Tools, CMake, and 7-Zip):</p>
+<p>On <strong>Windows</strong> (requires Visual Studio 2022 Build Tools, CMake, 7-Zip, Git, and
+OpenSSL 3; set <code class="docutils literal notranslate"><span class="pre">OPENSSL_ROOT_DIR</span></code> if OpenSSL is not under <code class="docutils literal notranslate"><span class="pre">C:\Program</span> <span class="pre">Files\OpenSSL</span></code>):</p>
 <div class="highlight-powershell notranslate"><div class="highlight"><pre><span></span><span class="c"># Build FreeTDS from source (uses the included helper script)</span>
 <span class="p">./</span><span class="n">windows</span><span class="p">/</span><span class="n">freetds-install</span><span class="p">.</span><span class="n">ps1</span>
 
-<span class="nv">$Env:CTDS_INCLUDE_DIRS</span> <span class="p">=</span> <span class="s2">&quot;</span><span class="p">$(</span><span class="n">pwd</span><span class="p">)</span><span class="s2">/build/include&quot;</span>
-<span class="nv">$Env:CTDS_LIBRARY_DIRS</span> <span class="p">=</span> <span class="s2">&quot;</span><span class="p">$(</span><span class="n">pwd</span><span class="p">)</span><span class="s2">/build/lib&quot;</span>
+<span class="nv">$Env:CTDS_INCLUDE_DIRS</span> <span class="p">=</span> <span class="s2">"</span><span class="p">$(</span><span class="n">pwd</span><span class="p">)</span><span class="s2">/build/include"</span>
+<span class="nv">$Env:CTDS_LIBRARY_DIRS</span> <span class="p">=</span> <span class="s2">"</span><span class="p">$(</span><span class="n">pwd</span><span class="p">)</span><span class="s2">/build/lib"</span>
 <span class="n">pip</span> <span class="n">install</span> <span class="n">k-ctds</span> <span class="p">-</span><span class="n">-no-binary</span> <span class="n">k-ctds</span>
 </pre></div>
 </div>
@@ -233,6 +237,15 @@ must be available on the system.</p>
 <li class="toctree-l2"><a class="reference internal" href="encryption.html#troubleshooting">Troubleshooting</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="entra.html">Microsoft Entra ID Authentication</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="entra.html#service-principal">Service principal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="entra.html#token-string">Token string</a></li>
+<li class="toctree-l2"><a class="reference internal" href="entra.html#connection-pools">Connection pools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="entra.html#token-lifetime">Token lifetime</a></li>
+<li class="toctree-l2"><a class="reference internal" href="entra.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="entra.html#helper-reference">Helper reference</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="faq.html#why-can-t-i-pass-an-empty-string-to-k-ctds-cursor-callproc">Why can’t I pass an empty string to <code class="xref py py-meth docutils literal notranslate"><span class="pre">k_ctds.Cursor.callproc()</span></code>?</a></li>
 <li class="toctree-l2"><a class="reference internal" href="faq.html#why-doesn-t-raiserror-raise-a-python-exception">Why doesn’t <cite>RAISERROR</cite> raise a Python exception?</a></li>
@@ -251,45 +264,45 @@ must be available on the system.</p>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Change Log</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#unreleased">Unreleased</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#v2-3-0">v2.3.0</a></li>
 <li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#v2-2-0">v2.2.0</a></li>
 <li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#v2-1-1">v2.1.1</a></li>
 <li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#v2-1-0">v2.1.0</a></li>
 <li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#v2-0-0">v2.0.0</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id3">1.15.0 - 2026-02-11</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id5">[1.14.0] - 2021-03-25</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id7">[1.13.0] - 2020-11-12</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id10">[1.12.0] - 2020-03-07</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id12">[1.11.0] - 2019-11-14</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id15">[1.10.1] - 2019-06-27</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id17">[1.10.0] - 2019-04-15</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id20">[1.9.0] - 2018-11-05</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id23">[1.8.0] - 2018-09-07</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id26">[1.7.0] - 2018-01-24</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id29">[1.6.3] - 2017-12-05</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id31">[1.6.2] - 2017-11-27</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id33">[1.6.1] - 2017-11-20</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id35">[1.6.0] - 2017-11-17</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id38">[1.5.0] - 2017-10-16</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id40">[1.4.1] - 2017-09-29</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id42">[1.4.0] - 2017-09-13</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id45">[1.3.2] - 2017-07-25</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id48">[1.3.1] - 2017-05-31</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id50">[1.3.0] - 2017-03-15</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id52">[1.2.3] - 2017-03-13</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id54">[1.2.2] - 2017-01-10</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id56">[1.2.1] - 2016-12-27</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id58">[1.2.0] - 2016-12-27</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id61">[1.1.0] - 2016-11-14</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id64">[1.0.8] - 2016-08-17</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id66">[1.0.7] - 2016-08-15</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id68">[1.0.6] - 2016-08-15</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id71">[1.0.5] - 2016-05-23</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id73">[1.0.4] - 2016-05-19</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id76">[1.0.3] - 2016-03-31</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id79">[1.0.2] - 2016-03-15</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id82">[1.0.1] - 2016-03-14</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id85">[1.0.0] - 2016-03-14</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id4">1.15.0 - 2026-02-11</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id7">[1.14.0] - 2021-03-25</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id9">[1.13.0] - 2020-11-12</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id12">[1.12.0] - 2020-03-07</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id14">[1.11.0] - 2019-11-14</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id17">[1.10.1] - 2019-06-27</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id19">[1.10.0] - 2019-04-15</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id22">[1.9.0] - 2018-11-05</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id25">[1.8.0] - 2018-09-07</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id28">[1.7.0] - 2018-01-24</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id31">[1.6.3] - 2017-12-05</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id33">[1.6.2] - 2017-11-27</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id35">[1.6.1] - 2017-11-20</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id37">[1.6.0] - 2017-11-17</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id40">[1.5.0] - 2017-10-16</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id42">[1.4.1] - 2017-09-29</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id44">[1.4.0] - 2017-09-13</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id47">[1.3.2] - 2017-07-25</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id50">[1.3.1] - 2017-05-31</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id52">[1.3.0] - 2017-03-15</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id54">[1.2.3] - 2017-03-13</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id56">[1.2.2] - 2017-01-10</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id58">[1.2.1] - 2016-12-27</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id60">[1.2.0] - 2016-12-27</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id63">[1.1.0] - 2016-11-14</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id66">[1.0.8] - 2016-08-17</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id68">[1.0.7] - 2016-08-15</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id70">[1.0.6] - 2016-08-15</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id73">[1.0.5] - 2016-05-23</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id75">[1.0.4] - 2016-05-19</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id78">[1.0.3] - 2016-03-31</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id81">[1.0.2] - 2016-03-15</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id84">[1.0.1] - 2016-03-14</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CHANGELOG.html#id87">[1.0.0] - 2016-03-14</a></li>
 </ul>
 </li>
 </ul>

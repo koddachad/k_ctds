@@ -14,8 +14,8 @@
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="_static/documentation_options.js?v=b21de401"></script>
-      <script src="_static/doctools.js?v=9a2dae69"></script>
-      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -60,6 +60,7 @@
 <li class="toctree-l1"><a class="reference internal" href="bulk_insert.html">Bulk Insert</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pooling.html">Connection Pooling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="encryption.html">TLS/SSL Encryption</a></li>
+<li class="toctree-l1"><a class="reference internal" href="entra.html">Microsoft Entra ID Authentication</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Change Log</a></li>
@@ -112,18 +113,18 @@ style as defined in <span class="target" id="index-0"></span><a class="pep refer
 index of 0.</p>
 </div>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-    <span class="s1">&#39;SELECT * FROM MyTable WHERE Id = :0 AND OtherId = :1&#39;</span><span class="p">,</span>
+    <span class="s1">'SELECT * FROM MyTable WHERE Id = :0 AND OtherId = :1'</span><span class="p">,</span>
     <span class="p">(</span><span class="mi">1234</span><span class="p">,</span> <span class="mi">5678</span><span class="p">)</span>
 <span class="p">)</span>
 
 <span class="n">cursor</span><span class="o">.</span><span class="n">executemany</span><span class="p">(</span>
-<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="w">    </span><span class="sd">'''</span>
 <span class="sd">    INSERT (Id, OtherId, Name, Birthday) INTO MyTable</span>
 <span class="sd">    VALUES (:0, :1, :2, :3)</span>
-<span class="sd">    &#39;&#39;&#39;</span><span class="p">,</span>
+<span class="sd">    '''</span><span class="p">,</span>
     <span class="p">(</span>
-        <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;John Doe&#39;</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2001</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
-        <span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="mi">22</span><span class="p">,</span> <span class="s1">&#39;Jane Doe&#39;</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">1974</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">11</span><span class="p">)),</span>
+        <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">'John Doe'</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2001</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
+        <span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="mi">22</span><span class="p">,</span> <span class="s1">'Jane Doe'</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">1974</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">11</span><span class="p">)),</span>
     <span class="p">)</span>
 <span class="p">)</span>
 </pre></div>
@@ -133,12 +134,12 @@ index of 0.</p>
 <p>Parameter SQL types are inferred from the Python object type. If desired,
 the SQL type can be explicitly specified using a
 <a class="reference internal" href="types.html"><span class="doc">type wrapper class</span></a>. For example, this is necessary when passing
-<a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a> for a <cite>BINARY</cite> column.</p>
+<a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a> for a <cite>BINARY</cite> column.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="w">    </span><span class="sd">'''</span>
 <span class="sd">    INSERT (Id, BinaryValue) INTO MyTable</span>
 <span class="sd">    VALUES (:0, :1)</span>
-<span class="sd">    &#39;&#39;&#39;</span><span class="p">,</span>
+<span class="sd">    '''</span><span class="p">,</span>
     <span class="p">(</span>
         <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">cursor</span><span class="o">.</span><span class="n">SqlBinary</span><span class="p">(</span><span class="kc">None</span><span class="p">)),</span>
     <span class="p">)</span>
@@ -147,7 +148,7 @@ the SQL type can be explicitly specified using a
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Timezone-aware <a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">datetime.datetime</span></code></a> objects are automatically
+<p>Timezone-aware <a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">datetime.datetime</span></code></a> objects are automatically
 mapped to the SQL <code class="docutils literal notranslate"><span class="pre">DATETIMEOFFSET</span></code> type when using TDS 7.3+.
 Naive datetimes continue to map to <code class="docutils literal notranslate"><span class="pre">DATETIME</span></code>/<code class="docutils literal notranslate"><span class="pre">DATETIME2</span></code>.</p>
 </div>
@@ -159,15 +160,15 @@ Naive datetimes continue to map to <code class="docutils literal notranslate"><s
 <a class="reference internal" href="cursor.html#k_ctds.Cursor.executemany" title="k_ctds.Cursor.executemany"><code class="xref py py-meth docutils literal notranslate"><span class="pre">k_ctds.Cursor.executemany()</span></code></a>, any SQL code which defines parameters
 cannot be used with execute parameters. For example, the following is <strong>not</strong>
 supported:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Parameters passed from python are not supported with SQL &#39;@&#39;</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Parameters passed from python are not supported with SQL '@'</span>
 <span class="c1"># parameters.</span>
 <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="w">    </span><span class="sd">'''</span>
 <span class="sd">    CREATE PROCEDURE Increment</span>
 <span class="sd">        @value INT OUTPUT</span>
 <span class="sd">    AS</span>
 <span class="sd">        SET @value = @value + :0;</span>
-<span class="sd">    &#39;&#39;&#39;</span><span class="p">,</span>
+<span class="sd">    '''</span><span class="p">,</span>
     <span class="p">(</span><span class="mi">1</span><span class="p">,)</span>
 <span class="p">)</span>
 </pre></div>

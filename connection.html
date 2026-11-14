@@ -14,8 +14,8 @@
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="_static/documentation_options.js?v=b21de401"></script>
-      <script src="_static/doctools.js?v=9a2dae69"></script>
-      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -53,6 +53,7 @@
 <li class="toctree-l1"><a class="reference internal" href="bulk_insert.html">Bulk Insert</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pooling.html">Connection Pooling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="encryption.html">TLS/SSL Encryption</a></li>
+<li class="toctree-l1"><a class="reference internal" href="entra.html">Microsoft Entra ID Authentication</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="api.html">API Reference</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Connection</a><ul>
@@ -118,7 +119,7 @@
 <h1>Connection<a class="headerlink" href="#connection" title="Link to this heading"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="k_ctds.Connection">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">k_ctds.</span></span><span class="sig-name descname"><span class="pre">Connection</span></span><a class="headerlink" href="#k_ctds.Connection" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">k_ctds.</span></span><span class="sig-name descname"><span class="pre">Connection</span></span><a class="headerlink" href="#k_ctds.Connection" title="Link to this definition"></a></dt>
 <dd><p>A connection to the database server.</p>
 <p><span class="target" id="index-0"></span><a class="pep reference external" href="https://peps.python.org/pep-0249/#connection-objects"><strong>PEP 0249#connection-objects</strong></a></p>
 <dl class="py method">
@@ -146,16 +147,16 @@ will be implicitly rolled back when the connection is closed.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>exc_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#type" title="(in Python v3.14)"><em>type</em></a>) – The exception type, if an exception
-is raised in the context, otherwise <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">None</span></code></a>.</p></li>
-<li><p><strong>exc_val</strong> (<a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.14)"><em>Exception</em></a>) – The exception value, if an exception
-is raised in the context, otherwise <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">None</span></code></a>.</p></li>
-<li><p><strong>exc_tb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><em>object</em></a>) – The exception traceback, if an exception
-is raised in the context, otherwise <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">None</span></code></a>.</p></li>
+<li><p><strong>exc_type</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#type" title="(in Python v3.15)"><em>type</em></a>) – The exception type, if an exception
+is raised in the context, otherwise <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">None</span></code></a>.</p></li>
+<li><p><strong>exc_val</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#Exception" title="(in Python v3.15)"><em>Exception</em></a>) – The exception value, if an exception
+is raised in the context, otherwise <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">None</span></code></a>.</p></li>
+<li><p><strong>exc_tb</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><em>object</em></a>) – The exception traceback, if an exception
+is raised in the context, otherwise <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">None</span></code></a>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">None</span></code></a></p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">None</span></code></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -171,11 +172,11 @@ is raised in the context, otherwise <a class="reference external" href="https://
 <span class="sig-name descname"><span class="pre">autocommit</span></span><a class="headerlink" href="#k_ctds.Connection.autocommit" title="Link to this definition"></a></dt>
 <dd><p>Auto-commit transactions after <a class="reference internal" href="cursor.html#k_ctds.Cursor.execute" title="k_ctds.Cursor.execute"><code class="xref py py-meth docutils literal notranslate"><span class="pre">k_ctds.Cursor.execute()</span></code></a>,
 <a class="reference internal" href="cursor.html#k_ctds.Cursor.executemany" title="k_ctds.Cursor.executemany"><code class="xref py py-meth docutils literal notranslate"><span class="pre">k_ctds.Cursor.executemany()</span></code></a>, and <a class="reference internal" href="cursor.html#k_ctds.Cursor.callproc" title="k_ctds.Cursor.callproc"><code class="xref py py-meth docutils literal notranslate"><span class="pre">k_ctds.Cursor.callproc()</span></code></a>.
-If <a class="reference external" href="https://docs.python.org/3/library/constants.html#False" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">False</span></code></a>, operations must be committed explicitly using
+If <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#False" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">False</span></code></a>, operations must be committed explicitly using
 <a class="reference internal" href="#k_ctds.Connection.commit" title="k_ctds.Connection.commit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">commit()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)">bool</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)">bool</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -192,14 +193,14 @@ after <cite>batch_size</cite> rows have been copied to server.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>table</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The table in which to insert the rows.</p></li>
-<li><p><strong>rows</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#typeiter" title="(in Python v3.14)"><span class="xref std std-ref">typeiter</span></a>) – An iterable of data rows. Data rows are Python <cite>sequence</cite>
+<li><p><strong>table</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The table in which to insert the rows.</p></li>
+<li><p><strong>rows</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#typeiter" title="(in Python v3.15)"><span class="xref std std-ref">typeiter</span></a>) – An iterable of data rows. Data rows are Python <cite>sequence</cite>
 objects. Each item in the data row is inserted into the table in
 sequential order.
-Version 1.9 supports passing rows as <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>. Keys must map
+Version 1.9 supports passing rows as <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>. Keys must map
 to column names and must exist for all non-NULL columns.</p></li>
-<li><p><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – An optional batch size.</p></li>
-<li><p><strong>tablock</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Should the <cite>TABLOCK</cite> hint be passed?</p></li>
+<li><p><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – An optional batch size.</p></li>
+<li><p><strong>tablock</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) – Should the <cite>TABLOCK</cite> hint be passed?</p></li>
 <li><p><strong>auto_encode</strong> – Controls automatic encoding of Python <cite>str</cite> values
 based on the target column’s collation. When <cite>True</cite>,
 column metadata is queried from INFORMATION_SCHEMA.COLUMNS before
@@ -216,7 +217,7 @@ code page. .. versionadded:: 2.0.0</p></li>
 <dd class="field-even"><p>The number of rows saved to the table.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)">int</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -238,20 +239,20 @@ created will raise <a class="reference internal" href="ctds.html#k_ctds.Interfac
 <a class="reference internal" href="#k_ctds.Connection.bulk_insert" title="k_ctds.Connection.bulk_insert"><code class="xref py py-meth docutils literal notranslate"><span class="pre">bulk_insert()</span></code></a> via the <cite>auto_encode</cite> parameter to avoid
 repeated INFORMATION_SCHEMA queries when inserting multiple batches
 into the same table.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">codecs</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">column_codecs</span><span class="p">(</span><span class="s1">&#39;dbo.MyTable&#39;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">codecs</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">column_codecs</span><span class="p">(</span><span class="s1">'dbo.MyTable'</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">chunks</span><span class="p">:</span>
-    <span class="n">connection</span><span class="o">.</span><span class="n">bulk_insert</span><span class="p">(</span><span class="s1">&#39;dbo.MyTable&#39;</span><span class="p">,</span> <span class="n">chunk</span><span class="p">,</span> <span class="n">auto_encode</span><span class="o">=</span><span class="n">codecs</span><span class="p">)</span>
+    <span class="n">connection</span><span class="o">.</span><span class="n">bulk_insert</span><span class="p">(</span><span class="s1">'dbo.MyTable'</span><span class="p">,</span> <span class="n">chunk</span><span class="p">,</span> <span class="n">auto_encode</span><span class="o">=</span><span class="n">codecs</span><span class="p">)</span>
 </pre></div>
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>table</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The table name (may be schema- or catalog-qualified).</p>
+<dd class="field-odd"><p><strong>table</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The table name (may be schema- or catalog-qualified).</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A codecs object for use with <a class="reference internal" href="#k_ctds.Connection.bulk_insert" title="k_ctds.Connection.bulk_insert"><code class="xref py py-meth docutils literal notranslate"><span class="pre">bulk_insert()</span></code></a>.</p>
 </dd>
 <dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If the table does not exist or is inaccessible.</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.15)"><strong>ValueError</strong></a> – If the table does not exist or is inaccessible.</p>
 </dd>
 </dl>
 <div class="versionadded">
@@ -296,10 +297,10 @@ other cursors.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="k_ctds.Connection.database">
 <span class="sig-name descname"><span class="pre">database</span></span><a class="headerlink" href="#k_ctds.Connection.database" title="Link to this definition"></a></dt>
-<dd><p>The current database or <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">None</span></code></a> if the connection is closed.</p>
+<dd><p>The current database or <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">None</span></code></a> if the connection is closed.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)">str</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -312,7 +313,7 @@ other cursors.</p>
 <a class="reference internal" href="cursor.html#k_ctds.Cursor.callproc" title="k_ctds.Cursor.callproc"><code class="xref py py-meth docutils literal notranslate"><span class="pre">k_ctds.Cursor.callproc()</span></code></a> call.
 For example, this will include messages produced by the T-SQL <cite>PRINT</cite>
 and <cite>RAISERROR</cite> statements. Messages are preserved until the next call
-to any of the above methods. <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">None</span></code></a> is returned if the
+to any of the above methods. <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">None</span></code></a> is returned if the
 connection is closed.</p>
 <p><span class="target" id="index-4"></span><a class="pep reference external" href="https://peps.python.org/pep-0249/#connection-messages"><strong>PEP 0249#connection-messages</strong></a></p>
 <div class="versionadded">
@@ -320,7 +321,7 @@ connection is closed.</p>
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a>(<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a>)</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)">list</a>(<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)">dict</a>)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -336,10 +337,10 @@ connection is closed.</p>
 <dt class="sig sig-object py" id="k_ctds.Connection.spid">
 <span class="sig-name descname"><span class="pre">spid</span></span><a class="headerlink" href="#k_ctds.Connection.spid" title="Link to this definition"></a></dt>
 <dd><p>The SQL Server Session Process ID (SPID) for the connection or
-<a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">None</span></code></a> if the connection is closed.</p>
+<a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">None</span></code></a> if the connection is closed.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)">int</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -347,11 +348,11 @@ connection is closed.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="k_ctds.Connection.tds_version">
 <span class="sig-name descname"><span class="pre">tds_version</span></span><a class="headerlink" href="#k_ctds.Connection.tds_version" title="Link to this definition"></a></dt>
-<dd><p>The TDS version in use for the connection or <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">None</span></code></a> if the
+<dd><p>The TDS version in use for the connection or <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">None</span></code></a> if the
 connection is closed.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)">str</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -359,7 +360,7 @@ connection is closed.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="k_ctds.Connection.timeout">
 <span class="sig-name descname"><span class="pre">timeout</span></span><a class="headerlink" href="#k_ctds.Connection.timeout" title="Link to this definition"></a></dt>
-<dd><p>The connection timeout, in seconds, or <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">None</span></code></a> if the connection
+<dd><p>The connection timeout, in seconds, or <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">None</span></code></a> if the connection
 is closed.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -371,7 +372,7 @@ is closed.</p>
 FreeTDS which does not support setting the timeout on a connection.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)">int</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -382,10 +383,10 @@ FreeTDS which does not support setting the timeout on a connection.</p>
 <dd><p>Set the current database.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>database</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The database.</p>
+<dd class="field-odd"><p><strong>database</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The database.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">None</span></code></a></p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">None</span></code></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -396,12 +397,12 @@ FreeTDS which does not support setting the timeout on a connection.</p>
 <h2>String Representation<a class="headerlink" href="#string-representation" title="Link to this heading"></a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">repr(connection)</span></code> returns a human-readable summary useful for
 debugging:</p>
-<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">conn</span> <span class="o">=</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">&#39;localhost&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s1">&#39;sa&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">&#39;secret&#39;</span><span class="p">)</span>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">conn</span> <span class="o">=</span> <span class="n">k_ctds</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">'localhost'</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s1">'sa'</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">'secret'</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">repr</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
-<span class="go">&quot;&lt;k_ctds.Connection database=&#39;master&#39; spid=54&gt;&quot;</span>
+<span class="go">"&lt;k_ctds.Connection database='master' spid=54&gt;"</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">repr</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
-<span class="go">&#39;&lt;k_ctds.Connection (closed)&gt;&#39;</span>
+<span class="go">'&lt;k_ctds.Connection (closed)&gt;'</span>
 </pre></div>
 </div>
 <div class="versionadded">
