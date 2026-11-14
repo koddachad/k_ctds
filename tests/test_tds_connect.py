@@ -15,7 +15,7 @@ class TestTdsConnection(TestExternalDatabase):
 connect(server, port=1433, instance=None, user='', password='', database=None, \
 appname='k_ctds', hostname=None, login_timeout=5, timeout=5, tds_version=None, \
 autocommit=False, ansi_defaults=True, enable_bcp=True, paramstyle=None, \
-read_only=False, ntlmv2=False)
+read_only=False, ntlmv2=False, access_token=None, credential=None)
 
 Connect to a database.
 
@@ -37,6 +37,12 @@ Connect to a database.
 
 .. versionadded:: 1.8
     `ntlmv2`
+
+.. versionadded:: 2.3
+    `access_token`
+
+.. versionadded:: 2.3
+    `credential`
 
 :param str server: The database server host.
 :param int port: The database server port. This value is ignored if
@@ -64,6 +70,14 @@ Connect to a database.
     this connection. Supported values: `numeric`, `named`.
 :param bool read_only: Indicate 'read-only' application intent.
 :param bool ntlmv2: Enable NTLMv2 authentication.
+:param str access_token: A Microsoft Entra ID access token for the
+    Azure SQL resource (`https://database.windows.net/`). When provided,
+    `user` and `password` are ignored and federated authentication is
+    used. Requires TDS version 7.4.
+:param credential: An object with a `get_token(scope)` method, such as
+    the credential classes from `azure-identity`. A fresh token is
+    requested for every new connection, so pooled connections never
+    reuse an expired token. Mutually exclusive with `access_token`.
 :return: A new `Connection` object connected to the database.
 :rtype: Connection
 '''

@@ -1,4 +1,6 @@
-FROM buildpack-deps:bullseye
+# Debian 12. Debian 11 (bullseye) left LTS in August 2026 and its security
+# archive no longer serves packages, which broke the image build.
+FROM buildpack-deps:bookworm
 
 ARG PYTHON_VERSION=3.6.3
 ARG FREETDS_VERSION=1.00.40
@@ -55,17 +57,21 @@ RUN set -ex \
         \) -exec rm -rf '{}' + \
     && rm -rf /usr/src/python
 
-# Install pip, setuptools, and wheel
+# Install pip, setuptools, and wheel. ensurepip ships with Python, so this
+# works for every version; the generic get-pip.py script refuses Python 3.9.
 RUN set -ex; \
-    wget -O get-pip.py 'https://bootstrap.pypa.io/get-pip.py'; \
-    python3 get-pip.py \
+    python3 -m ensurepip --upgrade; \
+    python3 -m pip install \
         --disable-pip-version-check \
         --no-cache-dir \
+        --upgrade \
+        pip \
         setuptools \
-        wheel; \
-    rm -f get-pip.py
+        wheel
 
-# FreeTDS (required by k-ctds)
+# FreeTDS (required by k-ctds), with the k_ctds FEDAUTH (Microsoft Entra ID)
+# patch applied when one exists for this version.
+COPY freetds/ /usr/src/ctds-freetds-patches/
 RUN set -ex \
     && wget -O freetds.tar.gz "https://www.freetds.org/files/stable/freetds-${FREETDS_VERSION}.tar.gz" \
     && mkdir -p /usr/src/freetds \
@@ -73,6 +79,9 @@ RUN set -ex \
     && rm freetds.tar.gz \
     && apt-get update && apt-get install -y --no-install-recommends libgnutls28-dev libssl-dev \
     && cd /usr/src/freetds \
+    && if [ -f "/usr/src/ctds-freetds-patches/fedauth-${FREETDS_VERSION}.patch" ]; then \
+        patch -p1 < "/usr/src/ctds-freetds-patches/fedauth-${FREETDS_VERSION}.patch"; \
+    fi \
     && case "${FREETDS_VERSION}" in \
         0.*) TLS_FLAG="" ;; \
         1.0*|1.1*|1.2*|1.3*) TLS_FLAG="--with-gnutls" ;; \

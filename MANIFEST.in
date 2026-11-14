@@ -1,4 +1,5 @@
 graft src/k_ctds/include
+graft freetds
 include LICENSE
 include LICENSE.FreeTDS
 include LICENSE.OpenSSL

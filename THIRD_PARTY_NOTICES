@@ -28,6 +28,19 @@ Because FreeTDS is dynamically linked (not statically linked), the
 LGPL's requirements are satisfied: users retain the ability to replace
 the bundled FreeTDS shared library with a different or modified version.
 
+Bundled version and modifications: wheels bundle the FreeTDS release
+named by FREETDS_VERSION in pyproject.toml, built from the official
+release tarball (https://www.freetds.org/files/stable/) with one
+modification applied at build time. The patch
+freetds/fedauth-<version>.patch, shipped in the k-ctds source
+distribution, adds federated (Microsoft Entra ID) SecurityToken
+authentication for TDS 7.4; each modified source file carries a notice
+of the change, and the modified library remains under the LGPL. The
+complete modified source is available as the release tarball plus that
+patch, or as tag v1.5.21-kctds.1 of https://github.com/koddachad/freetds
+(source archive:
+https://github.com/koddachad/freetds/archive/refs/tags/v1.5.21-kctds.1.tar.gz).
+
 To use your own FreeTDS instead of the bundled copy, install k-ctds
 from source:
 
@@ -40,25 +53,28 @@ installation:
     CTDS_LIBRARY_DIRS=/path/to/freetds/lib
     CTDS_RUNTIME_LIBRARY_DIRS=/path/to/freetds/lib
 
-See LICENSE.FreeTDS for the full license notice.
+See LICENSE.FreeTDS for the license notice and the full text of the
+GNU Library General Public License version 2.
 
 
 OpenSSL
 -------
-License: Apache License 2.0 (OpenSSL 3.0+)
+License: Apache License 2.0 (OpenSSL 3.x)
 SPDX:    Apache-2.0
 Website: https://www.openssl.org/
 Source:  https://github.com/openssl/openssl
 
 FreeTDS is compiled with TLS support via OpenSSL. Pre-built wheels
 include the OpenSSL shared libraries (libssl, libcrypto) as transitive
-dependencies of FreeTDS — they are bundled automatically by auditwheel,
-delocate, or copied alongside the extension on Windows.
+dependencies of FreeTDS — they are bundled automatically by auditwheel
+(Linux), delocate (macOS) or delvewheel (Windows).
 
-IMPORTANT: Pre-built wheels are guaranteed to bundle OpenSSL 3.0.x,
-which is licensed under the Apache License 2.0. OpenSSL 3.0 is built
-from source during the wheel build process (on Linux and Windows) or
-installed via Homebrew's openssl@3 formula (on macOS). Older OpenSSL
+All pre-built wheels bundle OpenSSL 3.x, which is licensed under the
+Apache License 2.0. On Linux and macOS, the release named by
+OPENSSL_VERSION in pyproject.toml is built from source during the wheel
+build (the manylinux build image only provides OpenSSL 1.1.1, which is
+not used). On Windows it comes from the OpenSSL 3 installation on the
+build machine. Older OpenSSL
 versions (1.1.1 and earlier) used a different dual-license (the
 OpenSSL License + SSLeay License) and are NOT bundled in wheels.
 

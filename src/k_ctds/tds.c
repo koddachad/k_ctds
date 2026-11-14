@@ -135,7 +135,9 @@ static const char s_tds_connect_doc[] =
             "enable_bcp=" DEFAULT_ENABLE_BCP_STR ", "
             "paramstyle=None, "
             "read_only=" DEFAULT_READ_ONLY_STR ", "
-            "ntlmv2=" DEFAULT_NTLMV2_STR ")\n"
+            "ntlmv2=" DEFAULT_NTLMV2_STR ", "
+            "access_token=None, "
+            "credential=None)\n"
     "\n"
     "Connect to a database.\n"
     "\n"
@@ -157,6 +159,12 @@ static const char s_tds_connect_doc[] =
     "\n"
     ".. versionadded:: 1.8\n"
     "    `ntlmv2`\n"
+    "\n"
+    ".. versionadded:: 2.3\n"
+    "    `access_token`\n"
+    "\n"
+    ".. versionadded:: 2.3\n"
+    "    `credential`\n"
     "\n"
     ":param str server: The database server host.\n"
 
@@ -201,6 +209,16 @@ static const char s_tds_connect_doc[] =
 
     ":param bool ntlmv2: Enable NTLMv2 authentication.\n"
 
+    ":param str access_token: A Microsoft Entra ID access token for the\n"
+    "    Azure SQL resource (`https://database.windows.net/`). When provided,\n"
+    "    `user` and `password` are ignored and federated authentication is\n"
+    "    used. Requires TDS version 7.4.\n"
+
+    ":param credential: An object with a `get_token(scope)` method, such as\n"
+    "    the credential classes from `azure-identity`. A fresh token is\n"
+    "    requested for every new connection, so pooled connections never\n"
+    "    reuse an expired token. Mutually exclusive with `access_token`.\n"
+
     ":return: A new `Connection` object connected to the database.\n"
     ":rtype: Connection\n";
 
@@ -228,6 +246,7 @@ static PyObject* tds_connect(PyObject* self, PyObject* args, PyObject* kwargs)
         "paramstyle",
         "read_only",
         "ntlmv2",
+        "access_token",
         NULL
     };
 
@@ -259,7 +278,8 @@ static PyObject* tds_connect(PyObject* self, PyObject* args, PyObject* kwargs)
     PyObject* read_only = (DEFAULT_READ_ONLY) ? Py_True : Py_False;
     PyObject* ntlmv2 = (DEFAULT_NTLMV2) ? Py_True : Py_False;
     char* paramstyle_str = CTDS_DEFAULT_PARAMSTYLE;
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|HzzzzzzIIzO!O!O!zO!O!", s_kwlist, &server,
+    char* access_token = NULL;
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|HzzzzzzIIzO!O!O!zO!O!z", s_kwlist, &server,
                                      &port, &instance, &username, &password,
                                      &database, &appname, &hostname,
                                      &login_timeout, &timeout, &tds_version,
@@ -268,7 +288,8 @@ static PyObject* tds_connect(PyObject* self, PyObject* args, PyObject* kwargs)
                                      &PyBool_Type, &enable_bcp,
                                      &paramstyle_str,
                                      &PyBool_Type, &read_only,
-                                     &PyBool_Type, &ntlmv2))
+                                     &PyBool_Type, &ntlmv2,
+                                     &access_token))
     {
         return NULL;
     }
@@ -285,7 +306,8 @@ static PyObject* tds_connect(PyObject* self, PyObject* args, PyObject* kwargs)
                                      (Py_True == enable_bcp),
                                      s_paramstyles[ix].paramstyle,
                                      (Py_True == read_only),
-                                     (Py_True == ntlmv2));
+                                     (Py_True == ntlmv2),
+                                     access_token);
         }
     }
 

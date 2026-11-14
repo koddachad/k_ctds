@@ -27,15 +27,14 @@ VALGRIND_PYTHON_VERSIONS := \
     3.13.12 \
     3.14.3
 
-# FreeTDS versions to test against. This should
-# be the latest of each minor release.
+# FreeTDS versions to test against. Only the bundled version is tested,
+# since it carries the FEDAUTH (Microsoft Entra ID) patch from freetds/.
 # Note: These version strings *must* match the versions
-# on http://www.freetds.org/files/stable/.
+# on http://www.freetds.org/files/stable/ and have a matching
+# freetds/fedauth-<version>.patch.
 
 CHECKED_FREETDS_VERSIONS := \
-    1.3.21 \
-    1.4.27 \
-    1.5.12
+    1.5.21
 
 # Valgrind FreeTDS versions are limited to one without sp_executesql support
 # and one with.
@@ -165,6 +164,11 @@ $(BUILDDIR)/src/freetds-$(strip $(1)).tar.gz:
 
 $(BUILDDIR)/src/freetds-$(strip $(1)): $(BUILDDIR)/src/freetds-$(strip $(1)).tar.gz
 	tar -xzC $(BUILDDIR)/src -f $$(^)
+	# Apply the k_ctds FreeTDS patch (Microsoft Entra ID token authentication)
+	# when one exists for this version.
+	if [ -f freetds/fedauth-$(strip $(1)).patch ]; then \
+        patch -d $$(@) -p1 < freetds/fedauth-$(strip $(1)).patch; \
+    fi
 
 $(BUILDDIR)/freetds-$(strip $(1))/include/sybdb.h: $(BUILDDIR)/src/freetds-$(strip $(1))
 	mkdir -p $(BUILDDIR)/src/freetds-$(strip $(1))

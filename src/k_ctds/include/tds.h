@@ -56,6 +56,14 @@ enum ParamStyle {
 #  define CTDS_HAVE_NTLMV2 1
 #endif
 
+/*
+    Is federated (Microsoft Entra ID access token) authentication supported?
+    This requires the FreeTDS FEDAUTH patch shipped in freetds/.
+*/
+#if defined(DBSETLFEDAUTHTOKEN)
+#  define CTDS_HAVE_FEDAUTH 1
+#endif
+
 #if defined(SYBMSTIME)
 #  define CTDS_HAVE_TDS73_SUPPORT 1
 #endif

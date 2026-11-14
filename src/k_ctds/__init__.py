@@ -7,7 +7,7 @@ import logging
 # pylint: disable=no-name-in-module,redefined-builtin
 from k_ctds._tds import (
     apilevel,
-    connect,
+    connect as _connect,
     paramstyle,
     threadsafety,
 
@@ -84,6 +84,24 @@ from k_ctds._tds import (
     SqlVarBinary,
     SqlVarChar,
 )
+
+
+#: The OAuth scope used when requesting a Microsoft Entra ID token for Azure SQL.
+ENTRA_SQL_SCOPE = 'https://database.windows.net/.default'
+
+
+def connect(server, *args, **kwargs):
+    credential = kwargs.pop('credential', None)
+    if credential is not None:
+        if kwargs.get('access_token'):
+            raise InterfaceError('specify either access_token or credential, not both')
+        # Request a token for every physical connection so that pooled or
+        # reconnected sessions never present an expired token.
+        kwargs['access_token'] = credential.get_token(ENTRA_SQL_SCOPE).token
+    return _connect(server, *args, **kwargs)
+
+
+connect.__doc__ = _connect.__doc__
 
 
 class NullHandler(logging.Handler):

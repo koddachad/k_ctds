@@ -2159,7 +2159,8 @@ PyObject* Connection_create(const char* server, uint16_t port, const char* insta
                             const char* tds_version, bool autocommit,
                             bool ansi_defaults, bool enable_bcp,
                             enum ParamStyle paramstyle,
-                            bool read_only, bool ntlmv2)
+                            bool read_only, bool ntlmv2,
+                            const char* access_token)
 {
     struct Connection* connection = PyObject_New(struct Connection, &ConnectionType);
     if (NULL != connection)
@@ -2302,6 +2303,30 @@ PyObject* Connection_create(const char* server, uint16_t port, const char* insta
                 }
             }
 
+            if (access_token && access_token[0])
+            {
+#if defined(CTDS_HAVE_FEDAUTH)
+                /*
+                    Federated (Microsoft Entra ID) authentication. FreeTDS ignores
+                    the username and password when a token is present.
+                */
+                if (FAIL == DBSETLFEDAUTHTOKEN(connection->login, access_token))
+                {
+                    /* Never include the token itself in the error. */
+                    PyErr_SetString(PyExc_tds_InterfaceError, "invalid access_token");
+                    break;
+                }
+#else /* if defined(CTDS_HAVE_FEDAUTH) */
+                PyErr_Format(PyExc_NotImplementedError,
+                             "access_token is not supported by this build of FreeTDS");
+                break;
+#endif /* else if defined(CTDS_HAVE_FEDAUTH) */
+            }
+            else
+            {
+                access_token = NULL;
+            }
+
             if (ntlmv2)
             {
 #if defined(CTDS_HAVE_NTLMV2)
@@ -2354,6 +2379,15 @@ PyObject* Connection_create(const char* server, uint16_t port, const char* insta
                     break;
                 }
             }
+
+#if defined(CTDS_HAVE_FEDAUTH) && defined(DBVERSION_74)
+            /* Federated authentication is a TDS 7.4 login feature extension. */
+            if (access_token && (DBVERSION_74 != dbversion))
+            {
+                PyErr_SetString(PyExc_tds_InterfaceError, "access_token requires TDS version 7.4");
+                break;
+            }
+#endif /* if defined(CTDS_HAVE_FEDAUTH) && defined(DBVERSION_74) */
 
             if (read_only)
             {

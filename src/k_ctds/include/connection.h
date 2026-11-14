@@ -71,6 +71,9 @@ extern PyTypeObject ConnectionType;
 
     @param ntlmv2 [in] Include NTLMv2 authentication support in login request.
 
+    @param access_token [in] A Microsoft Entra ID access token to authenticate
+            with (federated authentication). This may be NULL.
+
     @return NULL if the connection creation failed.
     @return The created connection object.
 
@@ -82,7 +85,8 @@ PyObject* Connection_create(const char* server, uint16_t port, const char* insta
                             const char* tds_version, bool autocommit,
                             bool ansi_defaults, bool enable_bcp,
                             enum ParamStyle paramstyle,
-                            bool read_only, bool ntlmv2);
+                            bool read_only, bool ntlmv2,
+                            const char* access_token);
 
 
 struct Connection; /* forward declaration */
